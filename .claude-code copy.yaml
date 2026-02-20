@@ -1,0 +1,85 @@
+# Claude Code Orchestrator Configuration
+version: 1.0
+
+orchestrator:
+  enabled: true
+  main_instructions: "./ORCHESTRATOR.md"
+  agents_directory: "./agents/"
+  
+subagents:
+  knowledge-management:
+    file: "agents/knowledge-management-agent.md"
+    triggers:
+      - "knowledge management"
+      - "document everything"
+      - "knowledge check"
+      - "comprehensive documentation"
+      - "preserve knowledge"
+      - "documentation review"
+    timeout: 90
+    can_spawn_subagents: true
+    subagents: ["changelog", "docs", "archive", "validation"]
+    
+  changelog:
+    file: "agents/changelog-agent.md"
+    triggers: 
+      - "changelog"
+      - "document changes"
+      - "compress"
+    timeout: 30
+    reports_to: ["knowledge-management"]
+    
+  push:
+    file: "agents/push-agent.md"
+    triggers:
+      - "push"
+      - "commit"
+    timeout: 30
+    
+  archive:
+    file: "agents/archive-agent.md"
+    triggers:
+      - "archive"
+      - "outdated"
+      - "clean up"
+    timeout: 60
+    reports_to: ["knowledge-management"]
+    
+  validation:
+    file: "agents/validation-agent.md"
+    triggers:
+      - "validate"
+      - "check"
+      - "review"
+      - "pull request"
+      - "pr review"
+    timeout: 45
+    reports_to: ["knowledge-management"]
+    
+  docs:
+    file: "agents/docs-agent.md"
+    triggers:
+      - "readme"
+      - "document structure"
+      - "update docs"
+    timeout: 30
+    reports_to: ["knowledge-management"]
+    
+  mistake-review:
+    file: "agents/mistake-review-agent.md"
+    triggers:
+      - "review mistakes"
+      - "validate fixes"
+      - "prevent errors"
+      - "check improvements"
+      - "mistake review"
+    timeout: 60
+
+context_isolation:
+  enabled: true
+  max_context_share: "summary_only"
+  cleanup_after_execution: true
+  
+logging:
+  subagent_calls: false  # Keep hidden from user
+  summary_only: true
