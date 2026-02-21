@@ -1,6 +1,6 @@
-# DeepAgents Vision - User Checkpoint
+# DAPY Vision - User Checkpoint
 
-**Date:** 2025-11-26  
+**Date:** 2025-11-26
 **Purpose:** Preserve user's vision using only their words, organized by topic, with history of changes
 
 ---
@@ -17,7 +17,7 @@
 
 ### What We're Building
 
-> Building: DeepAgents CLI, reimplement tools That Claude provided and my subagents and tools (all in md) as tools. Reimplement advanced sub-prompts like archive or process mistakes using native tools of langchain and lang graph. I want to be able to observe my interaction with DeepAgents CLI, breakpoints, snapshots, human in the loop, all the best practices.
+> Building: DAPY, reimplement tools That Claude provided and my subagents and tools (all in md) as tools. Reimplement advanced sub-prompts like archive or process mistakes using native tools of langchain and lang graph. I want to be able to observe my interaction with DAPY, breakpoints, snapshots, human in the loop, all the best practices.
 
 ### Technology Stack
 
@@ -35,7 +35,7 @@
 
 ~~Prepare to deploy to langchain cloud.~~
 
-> ~~All right, so please review that my main workflow is working. And that, so my main workflow will be as following. I will start using DeepAgent's CLI the same way as I normally use Cloud Code.~~
+> ~~All right, so please review that my main workflow is working. And that, so my main workflow will be as following. I will start using DAPY the same way as I normally use Cloud Code.~~
 
 **Latest Decision:**
 
@@ -59,7 +59,7 @@
 
 ### Manus Ownership
 
-> I expect that you will deploy, run, manage and interact with deepagents. I wont try it until you can deliver good results on 10 simple test use cases.
+> I expect that you will deploy, run, manage and interact with dapy. I wont try it until you can deliver good results on 10 simple test use cases.
 
 ---
 
@@ -111,7 +111,7 @@
 
 ### Capturing Historical Data
 
-> add and research another items to the roadmap. I can, if let's say I pay for LangSmith, LangChain platform, can I take my whole bunch, let's say, chat, GPT, and entropic interactions, import them into LangChain, whatever tools they have, and run some like machine, run some like process that will help me improve that main agentic loop of deep agents. It should be like having a full history of my interactions with LAMs that I can annotate, should be a great data point to tweak the best workflow for what we're building.
+> add and research another items to the roadmap. I can, if let's say I pay for LangSmith, LangChain platform, can I take my whole bunch, let's say, chat, GPT, and entropic interactions, import them into LangChain, whatever tools they have, and run some like machine, run some like process that will help me improve that main agentic loop of DAPY. It should be like having a full history of my interactions with LAMs that I can annotate, should be a great data point to tweak the best workflow for what we're building.
 
 ---
 
@@ -127,7 +127,7 @@
 
 ### Separate Roadmap Item
 
-> This is capturing chat GPT and entropic is a separate item on the roadmap. I just wanted for you to record it and plan for it, but right now we're just implementing deep agents with full durability.
+> This is capturing chat GPT and entropic is a separate item on the roadmap. I just wanted for you to record it and plan for it, but right now we're just implementing DAPY with full durability.
 
 ---
 
