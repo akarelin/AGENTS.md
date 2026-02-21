@@ -1,10 +1,10 @@
-## DeepAgents CLI
+## DAPY - Deep Agents in PYthon
 
 Production-ready personal knowledge management system built with LangChain 1.0 and LangGraph 1.0.
 
 ### Overview
 
-DeepAgents CLI reimplements and extends the cascading markdown-based agent workflow into a robust, observable, and deployable system. It preserves the philosophy of markdown-driven prompts while adding enterprise-grade features like breakpoints, snapshots, human-in-the-loop controls, and durable state persistence.
+DAPY reimplements and extends the cascading markdown-based agent workflow into a robust, observable, and deployable system. It preserves the philosophy of markdown-driven prompts while adding enterprise-grade features like breakpoints, snapshots, human-in-the-loop controls, and durable state persistence.
 
 ### Key Features
 
@@ -44,8 +44,8 @@ DeepAgents CLI reimplements and extends the cascading markdown-based agent workf
 
 ```bash
 # Clone repository
-git clone https://github.com/yourusername/deepagents-cli.git
-cd deepagents-cli
+git clone https://github.com/yourusername/dapy.git
+cd dapy
 
 # Install
 pip install -e .
@@ -55,7 +55,7 @@ export LANGCHAIN_API_KEY=your_key_here
 export OPENAI_API_KEY=your_key_here
 
 # Run
-deepagents ask "What's next?"
+dapy ask "What's next?"
 ```
 
 **Docker (Development):**
@@ -65,41 +65,41 @@ deepagents ask "What's next?"
 docker-compose up -d
 
 # Enter container
-docker-compose exec deepagents-dev bash
+docker-compose exec dapy-dev bash
 
 # Run commands
-deepagents ask "What's next?"
+dapy ask "What's next?"
 ```
 
 ### Commands
 
 | Command | Description | Example |
 |---------|-------------|---------|
-| `ask` | Execute a query | `deepagents ask "Archive old code"` |
-| `next` | Show what's next | `deepagents next` |
-| `close` | Close session | `deepagents close` |
-| `document` | Document changes | `deepagents document` |
-| `push` | Commit and push | `deepagents push "Implemented feature X"` |
-| `version` | Show version | `deepagents version` |
-| `diag` | Show diagnostics | `deepagents diag` |
+| `ask` | Execute a query | `dapy ask "Archive old code"` |
+| `next` | Show what's next | `dapy next` |
+| `close` | Close session | `dapy close` |
+| `document` | Document changes | `dapy document` |
+| `push` | Commit and push | `dapy push "Implemented feature X"` |
+| `version` | Show version | `dapy version` |
+| `diag` | Show diagnostics | `dapy diag` |
 
 **Advanced Options:**
 
 ```bash
 # Enable breakpoint on specific tool
-deepagents ask "Archive old code" --breakpoint archive_tool
+dapy ask "Archive old code" --breakpoint archive_tool
 
 # Disable snapshots
-deepagents ask "What's next?" --no-snapshot
+dapy ask "What's next?" --no-snapshot
 
 # Auto-approve all operations
-deepagents ask "Update changelog" --approve-all
+dapy ask "Update changelog" --approve-all
 
 # Debug mode
-deepagents --debug ask "What's next?"
+dapy --debug ask "What's next?"
 
 # Custom config file
-deepagents --config my-config.yaml ask "What's next?"
+dapy --config my-config.yaml ask "What's next?"
 ```
 
 ### Architecture
@@ -107,7 +107,7 @@ deepagents --config my-config.yaml ask "What's next?"
 **Core Components:**
 
 ```
-deepagents/
+dapy/
 ├── cli.py                 # Click-based CLI
 ├── orchestrator.py        # Main agent creation
 ├── config.py             # Configuration management
@@ -170,7 +170,7 @@ END
 
 **Zero-Configuration Defaults:**
 
-DeepAgents works out of the box with sensible defaults. For customization, create `config.yaml`:
+DAPY works out of the box with sensible defaults. For customization, create `config.yaml`:
 
 ```yaml
 # Model configuration
@@ -184,7 +184,7 @@ snapshot_dir: ./snapshots
 
 # Persistence
 persistence_backend: sqlite
-db_path: ./deepagents.db
+db_path: ./dapy.db
 
 # Human-in-the-loop
 auto_approve: false
@@ -206,8 +206,8 @@ export LANGCHAIN_API_KEY=lsv2_pt_...
 export OPENAI_API_KEY=sk-...
 
 # Optional
-export LANGCHAIN_PROJECT=deepagents-dev
-export DEEPAGENTS_MODEL=openai:gpt-4o
+export LANGCHAIN_PROJECT=dapy-dev
+export DAPY_MODEL=openai:gpt-4o
 export POSTGRES_CONN_STRING=postgresql://...
 ```
 
@@ -235,7 +235,7 @@ Three deployment options are supported:
 **1. Local Docker Compose (Development)**
 ```bash
 docker-compose up -d
-docker-compose exec deepagents-dev bash
+docker-compose exec dapy-dev bash
 ```
 
 **2. GCP VM (Production)**
@@ -264,21 +264,21 @@ pip install -e ".[dev]"
 pytest
 
 # Format code
-black deepagents/
-isort deepagents/
+black dapy/
+isort dapy/
 
 # Type checking
-mypy deepagents/
+mypy dapy/
 
 # Linting
-ruff check deepagents/
+ruff check dapy/
 ```
 
 **Project Structure:**
 
 ```
-deepagents-cli/
-├── deepagents/           # Main package
+dapy/
+├── dapy/                 # Main package
 ├── tests/                # Test suite
 ├── deployment/           # Deployment configs
 ├── docs/                 # Documentation
@@ -292,27 +292,27 @@ deepagents-cli/
 
 ### Migration from Markdown Agents
 
-DeepAgents CLI preserves your existing workflow while adding production features:
+DAPY preserves your existing workflow while adding production features:
 
 **What's Preserved:**
-- ✅ Markdown-based prompts and instructions
-- ✅ Cascading agent architecture
-- ✅ Tool-specific behaviors and logic
-- ✅ Workflow patterns (close, document, push)
+- Markdown-based prompts and instructions
+- Cascading agent architecture
+- Tool-specific behaviors and logic
+- Workflow patterns (close, document, push)
 
 **What's Enhanced:**
-- ✅ Observability with LangSmith tracing
-- ✅ Interactive debugging with breakpoints
-- ✅ Durable state with checkpointing
-- ✅ Production deployment options
-- ✅ Human-in-the-loop controls
+- Observability with LangSmith tracing
+- Interactive debugging with breakpoints
+- Durable state with checkpointing
+- Production deployment options
+- Human-in-the-loop controls
 
 **Migration Steps:**
 
-1. Install DeepAgents CLI
-2. Copy your markdown prompts to `deepagents/prompts/`
-3. Configure tool mappings in `deepagents/tools/__init__.py`
-4. Test workflows with `deepagents ask`
+1. Install DAPY
+2. Copy your markdown prompts to `dapy/prompts/`
+3. Configure tool mappings in `dapy/tools/__init__.py`
+4. Test workflows with `dapy ask`
 5. Deploy to your preferred environment
 
 ### Observability
@@ -339,7 +339,7 @@ Snapshots are saved to `./snapshots/` as JSON files.
 **Diagnostics:**
 
 ```bash
-deepagents diag
+dapy diag
 ```
 
 Shows:
@@ -364,10 +364,10 @@ Shows:
 - Rotate API keys periodically
 
 **Workflow:**
-- Run `deepagents next` at session start
-- Run `deepagents close` at session end
-- Run `deepagents document` before pushing
-- Use `deepagents push` for changelog-verified commits
+- Run `dapy next` at session start
+- Run `dapy close` at session end
+- Run `dapy document` before pushing
+- Use `dapy push` for changelog-verified commits
 
 ### Troubleshooting
 
@@ -375,7 +375,7 @@ Shows:
 
 1. **"API key not found"**
    - Set `LANGCHAIN_API_KEY` and `OPENAI_API_KEY`
-   - Check with `deepagents diag`
+   - Check with `dapy diag`
 
 2. **"Database connection failed"**
    - Verify `POSTGRES_CONN_STRING` if using PostgreSQL
@@ -416,6 +416,6 @@ Inspired by the original cascading markdown agent system.
 
 ### Support
 
-- **Documentation**: [GitHub Wiki](https://github.com/yourusername/deepagents-cli/wiki)
-- **Issues**: [GitHub Issues](https://github.com/yourusername/deepagents-cli/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/yourusername/deepagents-cli/discussions)
+- **Documentation**: [GitHub Wiki](https://github.com/yourusername/dapy/wiki)
+- **Issues**: [GitHub Issues](https://github.com/yourusername/dapy/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/yourusername/dapy/discussions)

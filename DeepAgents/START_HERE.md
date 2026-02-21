@@ -1,6 +1,6 @@
 # START HERE - Next Manus Instance
 
-**User will start you with:** `Resume work on CRAP/DeepAgents`
+**User will start you with:** `Resume work on CRAP/DAPY`
 
 ---
 
@@ -14,26 +14,26 @@
 
 ### 2. Understand the Context
 
-**Project:** DeepAgents CLI - Personal knowledge management workflow  
-**User:** Alex (akarelin)  
-**Status:** Code exists, NOT tested, NOT deployed, NOT approved  
+**Project:** DAPY - Personal knowledge management workflow
+**User:** Alex (akarelin)
+**Status:** Code exists, NOT tested, NOT deployed, NOT approved
 **Your Job:** Test, iterate, debug, deliver working system
 
 ### 3. Critical Rules
 
-⚠️ **NOTHING IS DONE UNTIL USER APPROVES IT**
+**NOTHING IS DONE UNTIL USER APPROVES IT**
 
 Even if:
-- Code exists ✓
-- Tests pass ✓
-- Looks good ✓
+- Code exists
+- Tests pass
+- Looks good
 
 It's NOT done until user explicitly says: "This is done"
 
 ### 4. What User Expects
 
 **Phase 1 (Your responsibility):**
-- Deploy DeepAgents
+- Deploy DAPY
 - Run 10 test cases
 - Iterate until all pass
 - Show user results
@@ -49,45 +49,45 @@ It's NOT done until user explicitly says: "This is done"
 ### 5. Repository Structure
 
 ```
-CRAP/DeepAgents/
-├── START_HERE.md                    ← You are here
-├── USER_VISION_CHECKPOINT.md        ← Read first
-├── CURRENT_STATE.md                 ← Read second
-├── HANDOFF_TO_NEXT_MANUS.md        ← Read third
-├── deepagents/                      ← Core code (27 Python files)
-│   ├── cli.py                       ← CLI entry point
-│   ├── tools/                       ← 10 LangChain tools
-│   ├── workflows/                   ← 3 LangGraph workflows
-│   ├── middleware/                  ← Observability stack
-│   └── prompts/                     ← System prompts
-├── tools/                           ← Log ingestion tools
-│   ├── ingest_llm_logs.py          ← Import logs to LangSmith
-│   ├── query_llm_logs.py           ← Query and generate tests
-│   └── README_LOG_INGESTION.md     ← Documentation
-├── deployment/                      ← Deployment configs
-│   ├── langchain-cloud/            ← User chose this (but don't start yet)
-│   ├── server-five/                ← Alternative
-│   └── gcp/                        ← Alternative
-└── [Documentation files]           ← Various guides and analysis
+CRAP/DAPY/
+├── START_HERE.md                    <- You are here
+├── USER_VISION_CHECKPOINT.md        <- Read first
+├── CURRENT_STATE.md                 <- Read second
+├── HANDOFF_TO_NEXT_MANUS.md        <- Read third
+├── dapy/                            <- Core code (27 Python files)
+│   ├── cli.py                       <- CLI entry point
+│   ├── tools/                       <- 10 LangChain tools
+│   ├── workflows/                   <- 3 LangGraph workflows
+│   ├── middleware/                  <- Observability stack
+│   └── prompts/                     <- System prompts
+├── tools/                           <- Log ingestion tools
+│   ├── ingest_llm_logs.py          <- Import logs to LangSmith
+│   ├── query_llm_logs.py           <- Query and generate tests
+│   └── README_LOG_INGESTION.md     <- Documentation
+├── deployment/                      <- Deployment configs
+│   ├── langchain-cloud/            <- User chose this (but don't start yet)
+│   ├── server-five/                <- Alternative
+│   └── gcp/                        <- Alternative
+└── [Documentation files]           <- Various guides and analysis
 
 Total: 50+ files, ~3,635 lines of Python, ~15,000 lines of docs
 ```
 
 ### 6. Immediate Actions
 
-**When user says "Resume work on CRAP/DeepAgents":**
+**When user says "Resume work on CRAP/DAPY":**
 
-1. ✅ Acknowledge you've read the context
-2. ❓ Ask if user has registered for LangChain Cloud
-3. ❓ Ask if user has API keys ready
-4. ❓ Ask if user wants you to proceed with deployment
-5. ⏸️ WAIT for user's answers before doing anything
+1. Acknowledge you've read the context
+2. Ask if user has registered for LangChain Cloud
+3. Ask if user has API keys ready
+4. Ask if user wants you to proceed with deployment
+5. WAIT for user's answers before doing anything
 
 **DO NOT:**
-- ❌ Start deploying without approval
-- ❌ Make assumptions about API keys
-- ❌ Proceed without explicit go-ahead
-- ❌ Assume anything is done
+- Start deploying without approval
+- Make assumptions about API keys
+- Proceed without explicit go-ahead
+- Assume anything is done
 
 ### 7. Key Files to Reference
 
@@ -99,7 +99,7 @@ Total: 50+ files, ~3,635 lines of Python, ~15,000 lines of docs
 - `HANDOFF_TO_NEXT_MANUS.md` - Your instructions
 
 **Test Cases:**
-- `DEEPAGENTS_TEST_CASES.md` - 10 test cases to run
+- `DAPY_TEST_CASES.md` - 10 test cases to run
 
 **Deployment:**
 - `LANGCHAIN_CLOUD_DEPLOYMENT.md` - Deployment guide
@@ -119,11 +119,11 @@ Total: 50+ files, ~3,635 lines of Python, ~15,000 lines of docs
 ### 9. Success Criteria
 
 **Phase 1 Complete When:**
-- ✅ All 10 test cases pass
-- ✅ Results documented with evidence
-- ✅ User approves to proceed
+- All 10 test cases pass
+- Results documented with evidence
+- User approves to proceed
 
-**Then:** User starts using DeepAgents
+**Then:** User starts using DAPY
 
 ### 10. Questions to Ask User
 
@@ -146,7 +146,7 @@ When you start:
 
 ### 11. Remember
 
-**User will say:** `Resume work on CRAP/DeepAgents`
+**User will say:** `Resume work on CRAP/DAPY`
 
 **You should:**
 1. Read the three key documents
@@ -161,12 +161,12 @@ When you start:
 
 ## Quick Reference
 
-**User:** akarelin  
-**Project:** DeepAgents CLI  
-**Repo:** akarelin/CRAP/DeepAgents  
-**Status:** Code exists, NOT done  
-**Your job:** Test, iterate, deliver  
-**User's expectation:** Collaborative debugging  
+**User:** akarelin
+**Project:** DAPY
+**Repo:** akarelin/CRAP/DAPY
+**Status:** Code exists, NOT done
+**Your job:** Test, iterate, deliver
+**User's expectation:** Collaborative debugging
 
 **Read first:**
 1. USER_VISION_CHECKPOINT.md
@@ -179,4 +179,4 @@ When you start:
 - Log locations
 - Priority
 
-**Good luck!** 🚀
+**Good luck!**

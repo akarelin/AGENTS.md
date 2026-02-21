@@ -1,10 +1,10 @@
-# DeepAgents CLI Deployment Guide
+# DAPY Deployment Guide
 
 This directory contains deployment configurations for three environments: GCP VM, local Docker Compose, and LangChain Cloud.
 
 ## Overview
 
-DeepAgents CLI can be deployed in multiple ways depending on your needs:
+DAPY can be deployed in multiple ways depending on your needs:
 
 | Environment | Use Case | Complexity | Cost |
 |------------|----------|------------|------|
@@ -37,17 +37,17 @@ nano .env
 docker-compose up -d
 
 # 4. Enter container
-docker-compose exec deepagents-dev bash
+docker-compose exec dapy-dev bash
 
-# 5. Run DeepAgents CLI
-deepagents ask "What's next?"
+# 5. Run DAPY
+dapy ask "What's next?"
 ```
 
 **Features:**
-- ✅ Hot reload - code changes apply immediately
-- ✅ SQLite persistence - no database setup needed
-- ✅ Interactive shell access
-- ✅ Volume-mounted repositories
+- Hot reload - code changes apply immediately
+- SQLite persistence - no database setup needed
+- Interactive shell access
+- Volume-mounted repositories
 
 **Directory Structure:**
 ```
@@ -70,18 +70,18 @@ Best for production deployment with PostgreSQL, Nginx, and SSL.
 
 ```bash
 # 1. Create GCP VM (Ubuntu 22.04 recommended)
-gcloud compute instances create deepagents-vm \
+gcloud compute instances create dapy-vm \
   --machine-type=e2-standard-2 \
   --image-family=ubuntu-2204-lts \
   --image-project=ubuntu-os-cloud \
   --boot-disk-size=50GB
 
 # 2. SSH into VM
-gcloud compute ssh deepagents-vm
+gcloud compute ssh dapy-vm
 
 # 3. Clone repository
-git clone https://github.com/yourusername/deepagents-cli.git
-cd deepagents-cli/deployment/gcp
+git clone https://github.com/yourusername/dapy.git
+cd dapy/deployment/gcp
 
 # 4. Configure environment
 cp .env.example .env
@@ -92,28 +92,28 @@ nano .env  # Add your API keys
 ```
 
 **Features:**
-- ✅ PostgreSQL for durable state
-- ✅ Nginx reverse proxy with SSL
-- ✅ Auto-restart on failure
-- ✅ Health checks
-- ✅ Production-ready logging
+- PostgreSQL for durable state
+- Nginx reverse proxy with SSL
+- Auto-restart on failure
+- Health checks
+- Production-ready logging
 
 **Architecture:**
 ```
-Internet → Nginx (443) → DeepAgents CLI (8000) → PostgreSQL (5432)
+Internet → Nginx (443) → DAPY (8000) → PostgreSQL (5432)
 ```
 
 **Post-Deployment:**
 
 ```bash
 # Test deployment
-docker-compose exec deepagents deepagents version
+docker-compose exec dapy dapy version
 
 # Run commands
-docker-compose exec deepagents deepagents ask "What's next?"
+docker-compose exec dapy dapy ask "What's next?"
 
 # View logs
-docker-compose logs -f deepagents
+docker-compose logs -f dapy
 
 # Stop services
 docker-compose down
@@ -166,11 +166,11 @@ langchain deploy
 ```
 
 **Features:**
-- ✅ Automatic scaling (1-5 instances)
-- ✅ Managed infrastructure
-- ✅ Built-in monitoring via LangSmith
-- ✅ Zero DevOps overhead
-- ✅ Pay only for usage
+- Automatic scaling (1-5 instances)
+- Managed infrastructure
+- Built-in monitoring via LangSmith
+- Zero DevOps overhead
+- Pay only for usage
 
 **Configuration:**
 
@@ -196,8 +196,8 @@ All deployments use these environment variables:
 |----------|----------|-------------|---------|
 | `LANGCHAIN_API_KEY` | Yes | LangSmith API key | `lsv2_pt_...` |
 | `OPENAI_API_KEY` | Yes | OpenAI API key | `sk-...` |
-| `LANGCHAIN_PROJECT` | No | LangSmith project name | `deepagents-prod` |
-| `DEEPAGENTS_MODEL` | No | Model to use | `openai:gpt-4o` |
+| `LANGCHAIN_PROJECT` | No | LangSmith project name | `dapy-prod` |
+| `DAPY_MODEL` | No | Model to use | `openai:gpt-4o` |
 | `PERSISTENCE_BACKEND` | No | Database backend | `sqlite` or `postgres` |
 | `POSTGRES_CONN_STRING` | Conditional | PostgreSQL connection | `postgresql://...` |
 | `DB_PASSWORD` | Conditional | Database password | `secure_password` |
@@ -227,7 +227,7 @@ All deployments use these environment variables:
 **1. Container won't start**
 ```bash
 # Check logs
-docker-compose logs deepagents
+docker-compose logs dapy
 
 # Verify environment variables
 docker-compose config
@@ -242,7 +242,7 @@ docker-compose build --no-cache
 docker-compose ps postgres
 
 # Test connection
-docker-compose exec postgres psql -U deepagents -d deepagents
+docker-compose exec postgres psql -U dapy -d dapy
 
 # Reset database
 docker-compose down -v
@@ -255,16 +255,16 @@ docker-compose up -d
 cat .env
 
 # Check environment inside container
-docker-compose exec deepagents env | grep API_KEY
+docker-compose exec dapy env | grep API_KEY
 ```
 
 **4. Git operations failing**
 ```bash
 # Verify git config is mounted
-docker-compose exec deepagents git config --list
+docker-compose exec dapy git config --list
 
 # Check SSH keys
-docker-compose exec deepagents ls -la /root/.ssh
+docker-compose exec dapy ls -la /root/.ssh
 ```
 
 ### Performance Tuning
@@ -308,17 +308,17 @@ Access traces at: https://smith.langchain.com
 
 For deployment issues:
 1. Check logs: `docker-compose logs -f`
-2. Run diagnostics: `deepagents diag`
-3. Review documentation: [GitHub Wiki](https://github.com/yourusername/deepagents-cli/wiki)
-4. Open issue: [GitHub Issues](https://github.com/yourusername/deepagents-cli/issues)
+2. Run diagnostics: `dapy diag`
+3. Review documentation: [GitHub Wiki](https://github.com/yourusername/dapy/wiki)
+4. Open issue: [GitHub Issues](https://github.com/yourusername/dapy/issues)
 
 ---
 
 ## Next Steps
 
 After deployment:
-1. ✅ Test with `deepagents version`
-2. ✅ Run `deepagents ask "What's next?"`
-3. ✅ Review LangSmith traces
-4. ✅ Configure git repositories
-5. ✅ Set up scheduled tasks (optional)
+1. Test with `dapy version`
+2. Run `dapy ask "What's next?"`
+3. Review LangSmith traces
+4. Configure git repositories
+5. Set up scheduled tasks (optional)
