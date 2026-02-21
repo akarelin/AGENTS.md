@@ -1,4 +1,7 @@
 # AGENTS.md
+
+[![DAPY Release](https://img.shields.io/github/v/release/akarelin/AGENTS.md?filter=dapy-*&label=DAPY)](https://github.com/akarelin/AGENTS.md/releases?q=dapy)
+
 An unfinished, evolving collection of everything agentic — prompt engineering patterns, autonomous agent instructions, multi-agent orchestration experiments, and tooling. This is a working dumping ground, not a polished framework.
 
 ## Table of Contents
