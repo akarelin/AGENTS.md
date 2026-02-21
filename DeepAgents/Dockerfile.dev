@@ -24,17 +24,17 @@ RUN pip install --upgrade pip && \
     pip install -e ".[dev]"
 
 # Note: Application code is mounted as volume for hot reload
-# No COPY of deepagents/ directory
+# No COPY of dapy/ directory
 
 # Create directories
 RUN mkdir -p /app/data /app/snapshots /app/logs
 
 # Set up git config
-RUN git config --global user.name "DeepAgents Dev" && \
+RUN git config --global user.name "DAPY Dev" && \
     git config --global user.email "dev@localhost"
 
 # Expose port
 EXPOSE 8000
 
 # Default command for development
-CMD ["deepagents", "--help"]
+CMD ["dapy", "--help"]

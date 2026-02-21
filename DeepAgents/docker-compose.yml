@@ -1,27 +1,27 @@
 version: '3.8'
 
 services:
-  deepagents-dev:
+  dapy-dev:
     build:
       context: .
       dockerfile: Dockerfile.dev
-    container_name: deepagents-dev
+    container_name: dapy-dev
     environment:
       # LangChain/LangSmith
       - LANGCHAIN_TRACING_V2=true
       - LANGCHAIN_API_KEY=${LANGCHAIN_API_KEY}
-      - LANGCHAIN_PROJECT=deepagents-dev
+      - LANGCHAIN_PROJECT=dapy-dev
       
       # OpenAI
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       
-      # DeepAgents config
-      - DEEPAGENTS_MODEL=${DEEPAGENTS_MODEL:-openai:gpt-4o}
+      # DAPY config
+      - DAPY_MODEL=${DAPY_MODEL:-openai:gpt-4o}
       - PERSISTENCE_BACKEND=sqlite
       
     volumes:
       # Mount source code for hot reload
-      - ./deepagents:/app/deepagents
+      - ./dapy:/app/dapy
       - ./pyproject.toml:/app/pyproject.toml
       - ./README.md:/app/README.md
       
@@ -41,9 +41,9 @@ services:
     stdin_open: true
     tty: true
     networks:
-      - deepagents-dev-network
+      - dapy-dev-network
     command: /bin/bash
 
 networks:
-  deepagents-dev-network:
+  dapy-dev-network:
     driver: bridge

@@ -9,8 +9,8 @@ from langgraph.graph import StateGraph, START, END
 from typing import TypedDict, Annotated, Dict, Any, List
 from operator import add
 
-from deepagents.tools.git_operations import git_diff_tool, git_status_tool
-from deepagents.tools.changelog import changelog_tool
+from dapy.tools.git_operations import git_diff_tool, git_status_tool
+from dapy.tools.changelog import changelog_tool
 
 
 class DocumentChangesState(TypedDict):

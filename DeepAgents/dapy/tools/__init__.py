@@ -1,17 +1,17 @@
 """
-Tools for DeepAgents CLI
+Tools for DAPY
 
 Each tool is a LangChain tool migrated from the original markdown-based subagents.
 Tools are organized by function and can be composed into specialized agent toolsets.
 """
 
 from typing import Any, Dict, List
-from deepagents.tools.changelog import changelog_tool
-from deepagents.tools.archive import archive_tool
-from deepagents.tools.mistake_processor import mistake_processor_tool
-from deepagents.tools.validation import validation_tool
-from deepagents.tools.git_operations import git_push_tool, git_status_tool, git_diff_tool
-from deepagents.tools.knowledge_base import (
+from dapy.tools.changelog import changelog_tool
+from dapy.tools.archive import archive_tool
+from dapy.tools.mistake_processor import mistake_processor_tool
+from dapy.tools.validation import validation_tool
+from dapy.tools.git_operations import git_push_tool, git_status_tool, git_diff_tool
+from dapy.tools.knowledge_base import (
     read_markdown_tool,
     search_markdown_tool,
     update_markdown_tool,

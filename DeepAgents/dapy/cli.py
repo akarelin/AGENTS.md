@@ -1,5 +1,5 @@
 """
-DeepAgents CLI - Main entry point
+DAPY CLI - Main entry point
 
 Zero-configuration CLI for personal knowledge management using LangChain/LangGraph 1.0
 """
@@ -12,10 +12,10 @@ from rich.markdown import Markdown
 import os
 from typing import Optional
 
-from deepagents.orchestrator import create_main_agent
-from deepagents.config import load_config, DEFAULT_CONFIG
-from deepagents.observability import setup_tracing
-from deepagents.persistence import get_checkpointer
+from dapy.orchestrator import create_main_agent
+from dapy.config import load_config, DEFAULT_CONFIG
+from dapy.observability import setup_tracing
+from dapy.persistence import get_checkpointer
 
 console = Console()
 
@@ -39,17 +39,17 @@ def cli(
     breakpoint: tuple[str, ...],
 ) -> None:
     """
-    DeepAgents CLI - Production-ready personal knowledge management system.
+    DAPY - Deep Agents in PYthon.
 
     Built with LangChain 1.0 and LangGraph 1.0, featuring observability,
     human-in-the-loop controls, and durable state persistence.
 
     Examples:
-        deepagents ask "What's next?"
-        deepagents close
-        deepagents document
-        deepagents push "Implemented new feature"
-        deepagents ask "Archive outdated code" --breakpoint archive_tool
+        dapy ask "What's next?"
+        dapy close
+        dapy document
+        dapy push "Implemented new feature"
+        dapy ask "Archive outdated code" --breakpoint archive_tool
     """
     ctx.ensure_object(dict)
 
@@ -87,9 +87,9 @@ def ask(ctx: click.Context, query: tuple[str, ...], snapshot: bool, approve_all:
     QUERY: The question or command to execute (can be multiple words)
 
     Examples:
-        deepagents ask What is the current status?
-        deepagents ask "Archive outdated code"
-        deepagents ask Update the changelog --no-snapshot
+        dapy ask What is the current status?
+        dapy ask "Archive outdated code"
+        dapy ask Update the changelog --no-snapshot
     """
     query_str = ' '.join(query)
 
@@ -131,7 +131,7 @@ def next(ctx: click.Context) -> None:
     This command reads your current priorities and work in progress,
     then presents a concise summary of what to work on next.
     """
-    from deepagents.workflows.whats_next import run_whats_next_workflow
+    from dapy.workflows.whats_next import run_whats_next_workflow
 
     console.print("[bold cyan]Checking what's next...[/bold cyan]")
 
@@ -156,7 +156,7 @@ def close(ctx: click.Context) -> None:
     - Archives completed work
     - Provides a summary for the next session
     """
-    from deepagents.workflows.close_session import run_close_session_workflow
+    from dapy.workflows.close_session import run_close_session_workflow
 
     console.print("[bold cyan]Closing session...[/bold cyan]")
 
@@ -183,7 +183,7 @@ def document(ctx: click.Context) -> None:
     - Updates CHANGELOG.md with discovered changes
     - Updates relevant documentation as needed
     """
-    from deepagents.workflows.document_changes import run_document_changes_workflow
+    from dapy.workflows.document_changes import run_document_changes_workflow
 
     console.print("[bold cyan]Documenting changes...[/bold cyan]")
 
@@ -214,7 +214,7 @@ def push(ctx: click.Context, message: Optional[str], pr: bool) -> None:
     - Pushes to repository
     - Creates PR if requested
     """
-    from deepagents.tools.git_operations import git_push_tool
+    from dapy.tools.git_operations import git_push_tool
 
     console.print("[bold cyan]Preparing to push...[/bold cyan]")
 
@@ -240,12 +240,12 @@ def push(ctx: click.Context, message: Optional[str], pr: bool) -> None:
 @click.pass_context
 def daemon(ctx: click.Context, port: int, reload: bool) -> None:
     """
-    Run DeepAgents as a background daemon with API interface.
+    Run DAPY as a background daemon with API interface.
 
-    This is used for deployment scenarios where DeepAgents runs
+    This is used for deployment scenarios where DAPY runs
     as a service accepting requests via HTTP API.
     """
-    console.print(f"[bold cyan]Starting DeepAgents daemon on port {port}...[/bold cyan]")
+    console.print(f"[bold cyan]Starting DAPY daemon on port {port}...[/bold cyan]")
 
     # This would integrate with FastAPI or similar for HTTP interface
     # For now, placeholder
@@ -263,10 +263,10 @@ def inspect(ctx: click.Context, limit: int) -> None:
     Useful for reviewing what happened before an error.
     
     Examples:
-        deepagents inspect
-        deepagents inspect --limit 20
+        dapy inspect
+        dapy inspect --limit 20
     """
-    from deepagents.inspect import ExecutionInspector
+    from dapy.inspect import ExecutionInspector
     
     inspector = ExecutionInspector()
     inspector.show_recent_executions(limit)
@@ -296,15 +296,15 @@ def feedback(ctx: click.Context) -> None:
 @click.pass_context
 def feedback_submit(ctx: click.Context, description: Optional[str], category: Optional[str], severity: Optional[str]) -> None:
     """
-    Submit feedback about DeepAgents.
+    Submit feedback about DAPY.
     
     If DESCRIPTION is not provided, enters interactive mode.
     
     Examples:
-        deepagents feedback submit
-        deepagents feedback submit "Tool X failed with error Y" --category bug --severity high
+        dapy feedback submit
+        dapy feedback submit "Tool X failed with error Y" --category bug --severity high
     """
-    from deepagents.feedback import FeedbackManager, submit_feedback_interactive
+    from dapy.feedback import FeedbackManager, submit_feedback_interactive
     
     if description:
         # Non-interactive mode
@@ -315,7 +315,7 @@ def feedback_submit(ctx: click.Context, description: Optional[str], category: Op
             severity=severity
         )
         console.print(f"[bold green]✓[/bold green] Feedback submitted: {feedback_key}")
-        console.print(f"[dim]Track status with: deepagents feedback status {feedback_key}[/dim]")
+        console.print(f"[dim]Track status with: dapy feedback status {feedback_key}[/dim]")
     else:
         # Interactive mode
         submit_feedback_interactive()
@@ -329,10 +329,10 @@ def feedback_list(ctx: click.Context, limit: int) -> None:
     List your submitted feedback.
     
     Examples:
-        deepagents feedback list
-        deepagents feedback list --limit 20
+        dapy feedback list
+        dapy feedback list --limit 20
     """
-    from deepagents.feedback import show_feedback_list
+    from dapy.feedback import show_feedback_list
     show_feedback_list(limit)
 
 
@@ -346,9 +346,9 @@ def feedback_status(ctx: click.Context, feedback_key: str) -> None:
     FEEDBACK_KEY: The feedback identifier
     
     Examples:
-        deepagents feedback status feedback_20251126_143022
+        dapy feedback status feedback_20251126_143022
     """
-    from deepagents.feedback import show_feedback_status
+    from dapy.feedback import show_feedback_status
     show_feedback_status(feedback_key)
 
 
@@ -359,11 +359,11 @@ def version(ctx: click.Context) -> None:
     from importlib.metadata import version as get_version
 
     try:
-        ver = get_version('deepagents-cli')
+        ver = get_version('dapy')
     except Exception:
         ver = "unknown (development)"
 
-    console.print(f"[bold]DeepAgents CLI[/bold] version {ver}")
+    console.print(f"[bold]DAPY[/bold] version {ver}")
     console.print("Built with LangChain 1.0 and LangGraph 1.0")
 
 
@@ -382,10 +382,10 @@ def export_debug(ctx: click.Context, description: Optional[str], output: Optiona
     DESCRIPTION: Optional description of the issue
     
     Examples:
-        deepagents export-debug "Tool X failed with error Y"
-        deepagents export-debug --output my-debug.tar.gz
+        dapy export-debug "Tool X failed with error Y"
+        dapy export-debug --output my-debug.tar.gz
     """
-    from deepagents.debug_export import create_debug_package
+    from dapy.debug_export import create_debug_package
     
     console.print("[bold cyan]Creating debug package...[/bold cyan]")
     
@@ -416,7 +416,7 @@ def diag(ctx: click.Context) -> None:
 
     Displays configuration, environment variables, and system status.
     """
-    console.print("[bold cyan]DeepAgents Diagnostic Information[/bold cyan]\n")
+    console.print("[bold cyan]DAPY Diagnostic Information[/bold cyan]\n")
 
     # Configuration
     console.print("[bold]Configuration:[/bold]")

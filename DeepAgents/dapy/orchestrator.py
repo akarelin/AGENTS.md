@@ -9,18 +9,18 @@ from langchain.agents import create_agent
 from langchain.agents.middleware import HumanInTheLoopMiddleware
 from langchain_openai import ChatOpenAI
 
-from deepagents.middleware import (
+from dapy.middleware import (
     SnapshotMiddleware,
     BreakpointMiddleware,
     EnhancedLoggingMiddleware,
 )
-from deepagents.tools import get_all_tools
-from deepagents.config import get_prompt
+from dapy.tools import get_all_tools
+from dapy.config import get_prompt
 
 
 def create_main_agent(config: Dict[str, Any], checkpointer: Any = None) -> Any:
     """
-    Create the main DeepAgents orchestrator agent.
+    Create the main DAPY orchestrator agent.
     
     This agent uses LangChain 1.0's create_agent with custom middleware
     for observability, human-in-the-loop, and state management.
@@ -108,7 +108,7 @@ def create_specialized_agent(
     system_prompt = get_prompt(config, f'{agent_type}_agent')
     
     # Get tools relevant to this agent type
-    from deepagents.tools import get_tools_for_agent
+    from dapy.tools import get_tools_for_agent
     tools = get_tools_for_agent(agent_type, config)
     
     # Create model

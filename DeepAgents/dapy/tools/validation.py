@@ -34,7 +34,7 @@ def validation_tool(
     
     Example:
         validation_tool(
-            target="deepagents/",
+            target="dapy/",
             rules=["no_debug_code", "changelog_updated", "tests_present"]
         )
     """

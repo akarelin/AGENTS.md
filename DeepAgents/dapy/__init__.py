@@ -1,5 +1,7 @@
 """
-DeepAgents CLI - Production-ready personal knowledge management system
+DAPY - Deep Agents in PYthon
+
+Production-ready personal knowledge management system
 
 Built with LangChain 1.0 and LangGraph 1.0, featuring:
 - Observability with LangSmith tracing
@@ -11,10 +13,10 @@ Built with LangChain 1.0 and LangGraph 1.0, featuring:
 
 __version__ = "0.1.0"
 
-from deepagents.orchestrator import create_main_agent, create_specialized_agent
-from deepagents.config import load_config, DEFAULT_CONFIG
-from deepagents.observability import setup_tracing
-from deepagents.persistence import get_checkpointer
+from dapy.orchestrator import create_main_agent, create_specialized_agent
+from dapy.config import load_config, DEFAULT_CONFIG
+from dapy.observability import setup_tracing
+from dapy.persistence import get_checkpointer
 
 __all__ = [
     'create_main_agent',

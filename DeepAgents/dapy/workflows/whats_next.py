@@ -10,8 +10,8 @@ from typing import TypedDict, Annotated, Dict, Any, List
 from operator import add
 from pathlib import Path
 
-from deepagents.tools.git_operations import git_status_tool
-from deepagents.tools.knowledge_base import read_markdown_tool
+from dapy.tools.git_operations import git_status_tool
+from dapy.tools.knowledge_base import read_markdown_tool
 
 
 class WhatsNextState(TypedDict):

@@ -1,5 +1,5 @@
 """
-Configuration management for DeepAgents CLI
+Configuration management for DAPY
 
 Follows zero-configuration philosophy with sensible defaults
 and optional YAML overrides.
@@ -13,7 +13,7 @@ import os
 # Default configuration with sensible defaults
 DEFAULT_CONFIG: Dict[str, Any] = {
     # Model configuration
-    'model': os.environ.get('DEEPAGENTS_MODEL', 'openai:gpt-4o'),
+    'model': os.environ.get('DAPY_MODEL', 'openai:gpt-4o'),
     
     # Observability
     'debug': False,
@@ -23,7 +23,7 @@ DEFAULT_CONFIG: Dict[str, Any] = {
     
     # Persistence
     'persistence_backend': 'sqlite',
-    'db_path': './deepagents.db',
+    'db_path': './dapy.db',
     'postgres_conn_string': os.environ.get('POSTGRES_CONN_STRING'),
     
     # Human-in-the-loop

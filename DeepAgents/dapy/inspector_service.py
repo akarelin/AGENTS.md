@@ -1,7 +1,7 @@
 """
 Manus Inspector Service
 
-FastAPI service that allows Manus to remotely inspect DeepAgents executions,
+FastAPI service that allows Manus to remotely inspect DAPY executions,
 review snapshots, analyze failures, and suggest fixes.
 """
 
@@ -13,8 +13,8 @@ import json
 import os
 from datetime import datetime
 
-from deepagents.inspect import ExecutionInspector
-from deepagents.debug_export import DebugPackageExporter
+from dapy.inspect import ExecutionInspector
+from dapy.debug_export import DebugPackageExporter
 
 app = FastAPI(
     title="DeepAgents Inspector Service",

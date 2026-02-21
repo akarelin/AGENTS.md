@@ -3,7 +3,7 @@ Snapshot middleware for state capture at key execution points
 """
 
 from typing import Any, Dict
-from deepagents.observability import SnapshotManager
+from dapy.observability import SnapshotManager
 
 
 class SnapshotMiddleware:

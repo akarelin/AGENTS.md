@@ -1,5 +1,5 @@
 """
-Inspection utilities for reviewing and debugging DeepAgents executions
+Inspection utilities for reviewing and debugging DAPY executions
 
 Provides tools to quickly review recent executions, snapshots, and traces
 to identify issues and make corrections.
@@ -20,7 +20,7 @@ console = Console()
 
 class ExecutionInspector:
     """
-    Inspector for reviewing recent DeepAgents executions.
+    Inspector for reviewing recent DAPY executions.
     
     Helps with the iterative debugging workflow by providing
     quick access to execution history, snapshots, and traces.
@@ -252,7 +252,7 @@ class ExecutionInspector:
             URL to LangSmith project or None
         """
         import os
-        project = os.environ.get('LANGCHAIN_PROJECT', 'deepagents-dev')
+        project = os.environ.get('LANGCHAIN_PROJECT', 'dapy-dev')
         
         if os.environ.get('LANGCHAIN_TRACING_V2') == 'true':
             return f"https://smith.langchain.com/o/default/projects/p/{project}"

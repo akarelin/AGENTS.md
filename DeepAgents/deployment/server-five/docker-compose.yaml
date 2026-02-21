@@ -1,5 +1,5 @@
 services:
-  deepagents:
+  dapy:
     build:
       context: ../../
       dockerfile: Dockerfile
@@ -8,20 +8,20 @@ services:
       # LangChain/LangSmith
       - LANGCHAIN_TRACING_V2=true
       - LANGCHAIN_API_KEY=${LANGCHAIN_API_KEY}
-      - LANGCHAIN_PROJECT=deepagents-five
-      
+      - LANGCHAIN_PROJECT=dapy-five
+
       # OpenAI
       - OPENAI_API_KEY=${OPENAI_API_KEY}
-      
-      # DeepAgents config
-      - DEEPAGENTS_MODEL=openai:gpt-4o
+
+      # DAPY config
+      - DAPY_MODEL=openai:gpt-4o
       - PERSISTENCE_BACKEND=sqlite
       
     volumes:
       # Data persistence
-      - /data/deepagents:/app/data
-      - /data/deepagents/snapshots:/app/snapshots
-      - /data/deepagents/logs:/app/logs
+      - /data/dapy:/app/data
+      - /data/dapy/snapshots:/app/snapshots
+      - /data/dapy/logs:/app/logs
       
       # Git configuration
       - ~/.gitconfig:/root/.gitconfig:ro
@@ -41,30 +41,30 @@ services:
       dockerfile: Dockerfile.inspector
     restart: unless-stopped
     depends_on:
-      - deepagents
+      - dapy
     environment:
-      # Access to DeepAgents data
-      - DEEPAGENTS_SNAPSHOT_DIR=/app/snapshots
-      - DEEPAGENTS_LOGS_DIR=/app/logs
-      - DEEPAGENTS_DATA_DIR=/app/data
+      # Access to DAPY data
+      - DAPY_SNAPSHOT_DIR=/app/snapshots
+      - DAPY_LOGS_DIR=/app/logs
+      - DAPY_DATA_DIR=/app/data
       
       # Manus API keys (for remote inspection)
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - LANGCHAIN_API_KEY=${LANGCHAIN_API_KEY}
       
     volumes:
-      # Shared volumes with deepagents for inspection
-      - /data/deepagents:/app/data:ro
-      - /data/deepagents/snapshots:/app/snapshots:ro
-      - /data/deepagents/logs:/app/logs:ro
-      
+      # Shared volumes with dapy for inspection
+      - /data/dapy:/app/data:ro
+      - /data/dapy/snapshots:/app/snapshots:ro
+      - /data/dapy/logs:/app/logs:ro
+
       # Debug packages export
-      - /data/deepagents/debug-packages:/app/debug-packages
+      - /data/dapy/debug-packages:/app/debug-packages
       
     ports:
       - "8888:8888"  # Manus inspection API
     
-    command: python -m deepagents.inspector_service
+    command: python -m dapy.inspector_service
 
   manus-feedback-agent:
     build:
@@ -72,17 +72,17 @@ services:
       dockerfile: Dockerfile.inspector
     restart: unless-stopped
     depends_on:
-      - deepagents
+      - dapy
     environment:
       - LANGCHAIN_API_KEY=${LANGCHAIN_API_KEY}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - LANGCHAIN_PROJECT=deepagents-five
+      - LANGCHAIN_PROJECT=dapy-five
       
     volumes:
       # Tickets storage
-      - /data/deepagents/tickets:/app/tickets
-      
-    command: python -m deepagents.manus_feedback_agent --project deepagents-five --tickets-dir /app/tickets --interval 60
+      - /data/dapy/tickets:/app/tickets
+
+    command: python -m dapy.manus_feedback_agent --project dapy-five --tickets-dir /app/tickets --interval 60
 
   feedback-dashboard:
     build:
@@ -96,9 +96,9 @@ services:
       
     volumes:
       # Read-only access to tickets
-      - /data/deepagents/tickets:/app/tickets:ro
+      - /data/dapy/tickets:/app/tickets:ro
       
     ports:
       - "8889:8889"
     
-    command: python -m deepagents.feedback_dashboard
+    command: python -m dapy.feedback_dashboard

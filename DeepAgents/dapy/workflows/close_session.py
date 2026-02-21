@@ -10,10 +10,10 @@ from typing import TypedDict, Annotated, Dict, Any
 from operator import add
 from pathlib import Path
 
-from deepagents.tools.git_operations import git_status_tool
-from deepagents.tools.knowledge_base import read_markdown_tool, update_markdown_tool
-from deepagents.tools.archive import archive_tool
-from deepagents.tools.mistake_processor import mistake_processor_tool
+from dapy.tools.git_operations import git_status_tool
+from dapy.tools.knowledge_base import read_markdown_tool, update_markdown_tool
+from dapy.tools.archive import archive_tool
+from dapy.tools.mistake_processor import mistake_processor_tool
 
 
 class CloseSessionState(TypedDict):

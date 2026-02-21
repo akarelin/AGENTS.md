@@ -1,5 +1,5 @@
 """
-Observability and tracing for DeepAgents CLI
+Observability and tracing for DAPY
 
 Integrates with LangSmith for full agent execution visibility.
 """
@@ -13,7 +13,7 @@ import json
 from pathlib import Path
 
 
-def setup_tracing(enabled: bool = True, project: str = "deepagents-cli") -> None:
+def setup_tracing(enabled: bool = True, project: str = "dapy") -> None:
     """
     Configure LangSmith tracing.
     
@@ -48,7 +48,7 @@ def get_langsmith_client() -> Optional[Client]:
     return None
 
 
-@traceable(name="DeepAgents Session")
+@traceable(name="DAPY Session")
 def trace_session(
     session_type: str,
     query: str,
@@ -56,7 +56,7 @@ def trace_session(
     result: Any
 ) -> Dict[str, Any]:
     """
-    Trace a complete DeepAgents session.
+    Trace a complete DAPY session.
     
     Args:
         session_type: Type of session (ask, close, document, etc.)

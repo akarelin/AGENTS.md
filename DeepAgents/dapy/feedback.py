@@ -1,5 +1,5 @@
 """
-Feedback system for DeepAgents CLI
+Feedback system for DAPY
 
 Allows users to submit feedback about issues, unexpected behavior,
 or suggestions. Feedback is stored in LangSmith for Manus to review
@@ -30,7 +30,7 @@ class FeedbackManager:
     def __init__(self):
         """Initialize feedback manager with LangSmith client."""
         self.client = Client()
-        self.project_name = os.environ.get('LANGCHAIN_PROJECT', 'deepagents-dev')
+        self.project_name = os.environ.get('LANGCHAIN_PROJECT', 'dapy-dev')
     
     def submit_feedback(
         self,
@@ -88,7 +88,7 @@ class FeedbackManager:
             try:
                 dataset = self.client.create_dataset(
                     dataset_name=dataset_name,
-                    description="User feedback for DeepAgents CLI"
+                    description="User feedback for DAPY"
                 )
             except Exception:
                 # Dataset already exists
@@ -235,7 +235,7 @@ def submit_feedback_interactive() -> Optional[str]:
     """
     console.print(Panel(
         "[bold cyan]Submit Feedback[/bold cyan]\n\n"
-        "Help us improve DeepAgents by reporting issues or suggestions.",
+        "Help us improve DAPY by reporting issues or suggestions.",
         border_style="cyan"
     ))
     
@@ -308,7 +308,7 @@ def submit_feedback_interactive() -> Optional[str]:
     
     console.print(f"\n[bold green]✓[/bold green] Feedback submitted: {feedback_key}")
     console.print("\n[dim]Manus will review and create a ticket to address this.[/dim]")
-    console.print(f"[dim]Track status with: deepagents feedback status {feedback_key}[/dim]")
+    console.print(f"[dim]Track status with: dapy feedback status {feedback_key}[/dim]")
     
     return feedback_key
 

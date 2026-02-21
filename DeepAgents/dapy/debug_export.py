@@ -117,7 +117,7 @@ class DebugPackageExporter:
         return {
             'created_at': datetime.now().isoformat(),
             'description': description or 'Debug package for troubleshooting',
-            'deepagents_version': '0.1.0',
+            'dapy_version': '0.1.0',
             'package_format_version': '1.0',
         }
     
@@ -147,7 +147,7 @@ class DebugPackageExporter:
             'environment_variables': {
                 'LANGCHAIN_TRACING_V2': os.environ.get('LANGCHAIN_TRACING_V2', 'not set'),
                 'LANGCHAIN_PROJECT': os.environ.get('LANGCHAIN_PROJECT', 'not set'),
-                'DEEPAGENTS_MODEL': os.environ.get('DEEPAGENTS_MODEL', 'not set'),
+                'DAPY_MODEL': os.environ.get('DAPY_MODEL', 'not set'),
                 # Don't include API keys
             },
             'working_directory': os.getcwd(),
@@ -183,13 +183,13 @@ class DebugPackageExporter:
     
     def _create_package_readme(self, description: Optional[str]) -> str:
         """Create README for the debug package."""
-        return f"""# DeepAgents CLI Debug Package
+        return f"""# DAPY Debug Package
 
 **Created**: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
 
 ## Description
 
-{description or 'Debug package for troubleshooting DeepAgents CLI execution.'}
+{description or 'Debug package for troubleshooting DAPY execution.'}
 
 ## Contents
 

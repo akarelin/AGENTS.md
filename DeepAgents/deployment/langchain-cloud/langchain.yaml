@@ -1,7 +1,7 @@
 # LangChain Cloud Deployment Configuration
 # https://docs.langchain.com/cloud/deployment
 
-name: deepagents-cli
+name: dapy
 version: 1.0.0
 
 # Runtime configuration
@@ -9,7 +9,7 @@ runtime:
   python_version: "3.11"
   
 # Entry point
-entry_point: deepagents.orchestrator:create_main_agent
+entry_point: dapy.orchestrator:create_main_agent
 
 # Dependencies
 dependencies:

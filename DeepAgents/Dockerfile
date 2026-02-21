@@ -24,21 +24,21 @@ RUN pip install --upgrade pip && \
     pip install -e .
 
 # Copy application code
-COPY deepagents/ ./deepagents/
+COPY dapy/ ./dapy/
 
 # Create directories for data persistence
 RUN mkdir -p /app/data /app/snapshots /app/logs
 
 # Set up git config (will be overridden by volume mount)
-RUN git config --global user.name "DeepAgents" && \
-    git config --global user.email "deepagents@localhost"
+RUN git config --global user.name "DAPY" && \
+    git config --global user.email "dapy@localhost"
 
 # Expose port for daemon mode
 EXPOSE 8000
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD deepagents version || exit 1
+    CMD dapy version || exit 1
 
 # Default command
-CMD ["deepagents", "--help"]
+CMD ["dapy", "--help"]

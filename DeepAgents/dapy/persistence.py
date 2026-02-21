@@ -1,5 +1,5 @@
 """
-State persistence for DeepAgents CLI
+State persistence for DAPY
 
 Uses LangGraph 1.0 checkpointing for durable state management.
 """
@@ -23,7 +23,7 @@ def get_checkpointer(config: Dict[str, Any]) -> Any:
     backend = config.get('persistence_backend', 'sqlite')
     
     if backend == 'sqlite':
-        db_path = config.get('db_path', './deepagents.db')
+        db_path = config.get('db_path', './dapy.db')
         
         # Ensure directory exists
         Path(db_path).parent.mkdir(exist_ok=True, parents=True)
@@ -40,7 +40,7 @@ def get_checkpointer(config: Dict[str, Any]) -> Any:
         except ImportError:
             raise ImportError(
                 "PostgreSQL support requires psycopg2-binary. "
-                "Install with: pip install deepagents-cli[postgres]"
+                "Install with: pip install dapy[postgres]"
             )
         
         conn_string = config.get('postgres_conn_string')
