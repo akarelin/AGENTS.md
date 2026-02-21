@@ -79,7 +79,7 @@ router = LLMRouterChain(
 
 ## Recommendations
 
-### For DeepAgents CLI
+### For DAPY
 
 **Use LangSmith for:**
 - ✅ Tracing and observability (replace custom dashboard)
@@ -96,13 +96,13 @@ router = LLMRouterChain(
 
 **Option 1: LangSmith-First (Recommended for Now)**
 - Use LangSmith UI for all observability
-- Keep DeepAgents CLI as primary interface
+- Keep DAPY as primary interface
 - Manus monitors via LangSmith API
 - Defer chat interface to Phase 1 (Q1 2026)
 
 **Option 2: Build Chat Interface Now**
 - Deploy agent-chat-ui (Next.js)
-- Integrate with DeepAgents
+- Integrate with DAPY
 - Add mobile app later
 - More work upfront
 
@@ -156,7 +156,7 @@ When we build the chat interface (Q1 2026), we'll create:
 ## Implementation Plan
 
 ### Immediate (Current)
-1. ✅ Keep DeepAgents CLI as primary interface
+1. ✅ Keep DAPY as primary interface
 2. ✅ Use LangSmith for tracing (already integrated)
 3. ✅ Use LangSmith API for feedback (already implemented)
 4. ❌ Remove custom feedback dashboard
@@ -205,11 +205,11 @@ When we build the chat interface (Q1 2026), we'll create:
 **Best approach for now:**
 1. Get LangSmith paid subscription ($39 or $199/month)
 2. Use their UI for all observability and feedback
-3. Keep DeepAgents CLI as main interface
+3. Keep DAPY as main interface
 4. Defer chat interface to Phase 1
 5. Manus monitors via LangSmith API
 
-This gives you professional tools immediately while we focus on perfecting DeepAgents core functionality.
+This gives you professional tools immediately while we focus on perfecting DAPY core functionality.
 
 ---
 

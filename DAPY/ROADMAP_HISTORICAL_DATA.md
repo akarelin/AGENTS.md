@@ -2,7 +2,7 @@
 
 ## Overview
 
-Use your existing ChatGPT and Claude conversation history to optimize DeepAgents prompts and workflows. This turns your real usage patterns into training data for improving the agentic loop.
+Use your existing ChatGPT and Claude conversation history to optimize DAPY prompts and workflows. This turns your real usage patterns into training data for improving the agentic loop.
 
 ---
 
@@ -16,7 +16,7 @@ Use your existing ChatGPT and Claude conversation history to optimize DeepAgents
 - Your actual workflow needs
 
 **Use it to:**
-- Optimize DeepAgents system prompts
+- Optimize DAPY system prompts
 - Improve tool descriptions
 - Refine workflow logic
 - Identify missing tools
@@ -225,7 +225,7 @@ LangSmith has tools for:
 ### Data Converter Tool
 
 ```python
-# deepagents/tools/conversation_importer.py
+# dapy/tools/conversation_importer.py
 
 class ConversationImporter:
     """Import ChatGPT/Claude history to LangSmith."""
@@ -259,29 +259,29 @@ class ConversationImporter:
 
 ```bash
 # Import historical data
-deepagents import chatgpt conversations.json
-deepagents import claude claude_export.json
+dapy import chatgpt conversations.json
+dapy import claude claude_export.json
 
 # Analyze patterns
-deepagents analyze patterns --dataset historical-conversations
+dapy analyze patterns --dataset historical-conversations
 
 # Optimize prompts
-deepagents optimize prompts --dataset historical-conversations
+dapy optimize prompts --dataset historical-conversations
 
 # Evaluate current system
-deepagents evaluate --dataset historical-conversations
+dapy evaluate --dataset historical-conversations
 ```
 
 ### Evaluation Framework
 
 ```python
-# deepagents/evaluation/historical_eval.py
+# dapy/evaluation/historical_eval.py
 
 class HistoricalEvaluator:
-    """Evaluate DeepAgents against historical data."""
+    """Evaluate DAPY against historical data."""
     
     def evaluate_tool_selection(self, dataset: str) -> Dict:
-        """Would DeepAgents select correct tool?"""
+        """Would DAPY select correct tool?"""
         
     def evaluate_response_quality(self, dataset: str) -> Dict:
         """How do responses compare to historical?"""
@@ -352,7 +352,7 @@ class HistoricalEvaluator:
 
 ---
 
-## Integration with DeepAgents
+## Integration with DAPY
 
 ### System Prompt Optimization
 - Test prompts against historical queries
@@ -392,7 +392,7 @@ class HistoricalEvaluator:
 ### Prerequisites
 1. LangSmith paid subscription
 2. ChatGPT/Claude conversation exports
-3. DeepAgents CLI installed
+3. DAPY CLI installed
 
 ### Quick Start
 
@@ -402,17 +402,17 @@ class HistoricalEvaluator:
 # Claude: Settings → Privacy → Export Data
 
 # 2. Import to LangSmith
-deepagents import chatgpt conversations.json
-deepagents import claude claude_export.json
+dapy import chatgpt conversations.json
+dapy import claude claude_export.json
 
 # 3. Analyze patterns
-deepagents analyze patterns
+dapy analyze patterns
 
 # 4. Optimize prompts
-deepagents optimize prompts
+dapy optimize prompts
 
 # 5. Evaluate
-deepagents evaluate
+dapy evaluate
 ```
 
 ---
@@ -425,7 +425,7 @@ deepagents evaluate
 4. **Review data:** See what you have
 5. **Plan implementation:** Add to current roadmap
 
-This could be incredibly valuable for perfecting DeepAgents based on your actual usage!
+This could be incredibly valuable for perfecting DAPY based on your actual usage!
 
 ---
 

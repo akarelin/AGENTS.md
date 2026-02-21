@@ -2,7 +2,7 @@
 
 ## Overview
 
-This guide prepares you to register for LangChain Cloud and provide Manus with the necessary access to deploy and test DeepAgents.
+This guide prepares you to register for LangChain Cloud and provide Manus with the necessary access to deploy and test DAPY.
 
 ---
 
@@ -10,9 +10,9 @@ This guide prepares you to register for LangChain Cloud and provide Manus with t
 
 ### Why Plus?
 
-**For DeepAgents testing and iteration:**
+**For DAPY testing and iteration:**
 - ✅ **10k base traces/month** - Sufficient for testing and iteration
-- ✅ **1 free dev deployment** - Perfect for DeepAgents CLI
+- ✅ **1 free dev deployment** - Perfect for DAPY CLI
 - ✅ **Unlimited node executions** on free dev deployment
 - ✅ **Email support** - Help if issues arise
 - ✅ **Up to 10 seats** - You + Manus can both access
@@ -40,7 +40,7 @@ This guide prepares you to register for LangChain Cloud and provide Manus with t
 - ✅ All observability features
 
 **Cons:**
-- ❌ No deployment capability (can't deploy DeepAgents)
+- ❌ No deployment capability (can't deploy DAPY)
 - ❌ Only 1 seat
 - ❌ Community support only
 
@@ -80,7 +80,7 @@ This guide prepares you to register for LangChain Cloud and provide Manus with t
 1. Log into LangSmith: https://smith.langchain.com
 2. Go to Settings → API Keys
 3. Click "Create API Key"
-4. Name: `deepagents-deployment`
+4. Name: `dapy-deployment`
 5. **Copy and save the key** (shown only once)
 
 **Save here:**
@@ -90,7 +90,7 @@ LANGCHAIN_API_KEY=ls-...
 
 #### GitHub Access Token (Required)
 
-DeepAgents code is in your CRAP repo, need GitHub access:
+DAPY code is in your CRAP repo, need GitHub access:
 
 1. Go to https://github.com/settings/tokens
 2. Click "Generate new token (classic)"
@@ -110,7 +110,7 @@ For LLM calls:
 
 1. Go to https://platform.openai.com/api-keys
 2. Create new secret key
-3. Name: `deepagents-langchain`
+3. Name: `dapy-langchain`
 4. **Copy and save**
 
 **Save here:**
@@ -124,7 +124,7 @@ For Claude models:
 
 1. Go to https://console.anthropic.com/settings/keys
 2. Create key
-3. Name: `deepagents-langchain`
+3. Name: `dapy-langchain`
 4. **Copy and save**
 
 **Save here:**
@@ -137,7 +137,7 @@ ANTHROPIC_API_KEY=sk-ant-...
 **Option A: Share API Keys (Recommended)**
 
 Simply provide Manus with the API keys above. Manus will:
-- Deploy DeepAgents to your LangChain Cloud
+- Deploy DAPY to your LangChain Cloud
 - Run tests
 - Monitor traces
 - Iterate on fixes
@@ -187,7 +187,7 @@ Share this file securely with Manus (via this chat or secure channel).
    - Set up GitHub integration
 
 2. **Deploy to LangChain Cloud**
-   - Push DeepAgents code to deployment
+   - Push DAPY code to deployment
    - Configure as LangGraph application
    - Set up API endpoints
    - Verify deployment health
@@ -288,7 +288,7 @@ Share this file securely with Manus (via this chat or secure channel).
 - ✅ You: Share keys with Manus
 
 ### Day 1-2 (Manus)
-- Deploy DeepAgents to LangChain Cloud
+- Deploy DAPY to LangChain Cloud
 - Configure observability
 - Verify deployment health
 
@@ -313,7 +313,7 @@ Share this file securely with Manus (via this chat or secure channel).
 **URL:** https://smith.langchain.com
 
 **What you'll see:**
-- All DeepAgents executions
+- All DAPY executions
 - Trace details (inputs, outputs, timing)
 - Tool calls and decisions
 - Errors and debugging info
@@ -322,7 +322,7 @@ Share this file securely with Manus (via this chat or secure channel).
 **During testing:**
 - Watch Manus run tests in real-time
 - See what works and what fails
-- Understand how DeepAgents thinks
+- Understand how DAPY thinks
 - Learn from traces
 
 ### Deployment Dashboard
@@ -330,7 +330,7 @@ Share this file securely with Manus (via this chat or secure channel).
 **URL:** https://smith.langchain.com/deployments
 
 **What you'll see:**
-- DeepAgents deployment status
+- DAPY deployment status
 - Health checks
 - API endpoints
 - Logs and metrics
@@ -357,7 +357,7 @@ Share this file securely with Manus (via this chat or secure channel).
 ### Data Privacy
 
 **What LangChain sees:**
-- Traces of DeepAgents execution
+- Traces of DAPY execution
 - Inputs and outputs
 - Tool calls and results
 - **NOT your source code** (stays in GitHub)
@@ -427,7 +427,7 @@ Share this file securely with Manus (via this chat or secure channel).
 ### Ready to Start?
 
 Once you provide the keys, Manus will:
-1. Deploy DeepAgents
+1. Deploy DAPY
 2. Run 10 tests
 3. Iterate until all pass
 4. Deliver working system
@@ -462,7 +462,7 @@ curl https://your-deployment.langchain.com/health
 - LangSmith dashboard → Deployments → Logs
 
 **View traces:**
-- LangSmith dashboard → Projects → deepagents-testing
+- LangSmith dashboard → Projects → dapy-testing
 
 ---
 
@@ -475,7 +475,7 @@ curl https://your-deployment.langchain.com/health
 4. Wait for results
 
 **What Manus will do:**
-1. Deploy DeepAgents (Day 1-2)
+1. Deploy DAPY (Day 1-2)
 2. Run 10 tests (Day 3-5)
 3. Fix issues (Day 3-5)
 4. Deliver working system (Day 6-7)
@@ -484,7 +484,7 @@ curl https://your-deployment.langchain.com/health
 **Total cost: ~$50 for Month 1**
 
 **You'll get:**
-- Fully deployed DeepAgents
+- Fully deployed DAPY
 - 10 passing test cases
 - Complete observability
 - Ready for your own testing

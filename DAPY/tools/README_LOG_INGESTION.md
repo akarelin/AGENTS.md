@@ -42,7 +42,7 @@ Queries ingested logs and generates test cases using AI.
 ### Step 1: Install Dependencies
 
 ```bash
-cd /path/to/deepagents-cli
+cd /path/to/dapy
 pip install -e .
 pip install python-frontmatter
 ```
@@ -430,7 +430,7 @@ chmod +x watch_logs.sh
 crontab -e
 
 # Run every day at 2am
-0 2 * * * cd /path/to/deepagents-cli && python tools/ingest_llm_logs.py --source /path/to/logs --dataset my-llm-logs
+0 2 * * * cd /path/to/dapy && python tools/ingest_llm_logs.py --source /path/to/logs --dataset my-llm-logs
 ```
 
 ### Automated Annotation
@@ -487,7 +487,7 @@ Return JSON: {{"quality": N, "is_golden": true/false, "notes": "..."}}
 
 ---
 
-## Integration with DeepAgents
+## Integration with DAPY
 
 ### Use Generated Tests
 
@@ -498,12 +498,12 @@ test_cases = querier.generate_test_cases(
     num_tests=20
 )
 
-# Save to DeepAgents test suite
-with open("deepagents/tests/generated_tests.json", "w") as f:
+# Save to DAPY test suite
+with open("dapy/tests/generated_tests.json", "w") as f:
     json.dump(test_cases, f, indent=2)
 
 # Run tests
-# (DeepAgents will load and execute these tests)
+# (DAPY will load and execute these tests)
 ```
 
 ### Use Golden Examples for Prompt Optimization
@@ -512,7 +512,7 @@ with open("deepagents/tests/generated_tests.json", "w") as f:
 # Export golden examples
 querier.export_golden_examples(
     dataset_name="my-llm-logs",
-    output_file="deepagents/prompts/golden_examples.json"
+    output_file="dapy/prompts/golden_examples.json"
 )
 
 # Use in Prompt Canvas
@@ -722,7 +722,7 @@ python tools/query_llm_logs.py \
   --dataset my-complete-logs \
   --generate-tests \
   --num-tests 50 \
-  --output deepagents_tests.json
+  --output dapy_tests.json
 
 # 6. Export golden examples
 python tools/query_llm_logs.py \
@@ -781,5 +781,5 @@ print(f"Exported {count} golden examples")
 1. Ingest your logs
 2. Annotate golden examples
 3. Generate test cases
-4. Use for DeepAgents testing
+4. Use for DAPY testing
 5. Iterate and improve

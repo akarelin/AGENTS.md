@@ -437,10 +437,10 @@ cd ~/.claude/projects
 # Use claude-conversation-extractor
 
 # 5. Import all to LangSmith
-deepagents import chatgpt conversations.json
-deepagents import claude claude_export.json
-deepagents import cursor cursor_export.json
-deepagents import claude-code claude_code_export.json
+dapy import chatgpt conversations.json
+dapy import claude claude_export.json
+dapy import cursor cursor_export.json
+dapy import claude-code claude_code_export.json
 ```
 
 ### Phase 1: Proxy Setup (Week 1-2)
@@ -496,7 +496,7 @@ cd unified-llm-pwa
 ### Phase 4: CLI Tool Export Automation (Q1 2026)
 
 ```python
-# deepagents/tools/cli_exporters.py
+# dapy/tools/cli_exporters.py
 
 class CursorExporter:
     """Export Cursor IDE chat history."""
@@ -508,9 +508,9 @@ class CodexExporter:
     """Export Codex CLI logs."""
 
 # CLI commands
-deepagents export cursor
-deepagents export claude-code
-deepagents export codex
+dapy export cursor
+dapy export claude-code
+dapy export codex
 ```
 
 ---
@@ -563,7 +563,7 @@ deepagents export codex
 ### For Immediate Use
 
 1. **Export all historical data** (ChatGPT, Claude, Cursor, Claude Code)
-2. **Import to LangSmith** using DeepAgents import tools
+2. **Import to LangSmith** using DAPY import tools
 3. **Deploy LiteLLM Proxy** on server five
 4. **Use LLMConnect on iOS** pointed to proxy
 5. **Use Cursor/Claude Code** as normal (export periodically)
