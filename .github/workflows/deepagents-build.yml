@@ -1,0 +1,99 @@
+name: DeepAgents Build on Kolme
+
+on:
+  workflow_dispatch:
+    inputs:
+      version_bump:
+        description: 'Version bump type'
+        required: true
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+
+defaults:
+  run:
+    working-directory: DeepAgents
+
+jobs:
+  build:
+    runs-on: [self-hosted, linux]
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('DeepAgents/pyproject.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Install package
+        run: pip install -e ".[dev]"
+
+      - name: Lint with ruff
+        run: ruff check deepagents/
+
+      - name: Check formatting with black
+        run: black --check deepagents/
+
+      - name: Check import ordering with isort
+        run: isort --check-only deepagents/
+
+      - name: Type check with mypy
+        run: mypy deepagents/
+
+      - name: Verify CLI entry point
+        run: deepagents --help
+
+      - name: Compute next version
+        id: version
+        run: |
+          CURRENT=$(grep -Po '(?<=^version = ")[^"]+' pyproject.toml)
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT"
+          case "${{ inputs.version_bump }}" in
+            major) MAJOR=$((MAJOR + 1)); MINOR=0; PATCH=0 ;;
+            minor) MINOR=$((MINOR + 1)); PATCH=0 ;;
+            patch) PATCH=$((PATCH + 1)) ;;
+          esac
+          NEW="${MAJOR}.${MINOR}.${PATCH}"
+          echo "current=$CURRENT" >> "$GITHUB_OUTPUT"
+          echo "new=$NEW" >> "$GITHUB_OUTPUT"
+          echo "tag=v${NEW}" >> "$GITHUB_OUTPUT"
+
+      - name: Bump version in pyproject.toml
+        run: sed -i "s/^version = \"${{ steps.version.outputs.current }}\"/version = \"${{ steps.version.outputs.new }}\"/" pyproject.toml
+
+      - name: Build distribution
+        run: pip install build && python -m build
+
+      - name: Commit version bump
+        working-directory: ${{ github.workspace }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add DeepAgents/pyproject.toml
+          git commit -m "chore(deepagents): bump version to ${{ steps.version.outputs.new }}"
+          git tag "${{ steps.version.outputs.tag }}"
+          git push origin HEAD --tags
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: DeepAgents ${{ steps.version.outputs.tag }}
+          generate_release_notes: true
+          files: DeepAgents/dist/*
