@@ -1,11 +1,11 @@
 #!/bin/bash
 set -e
 
-# DeepAgents CLI Deployment Script for Server Five
-# This script deploys DeepAgents CLI with Manus inspector service
+# DAPY Deployment Script for Server Five
+# This script deploys DAPY with Manus inspector service
 
 echo "================================================"
-echo "DeepAgents CLI - Server Five Deployment"
+echo "DAPY - Server Five Deployment"
 echo "================================================"
 echo ""
 
@@ -33,11 +33,11 @@ echo ""
 
 # Create data directories
 echo "Creating data directories..."
-sudo mkdir -p /data/deepagents
-sudo mkdir -p /data/deepagents/snapshots
-sudo mkdir -p /data/deepagents/logs
-sudo mkdir -p /data/deepagents/debug-packages
-sudo chown -R $USER:$USER /data/deepagents
+sudo mkdir -p /data/dapy
+sudo mkdir -p /data/dapy/snapshots
+sudo mkdir -p /data/dapy/logs
+sudo mkdir -p /data/dapy/debug-packages
+sudo chown -R $USER:$USER /data/dapy
 echo "✓ Data directories created"
 echo ""
 
@@ -64,25 +64,25 @@ echo "Deployment Complete!"
 echo "================================================"
 echo ""
 echo "Services:"
-echo "  - DeepAgents CLI: docker-compose exec deepagents bash"
+echo "  - DAPY: docker-compose exec dapy bash"
 echo "  - Manus Inspector: http://localhost:8888"
 echo ""
 echo "Data locations:"
-echo "  - Snapshots: /data/deepagents/snapshots"
-echo "  - Logs: /data/deepagents/logs"
-echo "  - Debug packages: /data/deepagents/debug-packages"
+echo "  - Snapshots: /data/dapy/snapshots"
+echo "  - Logs: /data/dapy/logs"
+echo "  - Debug packages: /data/dapy/debug-packages"
 echo ""
 echo "Usage:"
-echo "  # Enter DeepAgents CLI"
-echo "  docker-compose exec deepagents bash"
+echo "  # Enter DAPY"
+echo "  docker-compose exec dapy bash"
 echo ""
 echo "  # Inside container:"
 echo "  cd /repos/your-project"
-echo "  deepagents next"
-echo "  deepagents ask 'What should I work on?'"
+echo "  dapy next"
+echo "  dapy ask 'What should I work on?'"
 echo ""
 echo "  # Export debug package when issues occur:"
-echo "  deepagents export-debug 'Description of issue'"
+echo "  dapy export-debug 'Description of issue'"
 echo ""
 echo "Manus Inspector API:"
 echo "  - Status: http://localhost:8888/api/status"

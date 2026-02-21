@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-echo "🚀 DeepAgents CLI - GCP Deployment Script"
+echo "🚀 DAPY - GCP Deployment Script"
 echo "=========================================="
 
 # Check if running on GCP
@@ -80,7 +80,7 @@ echo "📁 Creating directories..."
 mkdir -p data snapshots logs ssl
 
 # Build and start services
-echo "🏗️  Building DeepAgents CLI..."
+echo "🏗️  Building DAPY..."
 docker-compose build
 
 echo "🚀 Starting services..."
@@ -93,20 +93,20 @@ sleep 10
 # Check service status
 if docker-compose ps | grep -q "Up"; then
     echo ""
-    echo "✅ DeepAgents CLI deployed successfully!"
+    echo "✅ DAPY deployed successfully!"
     echo ""
     echo "📊 Service Status:"
     docker-compose ps
     echo ""
     echo "📝 Next Steps:"
     echo "   1. Test the deployment:"
-    echo "      docker-compose exec deepagents deepagents version"
+    echo "      docker-compose exec dapy dapy version"
     echo ""
     echo "   2. Run a command:"
-    echo "      docker-compose exec deepagents deepagents ask \"What's next?\""
+    echo "      docker-compose exec dapy dapy ask \"What's next?\""
     echo ""
     echo "   3. View logs:"
-    echo "      docker-compose logs -f deepagents"
+    echo "      docker-compose logs -f dapy"
     echo ""
     echo "   4. Access LangSmith traces:"
     echo "      https://smith.langchain.com"
