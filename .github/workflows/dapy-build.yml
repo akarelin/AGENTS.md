@@ -65,16 +65,30 @@ jobs:
       - name: Build distribution
         run: pip install build && python -m build
 
-      - name: Commit version bump
+      - name: Commit version bump via GitHub API
         working-directory: ${{ github.workspace }}
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          git config user.name "Alex Karelin"
-          git config user.email "alex@karelin.com"
-          git add DAPY/pyproject.toml
-          git commit -m "chore(dapy): bump version to ${{ steps.version.outputs.new }}"
-          git tag "${{ steps.version.outputs.tag }}"
-          git pull --rebase
-          git push origin HEAD --tags
+          BRANCH="${{ github.ref_name }}"
+          FILE_PATH="DAPY/pyproject.toml"
+          COMMIT_MSG="chore(dapy): bump version to ${{ steps.version.outputs.new }}"
+
+          # Get the latest file SHA from the remote (not local checkout)
+          FILE_SHA=$(gh api "repos/${{ github.repository }}/contents/${FILE_PATH}?ref=${BRANCH}" --jq '.sha')
+
+          # Push the updated file directly via the API — atomic, no race condition
+          RESPONSE=$(gh api --method PUT "repos/${{ github.repository }}/contents/${FILE_PATH}" \
+            -f message="${COMMIT_MSG}" \
+            -f content="$(base64 -w 0 "${FILE_PATH}")" \
+            -f sha="${FILE_SHA}" \
+            -f branch="${BRANCH}")
+
+          # Create the tag pointing at the new commit
+          NEW_COMMIT_SHA=$(echo "$RESPONSE" | jq -r '.commit.sha')
+          gh api --method POST "repos/${{ github.repository }}/git/refs" \
+            -f ref="refs/tags/${{ steps.version.outputs.tag }}" \
+            -f sha="${NEW_COMMIT_SHA}"
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
