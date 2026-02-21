@@ -32,7 +32,7 @@ jobs:
       - name: Read current version
         id: current_version
         run: |
-          VERSION=$(grep -oP 'version:\s*"\\K[^"]+' app.config.ts)
+          VERSION=$(sed -n 's/.*version: "\([^"]*\)".*/\1/p' app.config.ts)
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "Current version: $VERSION"
 
