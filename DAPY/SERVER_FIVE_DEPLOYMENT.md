@@ -1,4 +1,4 @@
-# DeepAgents CLI - Server Five Deployment Summary
+# DAPY - Server Five Deployment Summary
 
 ## What's Been Prepared
 
@@ -8,7 +8,7 @@ Complete Docker Compose deployment for server "five" with collaborative debuggin
 
 **Two Services:**
 
-1. **deepagents** - Your DeepAgents CLI instance
+1. **dapy** - Your DAPY instance
    - Interactive bash shell
    - Access to your repositories at `/repos`
    - Captures snapshots and logs automatically
@@ -25,7 +25,7 @@ Complete Docker Compose deployment for server "five" with collaborative debuggin
 ### Your Side
 
 1. Deploy to server five: `cd deployment/server-five && ./deploy.sh`
-2. Use DeepAgents: `docker-compose exec deepagents bash`
+2. Use DAPY: `docker-compose exec dapy bash`
 3. When issues occur: Snapshots are auto-captured
 4. Give Manus access: Provide server IP + port 8888
 5. Apply fixes Manus suggests
@@ -49,13 +49,13 @@ Complete Docker Compose deployment for server "five" with collaborative debuggin
 - `deployment/server-five/WORKFLOW_QUICKREF.md` - Quick reference card
 
 ### Inspector Service
-- `deepagents/inspector_service.py` - FastAPI service for remote inspection
+- `dapy/inspector_service.py` - FastAPI service for remote inspection
 - `Dockerfile.inspector` - Inspector service Docker image
 
 ### Debug Tools
-- `deepagents/debug_export.py` - Debug package exporter
-- `deepagents/inspect.py` - Local inspection utilities
-- CLI commands: `deepagents inspect`, `deepagents export-debug`
+- `dapy/debug_export.py` - Debug package exporter
+- `dapy/inspect.py` - Local inspection utilities
+- CLI commands: `dapy inspect`, `dapy export-debug`
 
 ## Key Features
 
@@ -72,7 +72,7 @@ Complete Docker Compose deployment for server "five" with collaborative debuggin
 - No SSH or direct server access needed
 
 **Collaborative Debugging:**
-- You use DeepAgents normally
+- You use DAPY normally
 - When issues occur, give Manus access
 - Manus analyzes remotely
 - Suggests specific fixes
@@ -88,8 +88,8 @@ Complete Docker Compose deployment for server "five" with collaborative debuggin
 
 ```bash
 # 1. Extract archive on server five
-tar -xzf deepagents-cli-server-five.tar.gz
-cd deepagents-cli/deployment/server-five
+tar -xzf dapy-server-five.tar.gz
+cd dapy/deployment/server-five
 
 # 2. Configure environment
 cp .env.example .env
@@ -99,9 +99,9 @@ nano .env  # Add your API keys
 ./deploy.sh
 
 # 4. Test
-docker-compose exec deepagents bash
-deepagents version
-deepagents next
+docker-compose exec dapy bash
+dapy version
+dapy next
 
 # 5. Configure firewall for Manus access
 sudo ufw allow from MANUS_IP to any port 8888
@@ -133,11 +133,11 @@ curl -X POST http://your-server:8888/api/debug-package/create
 
 ## Data Locations
 
-All data stored in `/data/deepagents/`:
+All data stored in `/data/dapy/`:
 - `snapshots/` - Execution snapshots (JSON)
 - `logs/` - Application logs
 - `debug-packages/` - Generated debug packages
-- `deepagents.db` - SQLite database
+- `dapy.db` - SQLite database
 
 ## Example Debugging Session
 
@@ -145,7 +145,7 @@ All data stored in `/data/deepagents/`:
 
 1. **You:** Run command
    ```bash
-   deepagents ask "Setup new project"
+   dapy ask "Setup new project"
    # Creates wrong structure
    ```
 
@@ -165,14 +165,14 @@ All data stored in `/data/deepagents/`:
 
 5. **You:** Apply fix
    ```bash
-   nano deepagents/prompts/system_prompt.md
-   docker-compose build deepagents
-   docker-compose restart deepagents
+   nano dapy/prompts/system_prompt.md
+   docker-compose build dapy
+   docker-compose restart dapy
    ```
 
 6. **You:** Test
    ```bash
-   deepagents ask "Setup new project"
+   dapy ask "Setup new project"
    # Now creates correct structure!
    ```
 
@@ -206,9 +206,9 @@ Follows same patterns as your other services in `RAN/Services/`:
 - Check `deployment/server-five/README.md`
 - Review logs: `docker-compose logs`
 
-**For DeepAgents behavior issues:**
+**For DAPY behavior issues:**
 - Use Manus inspector for collaborative debugging
-- Export debug package: `deepagents export-debug "description"`
+- Export debug package: `dapy export-debug "description"`
 
 **For Manus access issues:**
 - Verify firewall allows port 8888
@@ -217,8 +217,8 @@ Follows same patterns as your other services in `RAN/Services/`:
 ## Archive Contents
 
 ```
-deepagents-cli/
-├── deepagents/                    # Main package
+dapy/
+├── dapy/                    # Main package
 │   ├── inspector_service.py      # NEW: Manus inspector API
 │   ├── debug_export.py           # NEW: Debug package exporter
 │   ├── inspect.py                # NEW: Inspection utilities

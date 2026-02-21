@@ -1,4 +1,4 @@
-# DeepAgents CLI - Delivery Checklist
+# DAPY - Delivery Checklist
 
 ## Project Deliverables ✅
 
@@ -83,7 +83,7 @@
 - [x] LangSmith tracing integration
 - [x] State snapshots (JSON files)
 - [x] Metrics collection
-- [x] Diagnostic command (`deepagents diag`)
+- [x] Diagnostic command (`dapy diag`)
 - [x] Enhanced logging with timing
 
 ### Human-in-the-Loop ✅
@@ -135,19 +135,19 @@
 ### Manual Testing
 
 - [ ] Install locally with `pip install -e .`
-- [ ] Run `deepagents version`
-- [ ] Run `deepagents next`
-- [ ] Run `deepagents ask "What's next?"`
-- [ ] Test breakpoint: `deepagents ask "test" --breakpoint`
-- [ ] Test debug mode: `deepagents --debug ask "test"`
-- [ ] Run `deepagents diag`
+- [ ] Run `dapy version`
+- [ ] Run `dapy next`
+- [ ] Run `dapy ask "What's next?"`
+- [ ] Test breakpoint: `dapy ask "test" --breakpoint`
+- [ ] Test debug mode: `dapy --debug ask "test"`
+- [ ] Run `dapy diag`
 
 ### Docker Testing
 
 - [ ] Build: `docker-compose build`
 - [ ] Start: `docker-compose up -d`
-- [ ] Enter: `docker-compose exec deepagents-dev bash`
-- [ ] Test inside container: `deepagents version`
+- [ ] Enter: `docker-compose exec dapy-dev bash`
+- [ ] Test inside container: `dapy version`
 
 ### Deployment Testing
 
@@ -159,7 +159,7 @@
 
 ### Immediate
 
-1. Extract archive: `tar -xzf deepagents-cli-complete.tar.gz`
+1. Extract archive: `tar -xzf dapy-complete.tar.gz`
 2. Review documentation: `README.md`, `QUICKSTART.md`
 3. Install and test locally
 4. Configure environment variables
@@ -167,7 +167,7 @@
 
 ### Short-term
 
-1. Customize prompts in `deepagents/prompts/`
+1. Customize prompts in `dapy/prompts/`
 2. Add custom tools if needed
 3. Test workflows with your repositories
 4. Deploy to preferred environment
@@ -184,8 +184,8 @@
 ## Files Delivered
 
 ```
-deepagents-cli/
-├── deepagents/                    # Main package (21 Python files)
+dapy/
+├── dapy/                    # Main package (21 Python files)
 │   ├── cli.py
 │   ├── orchestrator.py
 │   ├── config.py
@@ -213,9 +213,9 @@ deepagents-cli/
 
 ## Archive
 
-**File**: `deepagents-cli-complete.tar.gz`  
+**File**: `dapy-complete.tar.gz`  
 **Size**: 45 KB  
-**Contents**: Complete DeepAgents CLI system with all files
+**Contents**: Complete DAPY system with all files
 
 ## Support
 
@@ -235,4 +235,4 @@ All documentation is complete and includes:
 ✅ **Three deployment options**  
 ✅ **Best practices implemented**
 
-The DeepAgents CLI system is ready for use, deployment, and customization.
+The DAPY system is ready for use, deployment, and customization.

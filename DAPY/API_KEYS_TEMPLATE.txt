@@ -7,7 +7,7 @@
 # 3. Fill in the values below
 # 4. Share this file with Manus via chat
 # 
-# Security: These keys will only be used by Manus to deploy and test DeepAgents
+# Security: These keys will only be used by Manus to deploy and test DAPY
 # You can revoke/rotate them anytime
 
 # ============================================================================
@@ -16,7 +16,7 @@
 
 # LangSmith API Key
 # Where: https://smith.langchain.com → Settings → API Keys
-# Name: deepagents-deployment
+# Name: dapy-deployment
 LANGCHAIN_API_KEY=ls-
 
 # GitHub Personal Access Token
@@ -27,7 +27,7 @@ GITHUB_TOKEN=ghp_
 
 # OpenAI API Key
 # Where: https://platform.openai.com/api-keys
-# Name: deepagents-langchain
+# Name: dapy-langchain
 OPENAI_API_KEY=sk-
 
 # ============================================================================
@@ -36,7 +36,7 @@ OPENAI_API_KEY=sk-
 
 # Anthropic API Key (for Claude models)
 # Where: https://console.anthropic.com/settings/keys
-# Name: deepagents-langchain
+# Name: dapy-langchain
 ANTHROPIC_API_KEY=sk-ant-
 
 # ============================================================================
@@ -49,7 +49,7 @@ LANGCHAIN_ORG=
 # Your LangChain workspace name
 LANGCHAIN_WORKSPACE=
 
-# GitHub repository for DeepAgents
+# GitHub repository for DAPY
 # (Should be: akarelin/CRAP)
 GITHUB_REPO=akarelin/CRAP
 
@@ -57,19 +57,19 @@ GITHUB_REPO=akarelin/CRAP
 # (Should be: master)
 GITHUB_BRANCH=master
 
-# Path to DeepAgents in repo
-# (Should be: DeepAgents)
-GITHUB_PATH=DeepAgents
+# Path to DAPY in repo
+# (Should be: DAPY)
+GITHUB_PATH=DAPY
 
 # ============================================================================
 # DEPLOYMENT CONFIGURATION
 # ============================================================================
 
 # LangSmith project name for traces
-LANGSMITH_PROJECT=deepagents-testing
+LANGSMITH_PROJECT=dapy-testing
 
 # Deployment name
-DEPLOYMENT_NAME=deepagents-dev
+DEPLOYMENT_NAME=dapy-dev
 
 # Deployment size (dev or prod)
 DEPLOYMENT_SIZE=dev
@@ -105,7 +105,7 @@ REPO_GPPU=akarelin/gppu
 
 # 1. Save this file with your keys filled in
 # 2. Share with Manus via chat
-# 3. Manus will deploy DeepAgents to LangChain Cloud
+# 3. Manus will deploy DAPY to LangChain Cloud
 # 4. Manus will run 10 test cases
 # 5. Manus will iterate until all tests pass
 # 6. Manus will deliver working system with results
