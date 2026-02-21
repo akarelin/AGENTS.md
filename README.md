@@ -1,7 +1,12 @@
 # AGENTS.md
 An unfinished, evolving collection of everything agentic — prompt engineering patterns, autonomous agent instructions, multi-agent orchestration experiments, and tooling. This is a working dumping ground, not a polished framework.
 
-
+## Table of Contents
+- [In development](#in-development)
+  - [DeepAgents CLI](#deepagents-cli)
+  - [Gadya (Гадя)](#gadya-гадя)
+- [No longer developed](#no-longer-developed)
+- [What's where](#whats-where)
 
 ## In development
 - **DeepAgents CLI**: A more ambitious attempt to wrap the whole workflow into a LangChain-based CLI tool
