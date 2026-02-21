@@ -168,26 +168,46 @@ jobs:
       - name: Commit version bump via GitHub API
         working-directory: .
         env:
-          GH_TOKEN: ${{ github.token }}
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
           BRANCH="${{ github.ref_name }}"
           FILE_PATH="Gadya/app.config.ts"
           COMMIT_MSG="Gadya v${{ needs.build.outputs.version }}"
+          REPO="${{ github.repository }}"
+          API="https://api.github.com/repos/${REPO}/contents/${FILE_PATH}"
 
           # Get the latest file SHA from the remote (not local checkout)
-          FILE_SHA=$(gh api "repos/${{ github.repository }}/contents/${FILE_PATH}?ref=${BRANCH}" --jq '.sha')
+          FILE_SHA=$(curl -sf -H "Authorization: token ${GITHUB_TOKEN}" \
+            "${API}?ref=${BRANCH}" | python3 -c "import sys,json; print(json.load(sys.stdin)['sha'])")
 
           # Push the updated file directly via the API — atomic, no race condition
-          gh api --method PUT "repos/${{ github.repository }}/contents/${FILE_PATH}" \
-            -f message="${COMMIT_MSG}" \
-            -f content="$(base64 -w 0 "${FILE_PATH}")" \
-            -f sha="${FILE_SHA}" \
-            -f branch="${BRANCH}"
+          CONTENT=$(base64 -w 0 "${FILE_PATH}")
+          curl -sf -X PUT -H "Authorization: token ${GITHUB_TOKEN}" \
+            -H "Content-Type: application/json" \
+            "${API}" \
+            -d "{\"message\":\"${COMMIT_MSG}\",\"content\":\"${CONTENT}\",\"sha\":\"${FILE_SHA}\",\"branch\":\"${BRANCH}\"}"
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ needs.build.outputs.tag }}
-          name: Gadya v${{ needs.build.outputs.version }}
-          files: Gadya/${{ needs.build.outputs.filename }}
-          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        working-directory: .
+        run: |
+          TAG="${{ needs.build.outputs.tag }}"
+          VERSION="${{ needs.build.outputs.version }}"
+          FILENAME="${{ needs.build.outputs.filename }}"
+          REPO="${{ github.repository }}"
+          API="https://api.github.com/repos/${REPO}"
+
+          # Create the release
+          RELEASE_RESPONSE=$(curl -sf -X POST -H "Authorization: token ${GITHUB_TOKEN}" \
+            -H "Content-Type: application/json" \
+            "${API}/releases" \
+            -d "{\"tag_name\":\"${TAG}\",\"name\":\"Gadya v${VERSION}\",\"generate_release_notes\":true}")
+
+          UPLOAD_URL=$(echo "${RELEASE_RESPONSE}" | python3 -c "import sys,json; print(json.load(sys.stdin)['upload_url'].split('{')[0])")
+
+          # Upload the APK asset
+          curl -sf -X POST -H "Authorization: token ${GITHUB_TOKEN}" \
+            -H "Content-Type: application/vnd.android.package-archive" \
+            "${UPLOAD_URL}?name=${FILENAME}" \
+            --data-binary @"Gadya/${FILENAME}"
