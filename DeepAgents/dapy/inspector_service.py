@@ -17,16 +17,16 @@ from dapy.inspect import ExecutionInspector
 from dapy.debug_export import DebugPackageExporter
 
 app = FastAPI(
-    title="DeepAgents Inspector Service",
-    description="Remote inspection API for Manus to troubleshoot DeepAgents executions",
+    title="DAPY Inspector Service",
+    description="Remote inspection API for Manus to troubleshoot DAPY executions",
     version="0.1.0"
 )
 
 # Configuration from environment
-SNAPSHOT_DIR = os.environ.get('DEEPAGENTS_SNAPSHOT_DIR', '/app/snapshots')
-LOGS_DIR = os.environ.get('DEEPAGENTS_LOGS_DIR', '/app/logs')
-DATA_DIR = os.environ.get('DEEPAGENTS_DATA_DIR', '/app/data')
-DEBUG_PACKAGES_DIR = os.environ.get('DEEPAGENTS_DEBUG_PACKAGES_DIR', '/app/debug-packages')
+SNAPSHOT_DIR = os.environ.get('DAPY_SNAPSHOT_DIR', '/app/snapshots')
+LOGS_DIR = os.environ.get('DAPY_LOGS_DIR', '/app/logs')
+DATA_DIR = os.environ.get('DAPY_DATA_DIR', '/app/data')
+DEBUG_PACKAGES_DIR = os.environ.get('DAPY_DEBUG_PACKAGES_DIR', '/app/debug-packages')
 
 inspector = ExecutionInspector(snapshot_dir=SNAPSHOT_DIR)
 exporter = DebugPackageExporter(
@@ -293,7 +293,7 @@ async def get_analysis_summary():
 async def root():
     """Root endpoint with service info."""
     return {
-        "service": "DeepAgents Inspector Service",
+        "service": "DAPY Inspector Service",
         "version": "0.1.0",
         "description": "Remote inspection API for Manus",
         "endpoints": {

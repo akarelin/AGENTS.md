@@ -25,8 +25,8 @@ dependencies:
 # Environment variables (secrets managed separately)
 environment:
   LANGCHAIN_TRACING_V2: "true"
-  LANGCHAIN_PROJECT: "deepagents-cloud"
-  DEEPAGENTS_MODEL: "openai:gpt-4o"
+  LANGCHAIN_PROJECT: "dapy-cloud"
+  DAPY_MODEL: "openai:gpt-4o"
   PERSISTENCE_BACKEND: "postgres"
 
 # Secrets (reference to LangChain Cloud secrets)
