@@ -7,7 +7,7 @@ name = "deepagents-cli"
 version = "0.1.0"
 description = "Production-ready personal knowledge management system built with LangChain 1.0 and LangGraph 1.0"
 readme = "README.md"
-requires-python = ">=3.14"
+requires-python = ">=3.12"
 license = {text = "MIT"}
 authors = [
     {name = "Alex Karelin", email = "alex@karelin.ai"}
@@ -18,7 +18,8 @@ classifiers = [
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
@@ -65,7 +66,7 @@ deepagents = ["prompts/**/*.md"]
 
 [tool.black]
 line-length = 100
-target-version = ['py314']
+target-version = ['py312']
 include = '\.pyi?$'
 extend-exclude = '''
 /(
@@ -87,7 +88,7 @@ line_length = 100
 skip_gitignore = true
 
 [tool.mypy]
-python_version = "3.14"
+python_version = "3.13"
 warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = false
@@ -95,7 +96,7 @@ ignore_missing_imports = true
 
 [tool.ruff]
 line-length = 100
-target-version = "py314"
+target-version = "py312"
 select = [
     "E",  # pycodestyle errors
     "W",  # pycodestyle warnings
