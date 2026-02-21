@@ -124,15 +124,24 @@ jobs:
           echo "path=$FILENAME" >> $GITHUB_OUTPUT
           echo "filename=$FILENAME" >> $GITHUB_OUTPUT
 
-      - name: Commit version bump
+      - name: Commit version bump via GitHub API
         working-directory: .
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          git config user.name "Alex Karelin"
-          git config user.email "alex@karelin.com"
-          git add Gadya/app.config.ts
-          git commit -m "Gadya v${{ steps.bump.outputs.version }}"
-          git pull --rebase
-          git push
+          BRANCH="${{ github.ref_name }}"
+          FILE_PATH="Gadya/app.config.ts"
+          COMMIT_MSG="Gadya v${{ steps.bump.outputs.version }}"
+
+          # Get the latest file SHA from the remote (not local checkout)
+          FILE_SHA=$(gh api "repos/${{ github.repository }}/contents/${FILE_PATH}?ref=${BRANCH}" --jq '.sha')
+
+          # Push the updated file directly via the API — atomic, no race condition
+          gh api --method PUT "repos/${{ github.repository }}/contents/${FILE_PATH}" \
+            -f message="${COMMIT_MSG}" \
+            -f content="$(base64 -w 0 "${FILE_PATH}")" \
+            -f sha="${FILE_SHA}" \
+            -f branch="${BRANCH}"
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
