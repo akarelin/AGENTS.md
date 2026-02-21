@@ -1,8 +1,8 @@
-# DeepAgents Test Cases
+# DAPY Test Cases
 
 ## Overview
 
-10 test cases extracted from user's actual workflows in RAN and CRAP repositories. These represent real tasks the user performs with Claude Code that DeepAgents should handle.
+10 test cases extracted from user's actual workflows in RAN and CRAP repositories. These represent real tasks the user performs with Claude Code that DAPY should handle.
 
 ---
 
@@ -26,17 +26,17 @@ What's next?
 5. Wait for user approval
 
 **Success Criteria:**
-- ✅ Reads 2Do.md correctly
-- ✅ Identifies current focus
-- ✅ Lists immediate tasks
-- ✅ Checks git status
-- ✅ Provides actionable summary
+- Reads 2Do.md correctly
+- Identifies current focus
+- Lists immediate tasks
+- Checks git status
+- Provides actionable summary
 
 **Example Output:**
 ```
 Current Status (from 2Do.md):
 - Focus: Multi-Subagent Workflow Architecture Project
-- Phase 2: Agent Implementation ✅ COMPLETED
+- Phase 2: Agent Implementation COMPLETED
 
 Immediate Tasks:
 1. Setup browser-use-mcp as WSL remote MCP server
@@ -69,17 +69,17 @@ document
 6. Provide summary of what was documented
 
 **Success Criteria:**
-- ✅ Detects all git changes
-- ✅ Classifies changes correctly
-- ✅ Updates CHANGELOG.md in proper format
-- ✅ Preserves existing CHANGELOG structure
-- ✅ Provides clear summary
+- Detects all git changes
+- Classifies changes correctly
+- Updates CHANGELOG.md in proper format
+- Preserves existing CHANGELOG structure
+- Provides clear summary
 
 **Example Output:**
 ```
 Changes Detected:
-- Modified: deepagents/cli.py (Added feedback command)
-- Added: deepagents/feedback.py (New module)
+- Modified: dapy/cli.py (Added feedback command)
+- Added: dapy/feedback.py (New module)
 
 CHANGELOG.md Updated:
 ### Added
@@ -113,20 +113,20 @@ close
 7. Provide session summary
 
 **Success Criteria:**
-- ✅ Updates 2Do.md with progress
-- ✅ Marks completed tasks
-- ✅ Adds clear next steps
-- ✅ Documents mistakes if any
-- ✅ Provides comprehensive summary
+- Updates 2Do.md with progress
+- Marks completed tasks
+- Adds clear next steps
+- Documents mistakes if any
+- Provides comprehensive summary
 
 **Example Output:**
 ```
 Session Summary:
 
 Progress Made:
-- ✅ Implemented feedback system
-- ✅ Added LangSmith integration
-- ✅ Updated documentation
+- Implemented feedback system
+- Added LangSmith integration
+- Updated documentation
 
 2Do.md Updated:
 - Marked "Add feedback command" as complete
@@ -164,17 +164,17 @@ push
 7. Confirm success
 
 **Success Criteria:**
-- ✅ Checks CHANGELOG.md first
-- ✅ Creates meaningful commit message
-- ✅ Commits all changes
-- ✅ Pushes successfully
-- ✅ Confirms with user
+- Checks CHANGELOG.md first
+- Creates meaningful commit message
+- Commits all changes
+- Pushes successfully
+- Confirms with user
 
 **Example Output:**
 ```
 Pre-push Checks:
-✅ CHANGELOG.md is up to date
-✅ All changes staged
+CHANGELOG.md is up to date
+All changes staged
 
 Commit Message (from CHANGELOG):
 "Add feedback system with LangSmith integration
@@ -184,10 +184,10 @@ Commit Message (from CHANGELOG):
 - Updated documentation"
 
 Committing...
-✅ Committed: abc123f
+Committed: abc123f
 
 Pushing to origin/master...
-✅ Pushed successfully
+Pushed successfully
 
 All changes are now on GitHub.
 ```
@@ -212,11 +212,11 @@ Archive the old authentication module in /repos/RAN/old_auth.py
 6. Provide summary
 
 **Success Criteria:**
-- ✅ File moved to ARCHIVE/
-- ✅ Timestamp added to filename
-- ✅ Original file removed
-- ✅ Inventory updated
-- ✅ Confirmation provided
+- File moved to ARCHIVE/
+- Timestamp added to filename
+- Original file removed
+- Inventory updated
+- Confirmation provided
 
 **Example Output:**
 ```
@@ -232,7 +232,7 @@ Inventory Updated:
 - Added entry to ARCHIVE/README.md
 - Documented replacement
 
-✅ File archived successfully
+File archived successfully
 ```
 
 ---
@@ -259,11 +259,11 @@ I accidentally deleted production data in the users table. Document this mistake
 5. Provide summary
 
 **Success Criteria:**
-- ✅ Mistake documented in AGENTS_mistakes.md
-- ✅ Includes all required fields
-- ✅ Identifies root cause
-- ✅ Suggests prevention
-- ✅ Updates AGENTS.md if pattern detected
+- Mistake documented in AGENTS_mistakes.md
+- Includes all required fields
+- Identifies root cause
+- Suggests prevention
+- Updates AGENTS.md if pattern detected
 
 **Example Output:**
 ```
@@ -283,7 +283,7 @@ AGENTS.md Updated:
 - Added rule: "ALWAYS backup before DELETE operations"
 - Added rule: "Test destructive queries on copy first"
 
-✅ Mistake documented and prevention measures added
+Mistake documented and prevention measures added
 ```
 
 ---
@@ -309,21 +309,21 @@ Validate the README.md against documentation standards
 4. Provide report with recommendations
 
 **Success Criteria:**
-- ✅ All standards checked
-- ✅ Violations identified
-- ✅ Specific recommendations provided
-- ✅ Line numbers for issues
-- ✅ Actionable feedback
+- All standards checked
+- Violations identified
+- Specific recommendations provided
+- Line numbers for issues
+- Actionable feedback
 
 **Example Output:**
 ```
 Validation Report: README.md
 
-✅ Has title
-✅ Has description
-❌ Missing installation instructions
-✅ Has usage examples
-❌ Code blocks not properly formatted (lines 45-52)
+Has title
+Has description
+Missing installation instructions
+Has usage examples
+Code blocks not properly formatted (lines 45-52)
 
 Violations Found: 2
 
@@ -358,11 +358,11 @@ Update README.md to reflect the new feedback feature
 7. Provide summary of changes
 
 **Success Criteria:**
-- ✅ README.md updated correctly
-- ✅ New section added in logical place
-- ✅ Includes usage example
-- ✅ Formatting consistent
-- ✅ TOC updated if present
+- README.md updated correctly
+- New section added in logical place
+- Includes usage example
+- Formatting consistent
+- TOC updated if present
 
 **Example Output:**
 ```
@@ -376,15 +376,15 @@ Changes Made:
 New Section:
 ## Feedback
 
-Submit feedback about DeepAgents behavior:
+Submit feedback about DAPY behavior:
 
 ```bash
-deepagents feedback "The changelog command didn't detect my changes"
+dapy feedback "The changelog command didn't detect my changes"
 ```
 
 Feedback is logged to LangSmith for analysis and improvement.
 
-✅ README.md updated successfully
+README.md updated successfully
 ```
 
 ---
@@ -406,11 +406,11 @@ Search for documentation about git workflows
 5. Provide summary with file paths
 
 **Success Criteria:**
-- ✅ Searches all markdown files
-- ✅ Finds relevant content
-- ✅ Provides file paths
-- ✅ Shows relevant excerpts
-- ✅ Ranks by relevance
+- Searches all markdown files
+- Finds relevant content
+- Provides file paths
+- Shows relevant excerpts
+- Ranks by relevance
 
 **Example Output:**
 ```
@@ -462,11 +462,11 @@ What's the current git status?
 4. Present in readable format
 
 **Success Criteria:**
-- ✅ Runs git status
-- ✅ Parses output correctly
-- ✅ Categorizes files
-- ✅ Provides clear summary
-- ✅ Suggests next action if needed
+- Runs git status
+- Parses output correctly
+- Categorizes files
+- Provides clear summary
+- Suggests next action if needed
 
 **Example Output:**
 ```
@@ -476,11 +476,11 @@ Branch: master
 Status: Clean working directory
 
 Modified Files: 2
-- deepagents/cli.py
+- dapy/cli.py
 - README.md
 
 Untracked Files: 1
-- deepagents/feedback.py
+- dapy/feedback.py
 
 Staged Files: 0
 
@@ -497,7 +497,7 @@ Suggested Action: Run "document" to update CHANGELOG, then "push"
 ## Test Execution Plan
 
 ### Phase 1: Setup (Day 1)
-1. Deploy DeepAgents to LangChain Cloud
+1. Deploy DAPY to LangChain Cloud
 2. Configure with user's repos
 3. Set up LangSmith tracing
 4. Verify basic connectivity
@@ -539,18 +539,18 @@ Run tests 6-10 (specialized tasks):
 ## Success Metrics
 
 ### Per Test
-- ✅ Completes without errors
-- ✅ Produces expected output
-- ✅ Follows user's workflow patterns
-- ✅ Trace shows correct tool usage
-- ✅ Performance acceptable (<30s per test)
+- Completes without errors
+- Produces expected output
+- Follows user's workflow patterns
+- Trace shows correct tool usage
+- Performance acceptable (<30s per test)
 
 ### Overall Suite
-- ✅ All 10 tests pass
-- ✅ No manual intervention needed
-- ✅ Consistent behavior across runs
-- ✅ Complete trace coverage in LangSmith
-- ✅ Ready for user's own testing
+- All 10 tests pass
+- No manual intervention needed
+- Consistent behavior across runs
+- Complete trace coverage in LangSmith
+- Ready for user's own testing
 
 ---
 
@@ -655,7 +655,7 @@ For each test:
 
 ### LangSmith Project
 
-- Project name: `deepagents-testing`
+- Project name: `dapy-testing`
 - All 10 test traces
 - Organized by test number
 - Tagged with pass/fail
@@ -663,7 +663,7 @@ For each test:
 
 ### Handoff Package
 
-- Working DeepAgents deployment
+- Working DAPY deployment
 - Test report
 - LangSmith project link
 - Known issues (if any)
@@ -680,7 +680,7 @@ All tests use real data from user's repos. No synthetic test data.
 
 ### User's Workflow
 
-Tests replicate exact commands user gives to Claude Code. This ensures DeepAgents works the same way.
+Tests replicate exact commands user gives to Claude Code. This ensures DAPY works the same way.
 
 ### Iteration Expected
 
@@ -699,7 +699,7 @@ User can watch all testing in LangSmith dashboard in real-time. Full transparenc
 ## Ready to Start
 
 Once user provides API keys, Manus will:
-1. Deploy DeepAgents
+1. Deploy DAPY
 2. Run these 10 tests
 3. Iterate on failures
 4. Deliver when all pass

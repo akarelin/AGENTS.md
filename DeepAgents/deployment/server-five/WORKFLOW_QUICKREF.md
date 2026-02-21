@@ -4,9 +4,9 @@
 
 ### 1. Normal Usage
 ```bash
-docker-compose exec deepagents bash
+docker-compose exec dapy bash
 cd /repos/your-project
-deepagents ask "Your query here"
+dapy ask "Your query here"
 ```
 
 ### 2. When Something Goes Wrong
@@ -33,16 +33,16 @@ deepagents ask "Your query here"
 exit
 
 # Edit prompts/tools as suggested by Manus
-nano ../../deepagents/prompts/system_prompt.md
-nano ../../deepagents/tools/your_tool.py
+nano ../../dapy/prompts/system_prompt.md
+nano ../../dapy/tools/your_tool.py
 
 # Rebuild and restart
-docker-compose build deepagents
-docker-compose restart deepagents
+docker-compose build dapy
+docker-compose restart dapy
 
 # Test again
-docker-compose exec deepagents bash
-deepagents ask "Same query to test fix"
+docker-compose exec dapy bash
+dapy ask "Same query to test fix"
 ```
 
 ---
@@ -80,7 +80,7 @@ curl http://server-five:8888/api/snapshot/snapshot_TIMESTAMP.json | jq .
 curl http://server-five:8888/api/logs/list | jq .
 
 # Get recent log entries
-curl "http://server-five:8888/api/logs/deepagents.log?lines=100"
+curl "http://server-five:8888/api/logs/dapy.log?lines=100"
 ```
 
 ### 5. Create Debug Package
@@ -117,7 +117,7 @@ cat snapshots/snapshot_TIMESTAMP.json | jq .
 
 ### Issue: Tool using wrong arguments
 **Manus inspects**: Snapshot shows tool call with incorrect args
-**Fix**: Update tool description in `deepagents/prompts/system_prompt.md`
+**Fix**: Update tool description in `dapy/prompts/system_prompt.md`
 
 ### Issue: Unexpected tool selection
 **Manus inspects**: Analysis shows wrong tool chosen for task
@@ -125,11 +125,11 @@ cat snapshots/snapshot_TIMESTAMP.json | jq .
 
 ### Issue: Tool execution failure
 **Manus inspects**: Snapshot shows exception in tool result
-**Fix**: Update tool implementation in `deepagents/tools/tool_name.py`
+**Fix**: Update tool implementation in `dapy/tools/tool_name.py`
 
 ### Issue: Incorrect workflow state
 **Manus inspects**: Workflow state shows unexpected transitions
-**Fix**: Update workflow logic in `deepagents/workflows/workflow_name.py`
+**Fix**: Update workflow logic in `dapy/workflows/workflow_name.py`
 
 ---
 
@@ -152,17 +152,17 @@ cat snapshots/snapshot_TIMESTAMP.json | jq .
 
 | Data Type | Location | Access |
 |-----------|----------|--------|
-| Snapshots | `/data/deepagents/snapshots/` | Read-only for Manus |
-| Logs | `/data/deepagents/logs/` | Read-only for Manus |
-| Debug Packages | `/data/deepagents/debug-packages/` | Read-write for Manus |
-| Database | `/data/deepagents/deepagents.db` | Not exposed to Manus |
+| Snapshots | `/data/dapy/snapshots/` | Read-only for Manus |
+| Logs | `/data/dapy/logs/` | Read-only for Manus |
+| Debug Packages | `/data/dapy/debug-packages/` | Read-write for Manus |
+| Database | `/data/dapy/dapy.db` | Not exposed to Manus |
 
 ---
 
 ## Example Debugging Session
 
 ```bash
-# User reports: "deepagents ask 'Setup project' created wrong structure"
+# User reports: "dapy ask 'Setup project' created wrong structure"
 
 # Manus: Check recent executions
 curl http://server-five:8888/api/executions/recent | jq '.executions[0]'
@@ -177,17 +177,17 @@ curl http://server-five:8888/api/snapshot/snapshot_20251126_143022.json | jq .
 # Finds: system_prompt.md describes structure incorrectly
 
 # Manus suggests:
-# "Update deepagents/prompts/system_prompt.md line 45"
+# "Update dapy/prompts/system_prompt.md line 45"
 # "Change: 'Use flat structure by default'"
 # "To: 'Use nested structure with src/ and tests/ directories'"
 
 # User applies fix:
-nano deepagents/prompts/system_prompt.md
-docker-compose build deepagents
-docker-compose restart deepagents
+nano dapy/prompts/system_prompt.md
+docker-compose build dapy
+docker-compose restart dapy
 
 # User tests:
-deepagents ask "Setup project"
+dapy ask "Setup project"
 # Now creates correct nested structure!
 ```
 

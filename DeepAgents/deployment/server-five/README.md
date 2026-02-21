@@ -1,15 +1,15 @@
-# DeepAgents CLI - Server Five Deployment
+# DAPY - Server Five Deployment
 
-This deployment configuration sets up DeepAgents CLI on server "five" with Manus remote inspection capabilities for collaborative debugging.
+This deployment configuration sets up DAPY on server "five" with Manus remote inspection capabilities for collaborative debugging.
 
 ## Architecture
 
 ```
 Server Five
-├── deepagents (container)          # Your DeepAgents CLI instance
+├── dapy (container)                # Your DAPY instance
 │   ├── Interactive shell
-│   ├── Snapshots → /data/deepagents/snapshots
-│   ├── Logs → /data/deepagents/logs
+│   ├── Snapshots → /data/dapy/snapshots
+│   ├── Logs → /data/dapy/logs
 │   └── Working directory → /repos
 │
 └── manus-inspector (container)     # Manus inspection service
@@ -40,27 +40,27 @@ nano .env
 ./deploy.sh
 ```
 
-### 3. Use DeepAgents CLI
+### 3. Use DAPY
 
 ```bash
-# Enter DeepAgents container
-docker-compose exec deepagents bash
+# Enter DAPY container
+docker-compose exec dapy bash
 
 # Inside container
 cd /repos/your-project
-deepagents next
-deepagents ask "What should I work on?"
+dapy next
+dapy ask "What should I work on?"
 ```
 
 ## Collaborative Debugging Workflow
 
 ### Your Workflow
 
-1. **Use DeepAgents normally**
+1. **Use DAPY normally**
    ```bash
-   docker-compose exec deepagents bash
+   docker-compose exec dapy bash
    cd /repos/your-project
-   deepagents ask "Setup new project"
+   dapy ask "Setup new project"
    ```
 
 2. **When something goes wrong**
@@ -79,10 +79,10 @@ deepagents ask "What should I work on?"
    - Suggests fixes
 
 5. **Apply fixes**
-   - Update prompts in `deepagents/prompts/`
+   - Update prompts in `dapy/prompts/`
    - Modify tool implementations if needed
-   - Rebuild: `docker-compose build deepagents`
-   - Restart: `docker-compose restart deepagents`
+   - Rebuild: `docker-compose build dapy`
+   - Restart: `docker-compose restart dapy`
 
 6. **Continue testing**
    - Test the fix
@@ -151,14 +151,14 @@ When you provide access, Manus can:
 
 ## Data Locations
 
-All data is stored in `/data/deepagents/`:
+All data is stored in `/data/dapy/`:
 
 ```
-/data/deepagents/
+/data/dapy/
 ├── snapshots/              # Execution snapshots (JSON)
 ├── logs/                   # Application logs
 ├── debug-packages/         # Generated debug packages
-└── deepagents.db          # SQLite database (if using SQLite)
+└── dapy.db                 # SQLite database (if using SQLite)
 ```
 
 ## Common Operations
@@ -166,8 +166,8 @@ All data is stored in `/data/deepagents/`:
 ### View Logs
 
 ```bash
-# View DeepAgents logs
-docker-compose logs -f deepagents
+# View DAPY logs
+docker-compose logs -f dapy
 
 # View Manus inspector logs
 docker-compose logs -f manus-inspector
@@ -180,7 +180,7 @@ docker-compose logs -f manus-inspector
 docker-compose restart
 
 # Restart specific service
-docker-compose restart deepagents
+docker-compose restart dapy
 ```
 
 ### Update Deployment
@@ -200,17 +200,17 @@ docker-compose up -d
 
 ```bash
 # Backup all data
-sudo tar -czf deepagents-backup-$(date +%Y%m%d).tar.gz /data/deepagents/
+sudo tar -czf dapy-backup-$(date +%Y%m%d).tar.gz /data/dapy/
 
 # Backup just snapshots
-sudo tar -czf snapshots-backup-$(date +%Y%m%d).tar.gz /data/deepagents/snapshots/
+sudo tar -czf snapshots-backup-$(date +%Y%m%d).tar.gz /data/dapy/snapshots/
 ```
 
 ### Clean Up Old Snapshots
 
 ```bash
 # Keep only last 100 snapshots
-cd /data/deepagents/snapshots
+cd /data/dapy/snapshots
 ls -t snapshot_*.json | tail -n +101 | xargs rm -f
 ```
 
@@ -220,14 +220,14 @@ ls -t snapshot_*.json | tail -n +101 | xargs rm -f
 
 ```bash
 # Check logs
-docker-compose logs deepagents
+docker-compose logs dapy
 docker-compose logs manus-inspector
 
 # Verify environment
 docker-compose config
 
 # Check data directory permissions
-ls -la /data/deepagents
+ls -la /data/dapy
 ```
 
 ### Can't Access Manus Inspector
@@ -250,20 +250,20 @@ curl http://localhost:8888/health
 df -h /data
 
 # Clean old snapshots
-find /data/deepagents/snapshots -name "snapshot_*.json" -mtime +7 -delete
+find /data/dapy/snapshots -name "snapshot_*.json" -mtime +7 -delete
 
 # Clean old logs
-find /data/deepagents/logs -name "*.log" -mtime +30 -delete
+find /data/dapy/logs -name "*.log" -mtime +30 -delete
 
 # Clean old debug packages
-find /data/deepagents/debug-packages -name "*.tar.gz" -mtime +7 -delete
+find /data/dapy/debug-packages -name "*.tar.gz" -mtime +7 -delete
 ```
 
-### DeepAgents Behaving Incorrectly
+### DAPY Behaving Incorrectly
 
 1. **Export debug package**
    ```bash
-   docker-compose exec deepagents deepagents export-debug "Description of issue"
+   docker-compose exec dapy dapy export-debug "Description of issue"
    ```
 
 2. **Or use Manus inspector API**
@@ -277,14 +277,14 @@ find /data/deepagents/debug-packages -name "*.tar.gz" -mtime +7 -delete
 
 4. **Apply fixes to prompts/tools**
    ```bash
-   # Edit files in deepagents/prompts/ or deepagents/tools/
-   nano ../../deepagents/prompts/system_prompt.md
-   
+   # Edit files in dapy/prompts/ or dapy/tools/
+   nano ../../dapy/prompts/system_prompt.md
+
    # Rebuild
-   docker-compose build deepagents
-   
+   docker-compose build dapy
+
    # Restart
-   docker-compose restart deepagents
+   docker-compose restart dapy
    ```
 
 ## Security Considerations
@@ -306,17 +306,17 @@ This deployment follows the same pattern as other services in `RAN/Services/`:
 
 ## Next Steps
 
-1. ✅ Deploy to server five: `./deploy.sh`
-2. ✅ Test basic operations: `deepagents next`
-3. ✅ Configure firewall for port 8888
-4. ✅ Test Manus inspector access
-5. ✅ Start using DeepAgents for your workflows
+1. Deploy to server five: `./deploy.sh`
+2. Test basic operations: `dapy next`
+3. Configure firewall for port 8888
+4. Test Manus inspector access
+5. Start using DAPY for your workflows
 
 ## Support
 
 For issues with:
 - **Deployment**: Check logs and this README
-- **DeepAgents behavior**: Use Manus inspector for collaborative debugging
+- **DAPY behavior**: Use Manus inspector for collaborative debugging
 - **Manus access**: Ensure firewall allows port 8888
 
 ## Example Session
@@ -326,16 +326,16 @@ For issues with:
 cd deployment/server-five
 ./deploy.sh
 
-# 2. Enter DeepAgents
-docker-compose exec deepagents bash
+# 2. Enter DAPY
+docker-compose exec dapy bash
 
-# 3. Use DeepAgents
+# 3. Use DAPY
 cd /repos/my-project
-deepagents next
-deepagents ask "Setup new project with README and structure"
+dapy next
+dapy ask "Setup new project with README and structure"
 
 # 4. If something goes wrong
-deepagents export-debug "Setup command created wrong structure"
+dapy export-debug "Setup command created wrong structure"
 
 # 5. Give Manus access (from another terminal)
 # Manus can now access: http://your-server-five:8888
@@ -346,14 +346,14 @@ curl http://your-server-five:8888/api/analysis/summary
 
 # 7. Apply fixes suggested by Manus
 exit  # Exit container
-nano ../../deepagents/prompts/system_prompt.md
-docker-compose build deepagents
-docker-compose restart deepagents
+nano ../../dapy/prompts/system_prompt.md
+docker-compose build dapy
+docker-compose restart dapy
 
 # 8. Test again
-docker-compose exec deepagents bash
+docker-compose exec dapy bash
 cd /repos/my-project
-deepagents ask "Setup new project with README and structure"
+dapy ask "Setup new project with README and structure"
 ```
 
 This workflow enables rapid iteration and debugging with Manus's help!

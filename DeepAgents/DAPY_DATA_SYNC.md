@@ -1,8 +1,8 @@
-# DeepAgents Data Sync Architecture
+# DAPY Data Sync Architecture
 
 ## Problem Statement
 
-DeepAgents needs access to your live data to perform tasks:
+DAPY needs access to your live data to perform tasks:
 - **Git repositories:** RAN, CRAP, _, gppu (working copies, not just code)
 - **Live files:** Current 2Do.md, CHANGELOG.md (not just committed versions)
 - **Write access:** To update files, commit, push
@@ -18,24 +18,24 @@ DeepAgents needs access to your live data to perform tasks:
 
 ```
 Your Local Machine
-    ↕ (sync)
-DeepAgents Filesystem (/repos/)
-    ↕ (git push/pull)
+    (sync)
+DAPY Filesystem (/repos/)
+    (git push/pull)
 GitHub
 ```
 
 ### Data Flow
 
 **Initial Setup:**
-1. Clone your repos to DeepAgents filesystem
+1. Clone your repos to DAPY filesystem
 2. Sync non-git data from your machine
 3. Configure git credentials for push access
 
 **During Operation:**
 1. You make changes locally
-2. Sync pushes changes to DeepAgents
-3. DeepAgents reads/writes files
-4. DeepAgents commits and pushes to GitHub
+2. Sync pushes changes to DAPY
+3. DAPY reads/writes files
+4. DAPY commits and pushes to GitHub
 5. You pull from GitHub to stay in sync
 
 ---
@@ -45,125 +45,125 @@ GitHub
 ### Method 1: GitHub (Code Only)
 
 **What it syncs:**
-- ✅ Code in git repos
-- ❌ Uncommitted changes
-- ❌ Non-git data
+- Code in git repos
+- NOT uncommitted changes
+- NOT non-git data
 
 **How it works:**
 ```bash
-# DeepAgents clones repos
+# DAPY clones repos
 git clone https://github.com/akarelin/RAN.git /repos/RAN
 git clone https://github.com/akarelin/CRAP.git /repos/CRAP
 git clone https://github.com/akarelin/_.git /repos/_
 git clone https://github.com/akarelin/gppu.git /repos/gppu
 
 # Configure git for push
-git config --global user.name "DeepAgents"
-git config --global user.email "deepagents@example.com"
+git config --global user.name "DAPY"
+git config --global user.email "dapy@example.com"
 ```
 
 **Pros:**
-- ✅ Simple
-- ✅ Already set up (GitHub token)
-- ✅ Two-way sync via git
+- Simple
+- Already set up (GitHub token)
+- Two-way sync via git
 
 **Cons:**
-- ❌ Only syncs committed changes
-- ❌ No access to work-in-progress
-- ❌ No non-git data
+- Only syncs committed changes
+- No access to work-in-progress
+- No non-git data
 
 **Use case:** Basic testing with committed data only
 
 ### Method 2: rsync (Full Sync)
 
 **What it syncs:**
-- ✅ All files (git and non-git)
-- ✅ Uncommitted changes
-- ✅ Working directory state
-- ✅ Bidirectional
+- All files (git and non-git)
+- Uncommitted changes
+- Working directory state
+- Bidirectional
 
 **How it works:**
 ```bash
-# Your machine → DeepAgents
+# Your machine -> DAPY
 rsync -avz --delete \
   /path/to/your/repos/ \
-  user@deepagents-server:/repos/
+  user@dapy-server:/repos/
 
-# DeepAgents → Your machine (after changes)
+# DAPY -> Your machine (after changes)
 rsync -avz --delete \
-  user@deepagents-server:/repos/ \
+  user@dapy-server:/repos/ \
   /path/to/your/repos/
 ```
 
 **Setup required:**
-- SSH access to DeepAgents server
+- SSH access to DAPY server
 - rsync installed on both sides
 - Cron job or manual sync
 
 **Pros:**
-- ✅ Full filesystem sync
-- ✅ Fast and efficient
-- ✅ Bidirectional
-- ✅ Preserves permissions
+- Full filesystem sync
+- Fast and efficient
+- Bidirectional
+- Preserves permissions
 
 **Cons:**
-- ❌ Requires SSH access
-- ❌ Manual or scheduled sync
-- ❌ Potential conflicts if both sides change
+- Requires SSH access
+- Manual or scheduled sync
+- Potential conflicts if both sides change
 
 **Use case:** Full development workflow with live data
 
 ### Method 3: scp (Manual Transfer)
 
 **What it syncs:**
-- ✅ Individual files or directories
-- ✅ Manual control
+- Individual files or directories
+- Manual control
 
 **How it works:**
 ```bash
 # Upload specific files
-scp /path/to/RAN/2Do.md user@deepagents-server:/repos/RAN/
+scp /path/to/RAN/2Do.md user@dapy-server:/repos/RAN/
 
 # Upload entire directory
-scp -r /path/to/RAN/ user@deepagents-server:/repos/
+scp -r /path/to/RAN/ user@dapy-server:/repos/
 
 # Download changes
-scp user@deepagents-server:/repos/RAN/CHANGELOG.md /path/to/RAN/
+scp user@dapy-server:/repos/RAN/CHANGELOG.md /path/to/RAN/
 ```
 
 **Pros:**
-- ✅ Simple
-- ✅ Selective sync
-- ✅ No additional tools
+- Simple
+- Selective sync
+- No additional tools
 
 **Cons:**
-- ❌ Manual process
-- ❌ Not automated
-- ❌ Tedious for many files
+- Manual process
+- Not automated
+- Tedious for many files
 
 **Use case:** Quick file transfers, testing specific changes
 
 ### Method 4: Google Drive (Cloud Storage)
 
 **What it syncs:**
-- ✅ Non-git data
-- ✅ Large files
-- ✅ Shared documents
-- ✅ Automatic sync
+- Non-git data
+- Large files
+- Shared documents
+- Automatic sync
 
 **How it works:**
 ```bash
-# Install rclone on DeepAgents
+# Install rclone on DAPY
 apt-get install rclone
 
 # Configure Google Drive
 rclone config
 
-# Sync from Google Drive to DeepAgents
-rclone sync gdrive:/DeepAgents/repos /repos/
+# Sync from Google Drive to DAPY
+rclone sync gdrive:/DAPY/repos /repos/
 
-# Sync from DeepAgents to Google Drive
-rclone sync /repos/ gdrive:/DeepAgents/repos
+# Sync from DAPY to Google Drive
+rclone sync /repos/ gdrive:/DAPY/repos
 ```
 
 **Setup required:**
@@ -172,15 +172,15 @@ rclone sync /repos/ gdrive:/DeepAgents/repos
 - OAuth credentials
 
 **Pros:**
-- ✅ Cloud-based (accessible anywhere)
-- ✅ Automatic sync
-- ✅ Version history
-- ✅ Good for non-git data
+- Cloud-based (accessible anywhere)
+- Automatic sync
+- Version history
+- Good for non-git data
 
 **Cons:**
-- ❌ Slower than rsync
-- ❌ Requires OAuth setup
-- ❌ Not ideal for git repos
+- Slower than rsync
+- Requires OAuth setup
+- Not ideal for git repos
 
 **Use case:** Non-git data, configs, databases
 
@@ -194,16 +194,16 @@ rclone sync /repos/ gdrive:/DeepAgents/repos
 **How it works:**
 1. Clone repos from GitHub (initial setup)
 2. rsync working directory changes (frequent)
-3. DeepAgents commits and pushes to GitHub
+3. DAPY commits and pushes to GitHub
 4. Google Drive for non-git data (as needed)
 
 **Pros:**
-- ✅ Best of all methods
-- ✅ Flexible
-- ✅ Efficient
+- Best of all methods
+- Flexible
+- Efficient
 
 **Cons:**
-- ❌ More complex setup
+- More complex setup
 
 ---
 
@@ -220,7 +220,7 @@ rclone sync /repos/ gdrive:/DeepAgents/repos
 apiVersion: langchain.com/v1
 kind: LangGraphApp
 metadata:
-  name: deepagents
+  name: dapy
 spec:
   initContainers:
     - name: sync-repos
@@ -233,28 +233,28 @@ spec:
           git clone https://github.com/akarelin/CRAP.git /repos/CRAP
           git clone https://github.com/akarelin/_.git /repos/_
           git clone https://github.com/akarelin/gppu.git /repos/gppu
-          
+
           # Configure git
-          git config --global user.name "DeepAgents"
-          git config --global user.email "deepagents@example.com"
+          git config --global user.name "DAPY"
+          git config --global user.email "dapy@example.com"
       volumeMounts:
         - name: repos
           mountPath: /repos
-  
+
   volumes:
     - name: repos
       emptyDir: {}
-  
+
   volumeMounts:
     - name: repos
       mountPath: /repos
 ```
 
 **Limitations:**
-- ❌ Only syncs at startup
-- ❌ No live sync during operation
-- ❌ Loses changes on restart
-- ❌ Only git data (no uncommitted changes)
+- Only syncs at startup
+- No live sync during operation
+- Loses changes on restart
+- Only git data (no uncommitted changes)
 
 **Verdict:** Not ideal for live development workflow
 
@@ -263,15 +263,15 @@ spec:
 **Advantage:** Full control over filesystem and sync.
 
 **Setup:**
-1. Deploy DeepAgents to server five (Docker Compose)
+1. Deploy DAPY to server five (Docker Compose)
 2. Set up rsync from your machine to server five
 3. Configure bidirectional sync
-4. DeepAgents has full access to live data
+4. DAPY has full access to live data
 
 ```yaml
 # deployment/server-five/docker-compose.yaml
 services:
-  deepagents:
+  dapy:
     volumes:
       - /path/on/server-five/repos:/repos
     environment:
@@ -281,7 +281,7 @@ services:
 **Sync script:**
 ```bash
 #!/bin/bash
-# sync-to-deepagents.sh
+# sync-to-dapy.sh
 
 # Sync your local repos to server five
 rsync -avz --delete \
@@ -289,18 +289,18 @@ rsync -avz --delete \
   /path/to/your/repos/ \
   user@server-five:/path/on/server-five/repos/
 
-echo "Synced to DeepAgents"
+echo "Synced to DAPY"
 ```
 
 **Pros:**
-- ✅ Full filesystem access
-- ✅ Live sync
-- ✅ Bidirectional
-- ✅ Persistent storage
+- Full filesystem access
+- Live sync
+- Bidirectional
+- Persistent storage
 
 **Cons:**
-- ❌ Requires server five setup
-- ❌ Not using LangChain Cloud
+- Requires server five setup
+- Not using LangChain Cloud
 
 **Verdict:** Best for development and testing
 
@@ -317,13 +317,13 @@ echo "Synced to DeepAgents"
 4. LangChain Cloud uses GitHub data only
 
 **Pros:**
-- ✅ Best of both worlds
-- ✅ Live data for testing
-- ✅ Managed deployment for production
+- Best of both worlds
+- Live data for testing
+- Managed deployment for production
 
 **Cons:**
-- ❌ Two deployment targets
-- ❌ More complex
+- Two deployment targets
+- More complex
 
 ---
 
@@ -333,10 +333,10 @@ echo "Synced to DeepAgents"
 
 **Use Server Five + rsync:**
 
-1. Deploy DeepAgents to server five
+1. Deploy DAPY to server five
 2. Set up rsync from your machine
 3. Sync repos before each test
-4. DeepAgents has full access to live data
+4. DAPY has full access to live data
 
 **Why:**
 - Need live data for realistic testing
@@ -350,7 +350,7 @@ echo "Synced to DeepAgents"
 
 1. Commit all changes to GitHub
 2. Deploy to LangChain Cloud
-3. DeepAgents works with committed data only
+3. DAPY works with committed data only
 4. Simpler, managed deployment
 
 **Why:**
@@ -365,17 +365,17 @@ echo "Synced to DeepAgents"
 
 ### Phase 1: Server Five Setup
 
-**Step 1: Deploy DeepAgents to Server Five**
+**Step 1: Deploy DAPY to Server Five**
 ```bash
-cd /path/to/deepagents-cli/deployment/server-five
+cd /path/to/dapy/deployment/server-five
 ./deploy.sh
 ```
 
 **Step 2: Create Repos Directory**
 ```bash
 ssh user@server-five
-mkdir -p /data/deepagents/repos
-chown deepagents:deepagents /data/deepagents/repos
+mkdir -p /data/dapy/repos
+chown dapy:dapy /data/dapy/repos
 ```
 
 **Step 3: Initial Sync**
@@ -383,35 +383,35 @@ chown deepagents:deepagents /data/deepagents/repos
 # From your machine
 rsync -avz --delete \
   ~/RAN/ \
-  user@server-five:/data/deepagents/repos/RAN/
+  user@server-five:/data/dapy/repos/RAN/
 
 rsync -avz --delete \
   ~/CRAP/ \
-  user@server-five:/data/deepagents/repos/CRAP/
+  user@server-five:/data/dapy/repos/CRAP/
 
 rsync -avz --delete \
   ~/_/ \
-  user@server-five:/data/deepagents/repos/_/
+  user@server-five:/data/dapy/repos/_/
 
 rsync -avz --delete \
   ~/gppu/ \
-  user@server-five:/data/deepagents/repos/gppu/
+  user@server-five:/data/dapy/repos/gppu/
 ```
 
 **Step 4: Configure Git**
 ```bash
 ssh user@server-five
-cd /data/deepagents/repos/RAN
-git config user.name "DeepAgents"
-git config user.email "deepagents@example.com"
+cd /data/dapy/repos/RAN
+git config user.name "DAPY"
+git config user.email "dapy@example.com"
 
 # Repeat for other repos
 ```
 
 **Step 5: Test Access**
 ```bash
-# SSH into DeepAgents container
-docker exec -it deepagents bash
+# SSH into DAPY container
+docker exec -it dapy bash
 
 # Check repos
 ls -la /repos/
@@ -424,11 +424,11 @@ git -C /repos/RAN status
 **Create sync script:**
 ```bash
 #!/bin/bash
-# ~/bin/sync-deepagents.sh
+# ~/bin/sync-dapy.sh
 
 REPOS=(RAN CRAP _ gppu)
 LOCAL_BASE=~/
-REMOTE_BASE=user@server-five:/data/deepagents/repos
+REMOTE_BASE=user@server-five:/data/dapy/repos
 
 for repo in "${REPOS[@]}"; do
   echo "Syncing $repo..."
@@ -439,29 +439,29 @@ for repo in "${REPOS[@]}"; do
     "$REMOTE_BASE/$repo/"
 done
 
-echo "All repos synced to DeepAgents"
+echo "All repos synced to DAPY"
 ```
 
 **Make executable:**
 ```bash
-chmod +x ~/bin/sync-deepagents.sh
+chmod +x ~/bin/sync-dapy.sh
 ```
 
 **Run before testing:**
 ```bash
-~/bin/sync-deepagents.sh
+~/bin/sync-dapy.sh
 ```
 
 ### Phase 3: Bidirectional Sync
 
-**Pull changes from DeepAgents:**
+**Pull changes from DAPY:**
 ```bash
 #!/bin/bash
-# ~/bin/pull-from-deepagents.sh
+# ~/bin/pull-from-dapy.sh
 
 REPOS=(RAN CRAP _ gppu)
 LOCAL_BASE=~/
-REMOTE_BASE=user@server-five:/data/deepagents/repos
+REMOTE_BASE=user@server-five:/data/dapy/repos
 
 for repo in "${REPOS[@]}"; do
   echo "Pulling $repo..."
@@ -470,14 +470,14 @@ for repo in "${REPOS[@]}"; do
     "$LOCAL_BASE/$repo/"
 done
 
-echo "All changes pulled from DeepAgents"
+echo "All changes pulled from DAPY"
 ```
 
 **Workflow:**
 1. Make changes locally
-2. Run `sync-deepagents.sh`
-3. DeepAgents runs tests
-4. Run `pull-from-deepagents.sh`
+2. Run `sync-dapy.sh`
+3. DAPY runs tests
+4. Run `pull-from-dapy.sh`
 5. Review changes
 6. Commit to git
 
@@ -485,7 +485,7 @@ echo "All changes pulled from DeepAgents"
 
 ## Data Organization
 
-### Filesystem Layout on DeepAgents
+### Filesystem Layout on DAPY
 
 ```
 /repos/
@@ -497,7 +497,7 @@ echo "All changes pulled from DeepAgents"
 │   ├── agents/
 │   └── .git/
 ├── CRAP/                   # Secondary repository
-│   ├── DeepAgents/        # DeepAgents code
+│   ├── DAPY/              # DAPY code
 │   └── .git/
 ├── _/                      # Knowledge base
 │   ├── KB/
@@ -516,8 +516,8 @@ echo "All changes pulled from DeepAgents"
 **Setup:**
 ```bash
 cd /repos/RAN
-git config user.name "DeepAgents"
-git config user.email "deepagents@example.com"
+git config user.name "DAPY"
+git config user.email "dapy@example.com"
 git remote set-url origin git@github.com:akarelin/RAN.git
 ```
 
@@ -535,7 +535,7 @@ git remote set-url origin git@github.com:akarelin/RAN.git
 **Setup:**
 ```bash
 # Generate SSH key (if needed)
-ssh-keygen -t ed25519 -C "deepagents-sync"
+ssh-keygen -t ed25519 -C "dapy-sync"
 
 # Copy to server five
 ssh-copy-id user@server-five
@@ -553,7 +553,7 @@ ssh user@server-five "echo 'Connection successful'"
 **SSH key setup:**
 ```bash
 # On server five
-ssh-keygen -t ed25519 -C "deepagents@server-five"
+ssh-keygen -t ed25519 -C "dapy@server-five"
 
 # Add to GitHub
 cat ~/.ssh/id_ed25519.pub
@@ -579,19 +579,19 @@ cat ~/.ssh/id_ed25519.pub
 
 **Check last sync:**
 ```bash
-ssh user@server-five "ls -la /data/deepagents/repos/RAN/"
+ssh user@server-five "ls -la /data/dapy/repos/RAN/"
 ```
 
 **Check git status:**
 ```bash
-ssh user@server-five "git -C /data/deepagents/repos/RAN status"
+ssh user@server-five "git -C /data/dapy/repos/RAN status"
 ```
 
 ### Disk Usage
 
 **Check space:**
 ```bash
-ssh user@server-five "du -sh /data/deepagents/repos/*"
+ssh user@server-five "du -sh /data/dapy/repos/*"
 ```
 
 ---
@@ -601,20 +601,20 @@ ssh user@server-five "du -sh /data/deepagents/repos/*"
 ### Sync Conflicts
 
 **If both sides change same file:**
-1. Pull from DeepAgents first
+1. Pull from DAPY first
 2. Resolve conflicts locally
-3. Sync back to DeepAgents
+3. Sync back to DAPY
 
 ### Permission Issues
 
 **If rsync fails:**
 ```bash
-ssh user@server-five "chown -R deepagents:deepagents /data/deepagents/repos"
+ssh user@server-five "chown -R dapy:dapy /data/dapy/repos"
 ```
 
 ### Git Push Failures
 
-**If DeepAgents can't push:**
+**If DAPY can't push:**
 1. Check SSH key is added to GitHub
 2. Check git remote URL
 3. Check network access
@@ -628,7 +628,7 @@ ssh user@server-five "chown -R deepagents:deepagents /data/deepagents/repos"
 **For testing (now):**
 - Deploy to server five
 - Use rsync for full sync
-- DeepAgents has live data access
+- DAPY has live data access
 
 **For production (later):**
 - Deploy to LangChain Cloud
@@ -637,7 +637,7 @@ ssh user@server-five "chown -R deepagents:deepagents /data/deepagents/repos"
 
 ### Setup Steps
 
-1. Deploy DeepAgents to server five
+1. Deploy DAPY to server five
 2. Create sync script
 3. Initial rsync of all repos
 4. Configure git credentials

@@ -1,8 +1,8 @@
-# DeepAgents CLI - Roadmap
+# DAPY - Roadmap
 
 ## Current Version: 0.1.0
 
-### Completed Features ✅
+### Completed Features
 
 **Core System**
 - Zero-configuration CLI with rich terminal output
@@ -56,7 +56,7 @@
 
 ### Phase 1A: Historical Data Import & Optimization (Q1 2026)
 
-**Goal:** Import ChatGPT/Claude conversation history into LangSmith and use it to optimize DeepAgents prompts and workflows.
+**Goal:** Import ChatGPT/Claude conversation history into LangSmith and use it to optimize DAPY prompts and workflows.
 
 **Features:**
 - Export tool for ChatGPT conversations.json
@@ -70,18 +70,18 @@
 - Workflow extraction from patterns
 
 **Components:**
-- `deepagents import chatgpt` - Import ChatGPT history
-- `deepagents import claude` - Import Claude history
-- `deepagents analyze patterns` - Analyze conversation patterns
-- `deepagents optimize prompts` - Test and optimize prompts
-- `deepagents evaluate` - Evaluate against historical data
+- `dapy import chatgpt` - Import ChatGPT history
+- `dapy import claude` - Import Claude history
+- `dapy analyze patterns` - Analyze conversation patterns
+- `dapy optimize prompts` - Test and optimize prompts
+- `dapy evaluate` - Evaluate against historical data
 
 **Use Cases:**
 - Understand your actual LLM usage patterns
 - Identify most common tasks and workflows
 - Optimize prompts based on successful interactions
 - Discover missing tools and features
-- Personalize DeepAgents to your workflow
+- Personalize DAPY to your workflow
 
 **Technical Approach:**
 - Parse ChatGPT conversations.json format
@@ -126,7 +126,7 @@
 - Analytics dashboard for conversation patterns
 
 **Components:**
-- `deepagents chat` - CLI chat interface
+- `dapy chat` - CLI chat interface
 - Web UI for chat (similar to ChatGPT interface)
 - Conversation storage in LangSmith
 - Prompt optimization tools
@@ -230,7 +230,7 @@
 Track feature requests in the feedback system:
 
 ```bash
-deepagents feedback submit "Feature request description" --category feature
+dapy feedback submit "Feature request description" --category feature
 ```
 
 View feature requests in the dashboard at `http://localhost:8889`
@@ -287,7 +287,7 @@ We welcome contributions! Areas where help is needed:
 Submit feedback using:
 
 ```bash
-deepagents feedback submit
+dapy feedback submit
 ```
 
 Or via the dashboard at `http://localhost:8889`
@@ -319,7 +319,7 @@ Priorities may change based on user feedback and demand.
 
 ## Long-Term Vision
 
-**DeepAgents as a Platform**
+**DAPY as a Platform**
 - Plugin system for custom tools
 - Marketplace for workflows and tools
 - Community-contributed integrations
