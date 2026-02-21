@@ -170,12 +170,20 @@ GitHub Actions workflow (`.github/workflows/build-android.yml`) for automated An
 .
 ├── AGENTS.md                  → Master instructions for autonomous agents (Claude, Gemini, etc.)
 ├── AGENTS_mistakes.md         → Log of agent mistakes and lessons learned
-├── INSTRUCTIONS_CORE.md       → Shared core instructions across all projects
-├── INSTRUCTIONS_EXPERIMENTAL.md → Experimental workflow ideas (session management, auto-PR)
-├── ROADMAP.md                 → Project roadmap and epics
-├── 2Do.md                     → Current priorities and task tracking
+├── CLAUDE.md / GEMINI.md      → Per-LLM instruction pointers
 │
-├── agents/                    → Specialized subagent definitions
+├── DeepAgents/                → LangChain/LangGraph CLI for agentic workflows
+│   ├── deepagents/            → Python package (orchestrator, tools, middleware)
+│   ├── deployment/            → Docker, GCP, LangChain Cloud configs
+│   └── tools/                 → LLM log ingestion and querying
+│
+├── Gadya/                     → Voice-first mobile assistant (React Native / Expo)
+│   ├── app/                   → Expo app screens and navigation
+│   ├── server/                → Express + tRPC backend with LangChain chains
+│   ├── hooks/                 → Voice system, continuous listening
+│   └── services/              → LLM integration, notes, storage
+│
+├── agents/                    → Specialized subagent definitions (legacy)
 │   ├── knowledge-management-agent.md
 │   ├── changelog-agent.md
 │   ├── docs-agent.md
@@ -184,20 +192,16 @@ GitHub Actions workflow (`.github/workflows/build-android.yml`) for automated An
 │   ├── push-agent.md
 │   └── mistake-review-agent.md
 │
-├── agent-swarm/               → Multi-agent orchestration experiments
+├── agent-swarm/               → Multi-agent orchestration experiments (legacy)
 │   ├── ORCHESTRATOR.md
 │   ├── claude-code-orchestration-plan.md
 │   └── agents/                → Alternative agent definitions
 │
-├── DeepAgents/                → LangChain/LangGraph CLI for agentic workflows
-│   ├── deepagents/            → Python package (orchestrator, tools, middleware)
-│   └── deployment/            → Docker, GCP, LangChain Cloud configs
-│
-├── docs/                      → Templates, plans, and guides
-│   ├── templates/             → README, AGENTS, archive templates
-│   ├── plans/                 → Subagent project plans
-│   └── guides/                → Best practices (archiving, etc.)
-│
-└── archive/                   → Previous iterations of AGENTS.md
+└── archive/                   → Previous iterations, old plans, templates, guides
+    ├── INSTRUCTIONS_CORE.md, INSTRUCTIONS_EXPERIMENTAL.md
+    ├── ROADMAP.md, 2Do.md
+    ├── templates/             → README, AGENTS, archive templates
+    ├── plans/                 → Subagent project plans
+    └── guides/                → Best practices (archiving, etc.)
 ```
 
