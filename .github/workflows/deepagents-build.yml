@@ -28,8 +28,10 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Verify Python
-        run: python3 --version
+      - name: Create venv
+        run: |
+          python3 -m venv .venv
+          echo "$PWD/.venv/bin" >> "$GITHUB_PATH"
 
       - name: Cache pip
         uses: actions/cache@v4
