@@ -1,6 +1,6 @@
-# DeepAgents CLI - Usage Examples
+# DAPY - Usage Examples
 
-This document provides practical examples of using DeepAgents CLI for common workflows.
+This document provides practical examples of using DAPY for common workflows.
 
 ## Table of Contents
 
@@ -19,7 +19,7 @@ This document provides practical examples of using DeepAgents CLI for common wor
 Start your session by checking priorities:
 
 ```bash
-deepagents next
+dapy next
 ```
 
 **Output:**
@@ -54,15 +54,15 @@ deepagents next
 Execute any query:
 
 ```bash
-deepagents ask "What files have changed since last commit?"
+dapy ask "What files have changed since last commit?"
 ```
 
 ```bash
-deepagents ask "Update the changelog with recent changes"
+dapy ask "Update the changelog with recent changes"
 ```
 
 ```bash
-deepagents ask "Archive the old implementation in legacy/"
+dapy ask "Archive the old implementation in legacy/"
 ```
 
 ### Document Changes
@@ -70,7 +70,7 @@ deepagents ask "Archive the old implementation in legacy/"
 Automatically update CHANGELOG.md from git diff:
 
 ```bash
-deepagents document
+dapy document
 ```
 
 **Output:**
@@ -79,8 +79,8 @@ deepagents document
 
 ## Detected Changes
 
-- Modified deepagents/cli.py
-- Modified deepagents/tools/changelog.py
+- Modified dapy/cli.py
+- Modified dapy/tools/changelog.py
 - Added tests/test_changelog.py
 
 ## Actions Taken
@@ -91,7 +91,7 @@ deepagents document
 
 ## Status
 
-- CHANGELOG.md: ✓ Updated
+- CHANGELOG.md: Updated
 ```
 
 ### Close Session
@@ -99,7 +99,7 @@ deepagents document
 End your work session:
 
 ```bash
-deepagents close
+dapy close
 ```
 
 **Output:**
@@ -116,8 +116,8 @@ deepagents close
 
 ## Status
 
-- 2Do.md: ✓ Updated
-- Mistakes: ✓ Checked
+- 2Do.md: Updated
+- Mistakes: Checked
 - Archive: 0 files archived
 
 ## Git Status
@@ -134,13 +134,13 @@ Review 2Do.md for next steps.
 Commit and push with changelog verification:
 
 ```bash
-deepagents push "Implemented user authentication"
+dapy push "Implemented user authentication"
 ```
 
 With pull request:
 
 ```bash
-deepagents push "Implemented user authentication" --pr
+dapy push "Implemented user authentication" --pr
 ```
 
 ---
@@ -152,7 +152,7 @@ deepagents push "Implemented user authentication" --pr
 **1. Start Session:**
 ```bash
 # Check what's next
-deepagents next
+dapy next
 
 # Output shows:
 # - Current priorities from 2Do.md
@@ -163,7 +163,7 @@ deepagents next
 **2. Work on Tasks:**
 ```bash
 # Make changes to code
-vim deepagents/auth.py
+vim dapy/auth.py
 
 # Test changes
 pytest tests/test_auth.py
@@ -172,7 +172,7 @@ pytest tests/test_auth.py
 **3. Document Changes:**
 ```bash
 # Update changelog automatically
-deepagents document
+dapy document
 
 # Review generated changelog
 cat CHANGELOG.md
@@ -181,16 +181,16 @@ cat CHANGELOG.md
 **4. Commit and Push:**
 ```bash
 # Push with changelog verification
-deepagents push "Implemented OAuth2 authentication"
+dapy push "Implemented OAuth2 authentication"
 
 # Or create PR
-deepagents push "Implemented OAuth2 authentication" --pr
+dapy push "Implemented OAuth2 authentication" --pr
 ```
 
 **5. Close Session:**
 ```bash
 # Update 2Do.md and prepare for next session
-deepagents close
+dapy close
 ```
 
 ### Feature Development Example
@@ -199,7 +199,7 @@ deepagents close
 
 ```bash
 # 1. Check current status
-deepagents next
+dapy next
 
 # 2. Create feature branch (manual)
 git checkout -b feature/new-tool
@@ -211,17 +211,17 @@ git checkout -b feature/new-tool
 pytest
 
 # 5. Document changes
-deepagents document
+dapy document
 
 # 6. Review and commit
 git diff
-deepagents push "Added new tool for X"
+dapy push "Added new tool for X"
 
 # 7. Create PR
-deepagents push --pr
+dapy push --pr
 
 # 8. Close session
-deepagents close
+dapy close
 ```
 
 ---
@@ -233,7 +233,7 @@ deepagents close
 Archive outdated implementations:
 
 ```bash
-deepagents ask "Archive the old authentication code in legacy/"
+dapy ask "Archive the old authentication code in legacy/"
 ```
 
 **What happens:**
@@ -248,7 +248,7 @@ deepagents ask "Archive the old authentication code in legacy/"
 Document a mistake for learning:
 
 ```bash
-deepagents ask "Document mistake: deleted production file without backup"
+dapy ask "Document mistake: deleted production file without backup"
 ```
 
 The system will:
@@ -262,11 +262,11 @@ The system will:
 Find information across markdown files:
 
 ```bash
-deepagents ask "Search for all references to authentication in docs"
+dapy ask "Search for all references to authentication in docs"
 ```
 
 ```bash
-deepagents ask "Find TODO items in project documentation"
+dapy ask "Find TODO items in project documentation"
 ```
 
 ### Update Documentation
@@ -274,11 +274,11 @@ deepagents ask "Find TODO items in project documentation"
 Update markdown files:
 
 ```bash
-deepagents ask "Update 2Do.md to mark authentication task as complete"
+dapy ask "Update 2Do.md to mark authentication task as complete"
 ```
 
 ```bash
-deepagents ask "Add new section to ROADMAP.md about Q2 goals"
+dapy ask "Add new section to ROADMAP.md about Q2 goals"
 ```
 
 ---
@@ -290,12 +290,12 @@ deepagents ask "Add new section to ROADMAP.md about Q2 goals"
 Pause execution at specific tools for inspection:
 
 ```bash
-deepagents ask "Archive old code" --breakpoint archive_tool
+dapy ask "Archive old code" --breakpoint archive_tool
 ```
 
 **Interactive Breakpoint Menu:**
 ```
-🔴 BREAKPOINT
+BREAKPOINT
 
 Tool: archive_tool
 
@@ -327,7 +327,7 @@ Action: _
 Set breakpoints on multiple tools:
 
 ```bash
-deepagents ask "Update changelog and push" \
+dapy ask "Update changelog and push" \
   --breakpoint changelog_tool \
   --breakpoint git_push_tool
 ```
@@ -346,7 +346,7 @@ auto_approve: true
 EOF
 
 # Use config
-deepagents --config my-config.yaml ask "What's next?"
+dapy --config my-config.yaml ask "What's next?"
 ```
 
 ### Debug Mode
@@ -354,19 +354,19 @@ deepagents --config my-config.yaml ask "What's next?"
 Enable verbose output:
 
 ```bash
-deepagents --debug ask "Document changes"
+dapy --debug ask "Document changes"
 ```
 
 **Output includes:**
 ```
-→ Calling tool: git_status_tool
+-> Calling tool: git_status_tool
   Args: {}
-← Completed: git_status_tool (0.15s)
+<- Completed: git_status_tool (0.15s)
   Result: {'branch': 'main', 'dirty': True, ...}
 
-→ Calling tool: git_diff_tool
+-> Calling tool: git_diff_tool
   Args: {'staged': False}
-← Completed: git_diff_tool (0.23s)
+<- Completed: git_diff_tool (0.23s)
   Result: {'diff': '...', 'files_changed': [...]}
 ```
 
@@ -375,7 +375,7 @@ deepagents --debug ask "Document changes"
 Turn off LangSmith tracing:
 
 ```bash
-deepagents --no-trace ask "What's next?"
+dapy --no-trace ask "What's next?"
 ```
 
 ### Auto-Approve All
@@ -383,7 +383,7 @@ deepagents --no-trace ask "What's next?"
 Skip approval prompts:
 
 ```bash
-deepagents ask "Archive and push" --approve-all
+dapy ask "Archive and push" --approve-all
 ```
 
 ---
@@ -395,12 +395,12 @@ deepagents ask "Archive and push" --approve-all
 Check system status:
 
 ```bash
-deepagents diag
+dapy diag
 ```
 
 **Output:**
 ```
-DeepAgents Diagnostic Information
+DAPY Diagnostic Information
 
 Configuration:
   model: openai:gpt-4o
@@ -411,7 +411,7 @@ Configuration:
 
 Environment:
   LANGCHAIN_TRACING_V2: true
-  LANGCHAIN_PROJECT: deepagents-dev
+  LANGCHAIN_PROJECT: dapy-dev
   OPENAI_API_KEY: sk-proj-...
 
 Checkpointer: SqliteSaver
@@ -456,7 +456,7 @@ cat snapshots/snapshot_tool_call_20251126_143022_123456.json
 View execution traces in LangSmith:
 
 1. Go to https://smith.langchain.com
-2. Select your project (e.g., "deepagents-dev")
+2. Select your project (e.g., "dapy-dev")
 3. Click on recent runs
 4. Explore tool calls, model invocations, and timing
 
@@ -466,7 +466,7 @@ View execution traces in LangSmith:
 
 ```bash
 # Check environment
-deepagents diag | grep API_KEY
+dapy diag | grep API_KEY
 
 # Set keys
 export LANGCHAIN_API_KEY=lsv2_pt_...
@@ -487,7 +487,7 @@ git config --list
 
 ```bash
 # Enable debug mode
-deepagents --debug ask "Your query here"
+dapy --debug ask "Your query here"
 
 # Check LangSmith traces for details
 # Review snapshots for state at failure
@@ -497,7 +497,7 @@ deepagents --debug ask "Your query here"
 
 ```bash
 # For SQLite (default)
-ls -la deepagents.db
+ls -la dapy.db
 
 # For PostgreSQL
 echo $POSTGRES_CONN_STRING
@@ -514,12 +514,12 @@ echo $POSTGRES_CONN_STRING
 docker-compose up -d
 
 # Enter container
-docker-compose exec deepagents-dev bash
+docker-compose exec dapy-dev bash
 
 # Inside container
 cd /repos/your-project
-deepagents next
-deepagents ask "What's next?"
+dapy next
+dapy ask "What's next?"
 ```
 
 ### Production Deployment
@@ -530,10 +530,10 @@ cd deployment/gcp
 ./deploy.sh
 
 # Run commands remotely
-docker-compose exec deepagents deepagents next
+docker-compose exec dapy dapy next
 
 # View logs
-docker-compose logs -f deepagents
+docker-compose logs -f dapy
 ```
 
 ---
@@ -548,7 +548,7 @@ Create `.git/hooks/pre-push`:
 #!/bin/bash
 # Ensure changelog is updated before push
 
-deepagents document
+dapy document
 git add CHANGELOG.md
 ```
 
@@ -558,8 +558,8 @@ Schedule periodic tasks:
 
 ```bash
 # Add to crontab
-0 9 * * * cd /path/to/project && deepagents next > daily-status.txt
-0 17 * * * cd /path/to/project && deepagents close
+0 9 * * * cd /path/to/project && dapy next > daily-status.txt
+0 17 * * * cd /path/to/project && dapy close
 ```
 
 ### With CI/CD
@@ -569,8 +569,8 @@ In GitHub Actions:
 ```yaml
 - name: Document changes
   run: |
-    pip install deepagents-cli
-    deepagents document
+    pip install dapy
+    dapy document
     git add CHANGELOG.md
     git commit -m "Update changelog [skip ci]" || true
     git push
@@ -580,18 +580,18 @@ In GitHub Actions:
 
 ## Best Practices
 
-1. **Start every session with `deepagents next`**
+1. **Start every session with `dapy next`**
    - Review priorities
    - Check work in progress
    - Plan your session
 
 2. **Document changes frequently**
-   - Run `deepagents document` after significant work
+   - Run `dapy document` after significant work
    - Keep CHANGELOG.md current
    - Makes git history more useful
 
 3. **Close sessions properly**
-   - Run `deepagents close` at end of day
+   - Run `dapy close` at end of day
    - Updates 2Do.md with progress
    - Prepares for next session
 
@@ -616,5 +616,5 @@ In GitHub Actions:
 
 - Read [deployment/README.md](deployment/README.md) for deployment options
 - Check [README.md](README.md) for architecture details
-- Explore [deepagents/prompts/](deepagents/prompts/) for prompt customization
-- Review [deepagents/tools/](deepagents/tools/) for tool implementations
+- Explore [dapy/prompts/](dapy/prompts/) for prompt customization
+- Review [dapy/tools/](dapy/tools/) for tool implementations

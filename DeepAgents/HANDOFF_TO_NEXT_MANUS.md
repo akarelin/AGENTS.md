@@ -1,15 +1,15 @@
 # Handoff Document for Next Manus Instance
 
-**From:** Current Manus Session  
-**To:** Next Manus Instance  
-**Date:** 2025-11-26  
-**Context:** DeepAgents CLI Development Project
+**From:** Current Manus Session
+**To:** Next Manus Instance
+**Date:** 2025-11-26
+**Context:** DAPY Development Project
 
 ---
 
 ## Quick Context
 
-You're taking over a personal knowledge management workflow rebuild project. The user (Alex) is migrating from cascading markdown files + Claude Code to a production-ready DeepAgents CLI using LangChain/LangGraph 1.0.
+You're taking over a personal knowledge management workflow rebuild project. The user (Alex) is migrating from cascading markdown files + Claude Code to a production-ready DAPY using LangChain/LangGraph 1.0.
 
 **Critical:** All code exists but **NOTHING IS DONE** until user approves it. Your job is to test, iterate, and debug with the user.
 
@@ -27,10 +27,10 @@ You're taking over a personal knowledge management workflow rebuild project. The
 
 ### Phase 1: You Test (Current)
 
-> "I expect that you will deploy, run, manage and interact with deepagents. I wont try it until you can deliver good results on 10 simple test use cases."
+> "I expect that you will deploy, run, manage and interact with dapy. I wont try it until you can deliver good results on 10 simple test use cases."
 
 **Your responsibility:**
-1. Deploy DeepAgents
+1. Deploy DAPY
 2. Run 10 test cases
 3. Iterate until all pass
 4. Show user the results
@@ -38,7 +38,7 @@ You're taking over a personal knowledge management workflow rebuild project. The
 
 ### Phase 2: User Tests (After Phase 1)
 
-> "I will start using DeepAgent's CLI the same way as I normally use Cloud Code. And I expect that at the beginning, it will not behave as expected."
+> "I will start using DAPY the same way as I normally use Cloud Code. And I expect that at the beginning, it will not behave as expected."
 
 **Your responsibility:**
 1. User will encounter issues
@@ -75,7 +75,7 @@ You're taking over a personal knowledge management workflow rebuild project. The
 
 **Do NOT proceed until user provides these.**
 
-### Step 2: Deploy DeepAgents
+### Step 2: Deploy DAPY
 
 **Deployment target:** LangChain Cloud (user chose Option B)
 
@@ -134,7 +134,7 @@ You're taking over a personal knowledge management workflow rebuild project. The
 - You've documented results
 - You've shown user the evidence
 
-**Then:** User starts using DeepAgents
+**Then:** User starts using DAPY
 
 ---
 
@@ -142,7 +142,7 @@ You're taking over a personal knowledge management workflow rebuild project. The
 
 ### Repository
 
-**Location:** `akarelin/CRAP/DeepAgents/`
+**Location:** `akarelin/CRAP/DAPY/`
 
 **Access:** User has granted you GitHub access to:
 - akarelin/_
@@ -155,11 +155,11 @@ You're taking over a personal knowledge management workflow rebuild project. The
 ### Code Status
 
 **Everything in the repo is:**
-- ✅ Created
-- ❌ NOT tested
-- ❌ NOT deployed
-- ❌ NOT approved
-- ❌ NOT done
+- Created
+- NOT tested
+- NOT deployed
+- NOT approved
+- NOT done
 
 **Treat it as:** Draft code that needs validation
 
@@ -173,7 +173,7 @@ You're taking over a personal knowledge management workflow rebuild project. The
 - `agents/` - Subagent definitions
 
 **CRAP:** Code and projects
-- `DeepAgents/` - This project
+- `DAPY/` - This project
 
 **_ (underscore):** Knowledge base
 - `Daily Notes/` - Daily logs with LLM interactions
@@ -184,7 +184,7 @@ You're taking over a personal knowledge management workflow rebuild project. The
 
 ### Tools Already Built
 
-**10 LangChain tools** (in `deepagents/tools/`):
+**10 LangChain tools** (in `dapy/tools/`):
 1. changelog_tool
 2. archive_tool
 3. mistake_processor_tool
@@ -196,7 +196,7 @@ You're taking over a personal knowledge management workflow rebuild project. The
 9. search_markdown_tool
 10. update_markdown_tool
 
-**3 LangGraph workflows** (in `deepagents/workflows/`):
+**3 LangGraph workflows** (in `dapy/workflows/`):
 1. close_session
 2. document_changes
 3. whats_next
@@ -382,7 +382,7 @@ User wants YOU to own the testing and initial deployment. They'll take over afte
 
 ### Test Cases Identified
 
-- `DEEPAGENTS_TEST_CASES.md` - 10 test cases from user's repos
+- `DAPY_TEST_CASES.md` - 10 test cases from user's repos
 
 ### API Keys Template
 
@@ -400,21 +400,21 @@ User wants YOU to own the testing and initial deployment. They'll take over afte
 
 ### Phase 1 Success (Your Current Goal)
 
-✅ All 10 test cases pass  
-✅ Results documented with evidence  
-✅ User approves to proceed  
+All 10 test cases pass
+Results documented with evidence
+User approves to proceed
 
 ### Phase 2 Success (After User Testing)
 
-✅ User can use DeepAgents for daily workflow  
-✅ Issues are debugged collaboratively  
-✅ Feedback loop is working  
+User can use DAPY for daily workflow
+Issues are debugged collaboratively
+Feedback loop is working
 
 ### Phase 3 Success (Long Term)
 
-✅ DeepAgents replaces Claude Code  
-✅ Full observability in LangSmith  
-✅ Continuous improvement from logs  
+DAPY replaces Claude Code
+Full observability in LangSmith
+Continuous improvement from logs
 
 ---
 
