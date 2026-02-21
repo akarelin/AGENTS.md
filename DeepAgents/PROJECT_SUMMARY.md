@@ -1,38 +1,38 @@
-# DeepAgents CLI - Project Summary
+# DAPY - Project Summary
 
 ## Overview
 
-DeepAgents CLI is a complete reimplementation of your cascading markdown-based knowledge management workflow, rebuilt from the ground up using **LangChain 1.0** and **LangGraph 1.0** best practices. It preserves your original workflow philosophy while adding production-grade features for observability, debugging, and deployment.
+DAPY is a complete reimplementation of your cascading markdown-based knowledge management workflow, rebuilt from the ground up using **LangChain 1.0** and **LangGraph 1.0** best practices. It preserves your original workflow philosophy while adding production-grade features for observability, debugging, and deployment.
 
 ## What Was Built
 
 ### Core System
 
-**1. CLI Framework** (`deepagents/cli.py`)
+**1. CLI Framework** (`dapy/cli.py`)
 - Zero-configuration command-line interface using Click
 - Rich terminal output with colors and formatting
 - Commands: ask, next, close, document, push, version, diag
 - Support for debug mode, breakpoints, and custom configs
 
-**2. Orchestrator** (`deepagents/orchestrator.py`)
+**2. Orchestrator** (`dapy/orchestrator.py`)
 - Main agent creation using LangChain 1.0's `create_agent`
 - Middleware stack for observability and control
 - Support for specialized agents (changelog, archive, etc.)
 - Model abstraction (currently OpenAI, extensible)
 
-**3. Configuration** (`deepagents/config.py`)
+**3. Configuration** (`dapy/config.py`)
 - Sensible defaults with optional YAML overrides
 - Environment variable support
 - Prompt loading from markdown files
 - Zero-config philosophy
 
-**4. Observability** (`deepagents/observability.py`)
+**4. Observability** (`dapy/observability.py`)
 - LangSmith tracing integration
 - State snapshot management
 - Metrics collection
 - Diagnostic reporting
 
-**5. Persistence** (`deepagents/persistence.py`)
+**5. Persistence** (`dapy/persistence.py`)
 - LangGraph checkpointing for durable state
 - SQLite for local development
 - PostgreSQL for production
@@ -40,19 +40,19 @@ DeepAgents CLI is a complete reimplementation of your cascading markdown-based k
 
 ### Middleware Stack
 
-**1. Snapshot Middleware** (`deepagents/middleware/snapshot.py`)
+**1. Snapshot Middleware** (`dapy/middleware/snapshot.py`)
 - Captures state before/after tool calls
 - Saves to JSON files for debugging
 - Configurable snapshot directory
 - Minimal performance overhead
 
-**2. Breakpoint Middleware** (`deepagents/middleware/breakpoint.py`)
+**2. Breakpoint Middleware** (`dapy/middleware/breakpoint.py`)
 - Interactive debugging at tool boundaries
 - Pause, inspect, skip, or abort execution
 - State inspection with syntax highlighting
 - PDB integration for deep debugging
 
-**3. Enhanced Logging** (`deepagents/middleware/logging.py`)
+**3. Enhanced Logging** (`dapy/middleware/logging.py`)
 - Detailed execution tracking
 - Timing information for all operations
 - Tool call statistics
@@ -83,20 +83,20 @@ Each tool preserves the original logic while adding:
 
 ### Workflows (LangGraph State Machines)
 
-**1. Close Session** (`deepagents/workflows/close_session.py`)
+**1. Close Session** (`dapy/workflows/close_session.py`)
 - Analyzes session state via git
 - Updates 2Do.md with progress
 - Checks for mistakes to document
 - Archives completed work
 - Generates comprehensive summary
 
-**2. Document Changes** (`deepagents/workflows/document_changes.py`)
+**2. Document Changes** (`dapy/workflows/document_changes.py`)
 - Detects changes via git diff/status
 - Classifies changes (Added/Changed/Fixed/Removed)
 - Updates CHANGELOG.md automatically
 - Generates documentation summary
 
-**3. What's Next** (`deepagents/workflows/whats_next.py`)
+**3. What's Next** (`dapy/workflows/whats_next.py`)
 - Reads 2Do.md for priorities
 - Reads ROADMAP.md for strategic direction
 - Checks git status for work in progress
@@ -159,8 +159,8 @@ Each workflow uses:
 ## Project Structure
 
 ```
-deepagents-cli/
-├── deepagents/                    # Main package
+dapy/
+├── dapy/                          # Main package
 │   ├── __init__.py               # Package initialization
 │   ├── cli.py                    # CLI entry point
 │   ├── orchestrator.py           # Agent creation
@@ -226,7 +226,7 @@ deepagents-cli/
 - Debugging aid
 
 **Diagnostics**
-- `deepagents diag` command
+- `dapy diag` command
 - Configuration display
 - Environment variables
 - Checkpointer status
@@ -268,20 +268,20 @@ deepagents-cli/
 
 ### What's Preserved
 
-✅ **Markdown-based prompts** - All prompts remain in markdown format  
-✅ **Cascading architecture** - Specialized agents for different tasks  
-✅ **Tool behaviors** - Original logic preserved in each tool  
-✅ **Workflow patterns** - close, document, push workflows intact  
-✅ **Philosophy** - Zero-config, markdown-driven approach
+**Markdown-based prompts** - All prompts remain in markdown format
+**Cascading architecture** - Specialized agents for different tasks
+**Tool behaviors** - Original logic preserved in each tool
+**Workflow patterns** - close, document, push workflows intact
+**Philosophy** - Zero-config, markdown-driven approach
 
 ### What's Enhanced
 
-✅ **Observability** - LangSmith tracing for full visibility  
-✅ **Debugging** - Breakpoints and snapshots  
-✅ **State management** - Durable checkpointing  
-✅ **Deployment** - Production-ready configurations  
-✅ **Error handling** - Structured error recovery  
-✅ **Testing** - Unit test framework ready
+**Observability** - LangSmith tracing for full visibility
+**Debugging** - Breakpoints and snapshots
+**State management** - Durable checkpointing
+**Deployment** - Production-ready configurations
+**Error handling** - Structured error recovery
+**Testing** - Unit test framework ready
 
 ## Technology Stack
 
@@ -319,19 +319,19 @@ deepagents-cli/
 
 ```bash
 # Morning: Check what's next
-deepagents next
+dapy next
 
 # Work on tasks
 # ... make changes ...
 
 # Document changes
-deepagents document
+dapy document
 
 # Commit and push
-deepagents push "Implemented feature X"
+dapy push "Implemented feature X"
 
 # Evening: Close session
-deepagents close
+dapy close
 ```
 
 ### Development Workflow
@@ -339,13 +339,13 @@ deepagents close
 ```bash
 # Start development container
 docker-compose up -d
-docker-compose exec deepagents-dev bash
+docker-compose exec dapy-dev bash
 
 # Inside container
 cd /repos/your-project
-deepagents next
+dapy next
 # ... work ...
-deepagents close
+dapy close
 ```
 
 ### Production Deployment
@@ -356,7 +356,7 @@ cd deployment/gcp
 ./deploy.sh
 
 # Run commands remotely
-docker-compose exec deepagents deepagents next
+docker-compose exec dapy dapy next
 ```
 
 ## Next Steps
@@ -366,8 +366,8 @@ docker-compose exec deepagents deepagents next
 1. **Install and test locally**
    ```bash
    pip install -e .
-   deepagents version
-   deepagents next
+   dapy version
+   dapy next
    ```
 
 2. **Configure environment**
@@ -379,20 +379,20 @@ docker-compose exec deepagents deepagents next
 3. **Try Docker development**
    ```bash
    docker-compose up -d
-   docker-compose exec deepagents-dev bash
+   docker-compose exec dapy-dev bash
    ```
 
 ### Short-term
 
 1. **Customize prompts**
-   - Edit `deepagents/prompts/system_prompt.md`
-   - Add tool-specific prompts in `deepagents/prompts/tools/`
-   - Add workflow prompts in `deepagents/prompts/workflows/`
+   - Edit `dapy/prompts/system_prompt.md`
+   - Add tool-specific prompts in `dapy/prompts/tools/`
+   - Add workflow prompts in `dapy/prompts/workflows/`
 
 2. **Add custom tools**
-   - Create new tool in `deepagents/tools/`
-   - Register in `deepagents/tools/__init__.py`
-   - Add prompt in `deepagents/prompts/tools/`
+   - Create new tool in `dapy/tools/`
+   - Register in `dapy/tools/__init__.py`
+   - Add prompt in `dapy/prompts/tools/`
 
 3. **Deploy to production**
    - Choose deployment option (GCP, LangChain Cloud)
@@ -435,7 +435,7 @@ docker-compose exec deepagents deepagents next
 
 ### Workflow
 
-- Start sessions with `deepagents next`
+- Start sessions with `dapy next`
 - Document changes frequently
 - Close sessions properly
 - Review mistakes and learn
@@ -449,10 +449,10 @@ docker-compose exec deepagents deepagents next
 - PROJECT_SUMMARY.md - This file
 
 **Code**
-- All source code in `deepagents/`
-- Tools in `deepagents/tools/`
-- Workflows in `deepagents/workflows/`
-- Prompts in `deepagents/prompts/`
+- All source code in `dapy/`
+- Tools in `dapy/tools/`
+- Workflows in `dapy/workflows/`
+- Prompts in `dapy/prompts/`
 
 **Deployment**
 - Local: `docker-compose.yml`
@@ -461,13 +461,13 @@ docker-compose exec deepagents deepagents next
 
 ## Conclusion
 
-DeepAgents CLI successfully reimplements your cascading markdown-based knowledge management workflow using modern LangChain/LangGraph 1.0 patterns. It preserves your original philosophy while adding production-grade features for observability, debugging, and deployment.
+DAPY successfully reimplements your cascading markdown-based knowledge management workflow using modern LangChain/LangGraph 1.0 patterns. It preserves your original philosophy while adding production-grade features for observability, debugging, and deployment.
 
 The system is ready for:
-- ✅ Local development and testing
-- ✅ Production deployment on GCP
-- ✅ Serverless deployment on LangChain Cloud
-- ✅ Customization and extension
-- ✅ Integration with existing workflows
+- Local development and testing
+- Production deployment on GCP
+- Serverless deployment on LangChain Cloud
+- Customization and extension
+- Integration with existing workflows
 
 All tools, workflows, and deployment configurations are complete and documented.
