@@ -1,0 +1,96 @@
+name: Android APK on Kolme
+
+on:
+  workflow_dispatch:
+
+
+defaults:
+  run:
+    working-directory: Gadya
+
+jobs:
+  build:
+    runs-on: [self-hosted, linux]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 9
+
+      - name: Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('Gadya/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('Gadya/**/*.gradle*', 'Gadya/**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Prebuild Android
+        run: npx expo prebuild --platform android --clean
+
+      - name: Configure AndroidX and fix duplicate class conflicts
+        run: |
+          # Ensure gradle.properties has AndroidX enabled and jetifier to convert support libs
+          echo "android.useAndroidX=true" >> android/gradle.properties
+          echo "android.enableJetifier=true" >> android/gradle.properties
+
+          # Add exclusion rules to app/build.gradle (inside dependencies block won't work, use configurations)
+          # Insert configuration block at the beginning of the android block in app/build.gradle
+          sed -i '/^android {/a\    configurations.all {\n        resolutionStrategy {\n            force "androidx.core:core:1.12.0"\n            force "androidx.core:core-ktx:1.12.0"\n            force "androidx.appcompat:appcompat:1.6.1"\n            force "androidx.versionedparcelable:versionedparcelable:1.1.1"\n            force "androidx.collection:collection:1.2.0"\n            force "androidx.lifecycle:lifecycle-runtime:2.6.2"\n            force "androidx.activity:activity:1.8.0"\n        }\n        exclude group: "com.android.support"\n    }' android/app/build.gradle
+
+      - name: Make gradlew executable
+        run: chmod +x android/gradlew
+
+      - name: Build Release APK
+        working-directory: Gadya/android
+        run: ./gradlew assembleRelease --no-daemon
+
+      - name: Rename APK with version
+        run: |
+          APK_PATH=$(find android/app/build/outputs/apk/release -name "*.apk" | head -1)
+          VERSION=$(date +%Y%m%d-%H%M%S)
+          NEW_NAME="gadya-${VERSION}.apk"
+          cp "$APK_PATH" "android/app/build/outputs/apk/release/$NEW_NAME"
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: gadya-apk-${{ github.run_number }}
+          path: Gadya/android/app/build/outputs/apk/release/gadya-*.apk
+          retention-days: 90
