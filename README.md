@@ -12,7 +12,7 @@ An unfinished, evolving collection of everything agentic — prompt engineering 
 - [What's where](#whats-where)
 
 ## In development
-- **DeepAgents CLI**: A more ambitious attempt to wrap the whole workflow into a LangChain-based CLI tool
+- **DAPY CLI**: A more ambitious attempt to wrap the whole workflow into a LangChain-based CLI tool
 - **Gadya (Гадя)**: A voice-first iOS/Android mobile assistant built with React Native / Expo and TypeScript. Designed for hands-free, one-handed interaction with LLMs — speak a question, get an AI answer read aloud, and optionally save or search personal notes via voice.
 
 
@@ -32,12 +32,12 @@ A production-ready personal knowledge management system and agentic workflow too
 
 | Command | Description |
 |---------|-------------|
-| `deepagents ask "..."` | Execute any query via the main agent |
-| `deepagents next` | Analyze 2Do.md, ROADMAP.md, git status — recommend what to do next |
-| `deepagents close` | Close session: update 2Do.md, document mistakes, archive work |
-| `deepagents document` | Auto-generate CHANGELOG.md from git diff |
-| `deepagents push "msg"` | Commit + push with changelog verification |
-| `deepagents daemon` | Run as background HTTP daemon |
+| `dapy ask "..."` | Execute any query via the main agent |
+| `dapy next` | Analyze 2Do.md, ROADMAP.md, git status — recommend what to do next |
+| `dapy close` | Close session: update 2Do.md, document mistakes, archive work |
+| `dapy document` | Auto-generate CHANGELOG.md from git diff |
+| `dapy push "msg"` | Commit + push with changelog verification |
+| `dapys daemon` | Run as background HTTP daemon |
 | `deepagents inspect` | Show recent executions and snapshots |
 | `deepagents feedback submit` | Submit feedback (bug/feature/etc.) |
 | `deepagents export-debug` | Package debug info for remote inspection |
