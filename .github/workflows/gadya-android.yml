@@ -127,10 +127,11 @@ jobs:
       - name: Commit version bump
         working-directory: .
         run: |
-          git config user.name "github-actions"
-          git config user.email "github-actions@github.com"
+          git config user.name "Alex Karelin"
+          git config user.email "alex@karelin.com"
           git add Gadya/app.config.ts
           git commit -m "Gadya v${{ steps.bump.outputs.version }}"
+          git pull --rebase
           git push
 
       - name: Create GitHub Release

@@ -1,4 +1,4 @@
-name: DeepAgents Build
+name: DAPY Build
 
 on:
   workflow_dispatch:
@@ -14,7 +14,7 @@ on:
 
 defaults:
   run:
-    working-directory: DeepAgents
+    working-directory: DAPY
 
 jobs:
   build:
@@ -37,7 +37,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('DeepAgents/pyproject.toml') }}
+          key: ${{ runner.os }}-pip-${{ hashFiles('DAPY/pyproject.toml') }}
           restore-keys: |
             ${{ runner.os }}-pip-
 
@@ -57,7 +57,7 @@ jobs:
           NEW="${MAJOR}.${MINOR}.${PATCH}"
           echo "current=$CURRENT" >> "$GITHUB_OUTPUT"
           echo "new=$NEW" >> "$GITHUB_OUTPUT"
-          echo "tag=v${NEW}" >> "$GITHUB_OUTPUT"
+          echo "tag=dapy-v${NEW}" >> "$GITHUB_OUTPUT"
 
       - name: Bump version in pyproject.toml
         run: sed -i "s/^version = \"${{ steps.version.outputs.current }}\"/version = \"${{ steps.version.outputs.new }}\"/" pyproject.toml
@@ -68,17 +68,18 @@ jobs:
       - name: Commit version bump
         working-directory: ${{ github.workspace }}
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add DeepAgents/pyproject.toml
-          git commit -m "chore(deepagents): bump version to ${{ steps.version.outputs.new }}"
+          git config user.name "Alex Karelin"
+          git config user.email "alex@karelin.com"
+          git add DAPY/pyproject.toml
+          git commit -m "chore(dapy): bump version to ${{ steps.version.outputs.new }}"
           git tag "${{ steps.version.outputs.tag }}"
+          git pull --rebase
           git push origin HEAD --tags
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.version.outputs.tag }}
-          name: DeepAgents ${{ steps.version.outputs.tag }}
+          name: DAPY ${{ steps.version.outputs.tag }}
           generate_release_notes: true
-          files: DeepAgents/dist/*
+          files: DAPY/dist/*
