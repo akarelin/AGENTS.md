@@ -6,7 +6,7 @@ An unfinished, evolving collection of everything agentic — prompt engineering 
 
 ## Table of Contents
 - [In development](#in-development)
-  - [DeepAgents CLI](#deepagents-cli)
+  - [DAPY CLI](#dapy-cli)
   - [Gadya (Гадя)](#gadya-гадя)
 - [No longer developed](#no-longer-developed)
 - [What's where](#whats-where)
@@ -22,7 +22,7 @@ An unfinished, evolving collection of everything agentic — prompt engineering 
 - **Mistake-driven improvement**: Agents log their own mistakes; those patterns feed back into better instructions
 
 
-# DeepAgents CLI
+# DAPY CLI
 
 A production-ready personal knowledge management system and agentic workflow tool built with LangChain 1.0 and LangGraph 1.0 (Python). It reimplements the original cascading markdown-based subagents and tools as native LangChain tools and LangGraph workflows — preserving the markdown-driven philosophy while adding enterprise-grade observability, persistence, and deployment options.
 
@@ -37,11 +37,11 @@ A production-ready personal knowledge management system and agentic workflow too
 | `dapy close` | Close session: update 2Do.md, document mistakes, archive work |
 | `dapy document` | Auto-generate CHANGELOG.md from git diff |
 | `dapy push "msg"` | Commit + push with changelog verification |
-| `dapys daemon` | Run as background HTTP daemon |
-| `deepagents inspect` | Show recent executions and snapshots |
-| `deepagents feedback submit` | Submit feedback (bug/feature/etc.) |
-| `deepagents export-debug` | Package debug info for remote inspection |
-| `deepagents diag` | Diagnostic info: config, env vars, git status |
+| `dapy daemon` | Run as background HTTP daemon |
+| `dapy inspect` | Show recent executions and snapshots |
+| `dapy feedback submit` | Submit feedback (bug/feature/etc.) |
+| `dapy export-debug` | Package debug info for remote inspection |
+| `dapy diag` | Diagnostic info: config, env vars, git status |
 
 Advanced flags: `--breakpoint <tool>` (pause at any tool), `--no-snapshot`, `--approve-all`, `--debug`.
 
@@ -86,7 +86,7 @@ Request → EnhancedLogging → Breakpoint → Snapshot → HumanInTheLoop → T
 - **LangSmith tracing** — every execution traced (tool calls, model invocations, workflow transitions)
 - **State snapshots** — JSON files saved before/after each tool call
 - **Remote inspection API** — external agents can access snapshots and traces
-- **Debug export** — `deepagents export-debug` packages everything for remote troubleshooting
+- **Debug export** — `dapy export-debug` packages everything for remote troubleshooting
 
 ### Technology Stack
 
@@ -100,7 +100,7 @@ Python 3.11, LangChain >= 0.3.0, LangGraph >= 0.2.0, LangSmith >= 0.2.0, Click (
 
 ### LLM Log Ingestion
 
-Included tools (`DeepAgents/tools/`) import ChatGPT and Claude conversation exports into LangSmith datasets, then query them to detect patterns, generate test cases, and export golden examples for prompt optimization.
+Included tools (`DAPY/tools/`) import ChatGPT and Claude conversation exports into LangSmith datasets, then query them to detect patterns, generate test cases, and export golden examples for prompt optimization.
 
 ---
 
@@ -175,8 +175,8 @@ GitHub Actions workflow (`.github/workflows/build-android.yml`) for automated An
 ├── AGENTS_mistakes.md         → Log of agent mistakes and lessons learned
 ├── CLAUDE.md / GEMINI.md      → Per-LLM instruction pointers
 │
-├── DeepAgents/                → LangChain/LangGraph CLI for agentic workflows
-│   ├── deepagents/            → Python package (orchestrator, tools, middleware)
+├── DAPY/                → LangChain/LangGraph CLI for agentic workflows
+│   ├── dapy/            → Python package (orchestrator, tools, middleware)
 │   ├── deployment/            → Docker, GCP, LangChain Cloud configs
 │   └── tools/                 → LLM log ingestion and querying
 │

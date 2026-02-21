@@ -18,10 +18,13 @@ defaults:
     working-directory: Gadya
 
 jobs:
-  build-and-release:
+  build:
     runs-on: [self-hosted, Linux, X64]
-    permissions:
-      contents: write
+
+    outputs:
+      version: ${{ steps.bump.outputs.version }}
+      tag: ${{ steps.bump.outputs.tag }}
+      filename: ${{ steps.apk.outputs.filename }}
 
     steps:
       - name: Checkout repository
@@ -124,6 +127,44 @@ jobs:
           echo "path=$FILENAME" >> $GITHUB_OUTPUT
           echo "filename=$FILENAME" >> $GITHUB_OUTPUT
 
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: gadya-apk-${{ steps.bump.outputs.version }}
+          path: Gadya/${{ steps.apk.outputs.filename }}
+          retention-days: 90
+
+      - name: Upload modified app.config.ts
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-config
+          path: Gadya/app.config.ts
+          retention-days: 1
+
+  release:
+    runs-on: [self-hosted, Linux, X64]
+    needs: [build]
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download APK artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: gadya-apk-${{ needs.build.outputs.version }}
+          path: Gadya
+
+      - name: Download modified app.config.ts
+        uses: actions/download-artifact@v4
+        with:
+          name: app-config
+          path: Gadya
+
       - name: Commit version bump via GitHub API
         working-directory: .
         env:
@@ -131,7 +172,7 @@ jobs:
         run: |
           BRANCH="${{ github.ref_name }}"
           FILE_PATH="Gadya/app.config.ts"
-          COMMIT_MSG="Gadya v${{ steps.bump.outputs.version }}"
+          COMMIT_MSG="Gadya v${{ needs.build.outputs.version }}"
 
           # Get the latest file SHA from the remote (not local checkout)
           FILE_SHA=$(gh api "repos/${{ github.repository }}/contents/${FILE_PATH}?ref=${BRANCH}" --jq '.sha')
@@ -146,14 +187,7 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ steps.bump.outputs.tag }}
-          name: Gadya v${{ steps.bump.outputs.version }}
-          files: Gadya/${{ steps.apk.outputs.filename }}
+          tag_name: ${{ needs.build.outputs.tag }}
+          name: Gadya v${{ needs.build.outputs.version }}
+          files: Gadya/${{ needs.build.outputs.filename }}
           generate_release_notes: true
-
-      - name: Upload APK artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: gadya-apk-${{ steps.bump.outputs.version }}
-          path: Gadya/${{ steps.apk.outputs.filename }}
-          retention-days: 90
