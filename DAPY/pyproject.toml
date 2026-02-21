@@ -53,10 +53,10 @@ postgres = [
 dapy = "dapy.cli:cli"
 
 [project.urls]
-Homepage = "https://github.com/akarelin/dapy"
-Documentation = "https://github.com/akarelin/dapy/wiki"
-Repository = "https://github.com/akarelin/dapy"
-Issues = "https://github.com/akarelin/dapy/issues"
+Homepage = "https://github.com/akarelin/AGENTS.md/tree/main/DAPY"
+Documentation = "https://github.com/akarelin/AGENTS.md/tree/main/DAPY"
+Repository = "https://github.com/akarelin/AGENTS.md"
+Issues = "https://github.com/akarelin/AGENTS.md/issues"
 
 [tool.setuptools]
 packages = ["dapy"]

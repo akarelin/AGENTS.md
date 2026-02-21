@@ -15,8 +15,8 @@ Get started with DAPY in 5 minutes.
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/yourusername/dapy.git
-cd dapy
+git clone https://github.com/akarelin/AGENTS.md.git
+cd AGENTS.md/DAPY
 
 # 2. Install
 pip install -e .
@@ -33,8 +33,8 @@ dapy version
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/yourusername/dapy.git
-cd dapy
+git clone https://github.com/akarelin/AGENTS.md.git
+cd AGENTS.md/DAPY
 
 # 2. Create .env file
 cp .env.example .env

@@ -80,8 +80,8 @@ gcloud compute instances create dapy-vm \
 gcloud compute ssh dapy-vm
 
 # 3. Clone repository
-git clone https://github.com/yourusername/dapy.git
-cd dapy/deployment/gcp
+git clone https://github.com/akarelin/AGENTS.md.git
+cd AGENTS.md/DAPY/deployment/gcp
 
 # 4. Configure environment
 cp .env.example .env
@@ -309,8 +309,8 @@ Access traces at: https://smith.langchain.com
 For deployment issues:
 1. Check logs: `docker-compose logs -f`
 2. Run diagnostics: `dapy diag`
-3. Review documentation: [GitHub Wiki](https://github.com/yourusername/dapy/wiki)
-4. Open issue: [GitHub Issues](https://github.com/yourusername/dapy/issues)
+3. Review documentation: [DAPY](https://github.com/akarelin/AGENTS.md/tree/main/DAPY)
+4. Open issue: [GitHub Issues](https://github.com/akarelin/AGENTS.md/issues)
 
 ---
 

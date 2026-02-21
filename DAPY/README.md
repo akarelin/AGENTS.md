@@ -44,8 +44,8 @@ DAPY reimplements and extends the cascading markdown-based agent workflow into a
 
 ```bash
 # Clone repository
-git clone https://github.com/yourusername/dapy.git
-cd dapy
+git clone https://github.com/akarelin/AGENTS.md.git
+cd AGENTS.md/DAPY
 
 # Install
 pip install -e .
@@ -416,6 +416,6 @@ Inspired by the original cascading markdown agent system.
 
 ### Support
 
-- **Documentation**: [GitHub Wiki](https://github.com/yourusername/dapy/wiki)
-- **Issues**: [GitHub Issues](https://github.com/yourusername/dapy/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/yourusername/dapy/discussions)
+- **Documentation**: [AGENTS.md/DAPY](https://github.com/akarelin/AGENTS.md/tree/main/DAPY)
+- **Issues**: [GitHub Issues](https://github.com/akarelin/AGENTS.md/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/akarelin/AGENTS.md/discussions)
