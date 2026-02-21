@@ -1,4 +1,4 @@
-name: DeepAgents Build on Kolme
+name: DeepAgents Build
 
 on:
   workflow_dispatch:
