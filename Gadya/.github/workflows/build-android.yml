@@ -2,6 +2,16 @@ name: Build Android APK
 
 on:
   workflow_dispatch:
+    inputs:
+      version_bump:
+        description: 'Version bump type'
+        required: true
+        default: 'patch'
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
 
 defaults:
   run:
@@ -10,11 +20,37 @@ defaults:
 
 jobs:
   build:
-    runs-on: [self-hosted, Linux]
+    runs-on: [self-hosted, Linux, X64]
     
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Read current version
+        id: current_version
+        run: |
+          VERSION=$(grep -oP 'version:\s*"\K[^"]+' app.config.ts)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Current version: $VERSION"
+
+      - name: Bump version
+        id: bump
+        run: |
+          IFS='.' read -r major minor patch <<< "${{ steps.current_version.outputs.version }}"
+          case "${{ inputs.version_bump }}" in
+            major) major=$((major + 1)); minor=0; patch=0 ;;
+            minor) minor=$((minor + 1)); patch=0 ;;
+            patch) patch=$((patch + 1)) ;;
+          esac
+          NEW_VERSION="${major}.${minor}.${patch}"
+          echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
+          echo "New version: $NEW_VERSION"
+
+      - name: Update version in app.config.ts
+        run: |
+          sed -i 's/version: "[^"]*"/version: "${{ steps.bump.outputs.version }}"/' app.config.ts
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -105,13 +141,21 @@ jobs:
       - name: Rename APK with version
         run: |
           APK_PATH=$(find android/app/build/outputs/apk/release -name "*.apk" | head -1)
-          VERSION=$(date +%Y%m%d-%H%M%S)
-          NEW_NAME="gadya-${VERSION}.apk"
+          NEW_NAME="gadya-${{ steps.bump.outputs.version }}.apk"
           cp "$APK_PATH" "android/app/build/outputs/apk/release/$NEW_NAME"
+
+      - name: Commit version bump
+        working-directory: .
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add Gadya/app.config.ts
+          git commit -m "Gadya v${{ steps.bump.outputs.version }}"
+          git push
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: gadya-apk-${{ github.run_number }}
+          name: gadya-apk-${{ steps.bump.outputs.version }}
           path: Gadya/android/app/build/outputs/apk/release/gadya-*.apk
           retention-days: 90
