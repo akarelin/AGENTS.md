@@ -72,7 +72,7 @@ class FeedbackMonitoringAgent:
     
     def __init__(
         self,
-        project_name: str = "deepagents-dev",
+        project_name: str = "dapy-dev",
         tickets_dir: str = "./tickets",
         check_interval: int = 60
     ):
@@ -348,7 +348,7 @@ def main():
     import argparse
     
     parser = argparse.ArgumentParser(description='Manus Feedback Monitoring Agent')
-    parser.add_argument('--project', default='deepagents-dev', help='LangSmith project name')
+    parser.add_argument('--project', default='dapy-dev', help='LangSmith project name')
     parser.add_argument('--tickets-dir', default='./tickets', help='Tickets directory')
     parser.add_argument('--interval', type=int, default=60, help='Check interval in seconds')
     parser.add_argument('--once', action='store_true', help='Run once and exit')

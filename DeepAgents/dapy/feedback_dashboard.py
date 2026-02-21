@@ -14,10 +14,10 @@ from typing import List, Dict, Any
 import json
 from datetime import datetime
 
-from deepagents.manus_feedback_agent import FeedbackMonitoringAgent, Ticket
+from dapy.manus_feedback_agent import FeedbackMonitoringAgent, Ticket
 
 app = FastAPI(
-    title="DeepAgents Feedback Dashboard",
+    title="DAPY Feedback Dashboard",
     description="Track feedback submissions and resolutions",
     version="0.1.0"
 )
@@ -102,7 +102,7 @@ def generate_dashboard_html() -> str:
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DeepAgents Feedback Dashboard</title>
+    <title>DAPY Feedback Dashboard</title>
     <style>
         * {
             margin: 0;
@@ -290,7 +290,7 @@ def generate_dashboard_html() -> str:
 <body>
     <div class="container">
         <header>
-            <h1>DeepAgents Feedback Dashboard</h1>
+            <h1>DAPY Feedback Dashboard</h1>
             <p class="subtitle">Track feedback submissions and Manus resolutions</p>
         </header>
         

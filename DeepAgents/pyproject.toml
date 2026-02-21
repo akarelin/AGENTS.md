@@ -3,9 +3,9 @@ requires = ["setuptools>=68.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "deepagents-cli"
-version = "0.1.1"
-description = "Production-ready personal knowledge management system built with LangChain 1.0 and LangGraph 1.0"
+name = "dapy"
+version = "0.2.0"
+description = "DAPY - Deep Agents in PYthon. Production-ready personal knowledge management system built with LangChain 1.0 and LangGraph 1.0"
 readme = "README.md"
 requires-python = ">=3.12"
 license = {text = "MIT"}
@@ -50,19 +50,19 @@ postgres = [
 ]
 
 [project.scripts]
-deepagents = "deepagents.cli:cli"
+dapy = "dapy.cli:cli"
 
 [project.urls]
-Homepage = "https://github.com/akarelin/deepagents-cli"
-Documentation = "https://github.com/akarelin/deepagents-cli/wiki"
-Repository = "https://github.com/akarelin/deepagents-cli"
-Issues = "https://github.com/akarelin/deepagents-cli/issues"
+Homepage = "https://github.com/akarelin/dapy"
+Documentation = "https://github.com/akarelin/dapy/wiki"
+Repository = "https://github.com/akarelin/dapy"
+Issues = "https://github.com/akarelin/dapy/issues"
 
 [tool.setuptools]
-packages = ["deepagents"]
+packages = ["dapy"]
 
 [tool.setuptools.package-data]
-deepagents = ["prompts/**/*.md"]
+dapy = ["prompts/**/*.md"]
 
 [tool.black]
 line-length = 100
@@ -119,7 +119,7 @@ python_functions = ["test_*"]
 addopts = [
     "--strict-markers",
     "--strict-config",
-    "--cov=deepagents",
+    "--cov=dapy",
     "--cov-report=term-missing",
     "--cov-report=html",
 ]
