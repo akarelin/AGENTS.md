@@ -1,4 +1,4 @@
-# Golden Dataset Plan for DeepAgents
+# Golden Dataset Plan for DAPY
 
 ## Overview
 
@@ -20,7 +20,7 @@ Using **LangSmith's native features** to create golden datasets from your real t
 
 ### 2. Prompt Canvas
 **What:** AI-assisted prompt editor
-**Use:** Optimize DeepAgents prompts based on golden examples
+**Use:** Optimize DAPY prompts based on golden examples
 **Features:**
 - Chat sidebar for natural language edits
 - Quick actions (reading level, length)
@@ -67,7 +67,7 @@ Using **LangSmith's native features** to create golden datasets from your real t
     "changelog_updated": true,
     "summary": "Changes documented"
   },
-  "reference_output": "Changes Detected:\n- Modified: deepagents/cli.py (Added feedback command)\n- Added: deepagents/feedback.py (New module)\n\nCHANGELOG.md Updated:\n### Added\n- Feedback command for user input collection\n- LangSmith feedback API integration\n\nDocumentation Updated:\n- README.md: Added feedback command documentation\n\nSummary: 2 changes documented in CHANGELOG.md"
+  "reference_output": "Changes Detected:\n- Modified: dapy/cli.py (Added feedback command)\n- Added: dapy/feedback.py (New module)\n\nCHANGELOG.md Updated:\n### Added\n- Feedback command for user input collection\n- LangSmith feedback API integration\n\nDocumentation Updated:\n- README.md: Added feedback command documentation\n\nSummary: 2 changes documented in CHANGELOG.md"
 }
 ```
 
@@ -178,7 +178,7 @@ Using **LangSmith's native features** to create golden datasets from your real t
 {
   "input": "Update CHANGELOG.md with recent changes",
   "context": {
-    "git_diff": "deepagents/cli.py, deepagents/feedback.py modified"
+    "git_diff": "dapy/cli.py, dapy/feedback.py modified"
   },
   "expected_output": {
     "changelog_updated": true,
@@ -212,7 +212,7 @@ Using **LangSmith's native features** to create golden datasets from your real t
 **Step 1: Create Dataset**
 1. Go to LangSmith UI → Datasets & Experiments
 2. Click "+ New Dataset"
-3. Name: `deepagents-golden-examples`
+3. Name: `dapy-golden-examples`
 4. Description: "Golden task examples from user's real workflows"
 5. Create dataset
 
@@ -235,19 +235,19 @@ Using **LangSmith's native features** to create golden datasets from your real t
 3. Save each example
 
 **Step 3: Add Examples from Traces (Future)**
-When DeepAgents is running:
+When DAPY is running:
 1. Filter traces with good outcomes
 2. Click "Add to Dataset" from trace view
 3. Edit if needed
-4. Add to `deepagents-golden-examples`
+4. Add to `dapy-golden-examples`
 
 ### Phase 2: Set Up Annotation Workflow
 
 **Step 1: Create Annotation Queue**
 1. Go to LangSmith UI → Annotation Queues
 2. Click "+ New Queue"
-3. Name: `deepagents-review`
-4. Default dataset: `deepagents-golden-examples`
+3. Name: `dapy-review`
+4. Default dataset: `dapy-golden-examples`
 5. Configure schema:
    ```json
    {
@@ -277,8 +277,8 @@ For you to mark past conversations as golden:
 **Step 1: Create Prompt in LangSmith**
 1. Go to Prompts section
 2. Click "+ Prompt"
-3. Name: `deepagents-system-prompt`
-4. Add current system prompt from `deepagents/prompts/system_prompt.md`
+3. Name: `dapy-system-prompt`
+4. Add current system prompt from `dapy/prompts/system_prompt.md`
 
 **Step 2: Optimize with Prompt Canvas**
 1. Click glowing wand icon on prompt
@@ -296,7 +296,7 @@ For you to mark past conversations as golden:
 **Step 3: Test Against Golden Dataset**
 1. In Prompt Playground, select prompt
 2. Click "Set up Evaluation"
-3. Select `deepagents-golden-examples` dataset
+3. Select `dapy-golden-examples` dataset
 4. Run evaluation
 5. Review results
 6. Iterate on prompt based on failures
@@ -341,7 +341,7 @@ For you to mark past conversations as golden:
 }
 ```
 
-**DeepAgents Behavior:**
+**DAPY Behavior:**
 - Instead of calling GitHub API
 - Reads `/repos/test-data/api-responses/github-user-info.json`
 - Processes data
@@ -357,12 +357,12 @@ For you to mark past conversations as golden:
 ### Phase 5: Continuous Improvement
 
 **Workflow:**
-1. **You use DeepAgents** → Traces logged to LangSmith
+1. **You use DAPY** → Traces logged to LangSmith
 2. **Good outcomes** → Add to annotation queue
 3. **You review** → Mark as golden, add to dataset
 4. **Prompt optimization** → Use Prompt Canvas with golden examples
 5. **Evaluation** → Test new prompts against golden dataset
-6. **Deploy** → Update DeepAgents with optimized prompts
+6. **Deploy** → Update DAPY with optimized prompts
 7. **Repeat** → Continuous improvement cycle
 
 ---
@@ -373,7 +373,7 @@ For you to mark past conversations as golden:
 
 ```json
 {
-  "name": "deepagents-golden-examples",
+  "name": "dapy-golden-examples",
   "description": "Golden task examples from user's real workflows",
   "schema": {
     "input": {
@@ -442,7 +442,7 @@ For you to mark past conversations as golden:
    - Navigate to Annotation Queues
 
 2. **Review Traces**
-   - Open `deepagents-review` queue
+   - Open `dapy-review` queue
    - See traces that need review
    - Filter by date, task type, etc.
 
@@ -458,7 +458,7 @@ For you to mark past conversations as golden:
 4. **Add to Dataset**
    - Press `D` hotkey
    - Or click "Add to Dataset"
-   - Trace added to `deepagents-golden-examples`
+   - Trace added to `dapy-golden-examples`
 
 5. **Repeat**
    - Process queue regularly
@@ -496,7 +496,7 @@ For you to mark past conversations as golden:
 
 **Instead of API integrations:**
 - Provide data as text files
-- DeepAgents reads files
+- DAPY reads files
 - Processes data
 - Returns results
 
@@ -658,7 +658,7 @@ id,username,email,signup_date
    - Add config examples
    - Document file structure
 
-2. **Deploy DeepAgents to LangChain Cloud**
+2. **Deploy DAPY to LangChain Cloud**
    - Configure with golden dataset
    - Enable tracing
    - Test with text file data
