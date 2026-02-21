@@ -1,4 +1,4 @@
-name: Build Android APK
+name: Gadya APK
 
 on:
   workflow_dispatch:
@@ -16,12 +16,11 @@ on:
 defaults:
   run:
     working-directory: Gadya
-    shell: bash
 
 jobs:
-  build:
+  build-and-release:
     runs-on: [self-hosted, Linux, X64]
-    
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -31,7 +30,7 @@ jobs:
       - name: Read current version
         id: current_version
         run: |
-          VERSION=$(grep -oP 'version:\s*"\K[^"]+' app.config.ts)
+          VERSION=$(grep -oP 'version:\s*"\\K[^"]+' app.config.ts)
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "Current version: $VERSION"
 
@@ -46,6 +45,7 @@ jobs:
           esac
           NEW_VERSION="${major}.${minor}.${patch}"
           echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
+          echo "tag=gadya-v${NEW_VERSION}" >> $GITHUB_OUTPUT
           echo "New version: $NEW_VERSION"
 
       - name: Update version in app.config.ts
@@ -102,34 +102,9 @@ jobs:
 
       - name: Configure AndroidX and fix duplicate class conflicts
         run: |
-          # Ensure gradle.properties has AndroidX enabled
-          cat >> android/gradle.properties << 'PROPS'
-          android.useAndroidX=true
-          android.enableJetifier=true
-          PROPS
-          
-          # Add exclusion rules to the ROOT build.gradle (applies to all subprojects)
-          cat >> android/build.gradle << 'ROOTGRADLE'
-
-          subprojects {
-              afterEvaluate { project ->
-                  if (project.hasProperty('android')) {
-                      project.configurations.all {
-                          resolutionStrategy {
-                              force 'androidx.core:core:1.12.0'
-                              force 'androidx.core:core-ktx:1.12.0'
-                              force 'androidx.appcompat:appcompat:1.6.1'
-                              force 'androidx.versionedparcelable:versionedparcelable:1.1.1'
-                              force 'androidx.collection:collection:1.2.0'
-                              force 'androidx.lifecycle:lifecycle-runtime:2.6.2'
-                              force 'androidx.activity:activity:1.8.0'
-                          }
-                          exclude group: 'com.android.support'
-                      }
-                  }
-              }
-          }
-          ROOTGRADLE
+          echo "android.useAndroidX=true" >> android/gradle.properties
+          echo "android.enableJetifier=true" >> android/gradle.properties
+          sed -i '/^android {/a\    configurations.all {\n        resolutionStrategy {\n            force "androidx.core:core:1.12.0"\n            force "androidx.core:core-ktx:1.12.0"\n            force "androidx.appcompat:appcompat:1.6.1"\n            force "androidx.versionedparcelable:versionedparcelable:1.1.1"\n            force "androidx.collection:collection:1.2.0"\n            force "androidx.lifecycle:lifecycle-runtime:2.6.2"\n            force "androidx.activity:activity:1.8.0"\n        }\n        exclude group: "com.android.support"\n    }' android/app/build.gradle
 
       - name: Make gradlew executable
         run: chmod +x android/gradlew
@@ -138,11 +113,14 @@ jobs:
         working-directory: Gadya/android
         run: ./gradlew assembleRelease --no-daemon
 
-      - name: Rename APK with version
+      - name: Prepare APK
+        id: apk
         run: |
           APK_PATH=$(find android/app/build/outputs/apk/release -name "*.apk" | head -1)
-          NEW_NAME="gadya-${{ steps.bump.outputs.version }}.apk"
-          cp "$APK_PATH" "android/app/build/outputs/apk/release/$NEW_NAME"
+          FILENAME="gadya-${{ steps.bump.outputs.version }}.apk"
+          cp "$APK_PATH" "$FILENAME"
+          echo "path=$FILENAME" >> $GITHUB_OUTPUT
+          echo "filename=$FILENAME" >> $GITHUB_OUTPUT
 
       - name: Commit version bump
         working-directory: .
@@ -153,9 +131,17 @@ jobs:
           git commit -m "Gadya v${{ steps.bump.outputs.version }}"
           git push
 
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.bump.outputs.tag }}
+          name: Gadya v${{ steps.bump.outputs.version }}
+          files: Gadya/${{ steps.apk.outputs.filename }}
+          generate_release_notes: true
+
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: gadya-apk-${{ steps.bump.outputs.version }}
-          path: Gadya/android/app/build/outputs/apk/release/gadya-*.apk
+          path: Gadya/${{ steps.apk.outputs.filename }}
           retention-days: 90
