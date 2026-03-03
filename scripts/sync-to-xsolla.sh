@@ -9,8 +9,8 @@ SRC_REPO="akarelin/AGENTS.md"
 DST_REPO="chairman-projects/AGENTS.md"
 
 # Ensure remotes are set
-git remote set-url "$SRC" "$SRC_REPO" 2>/dev/null || git remote add "$SRC" "$SRC_REPO"
-git remote set-url "$DST" "$DST_REPO" 2>/dev/null || git remote add "$DST" "$DST_REPO"
+git remote set-url "$SRC" "git@github.com:${SRC_REPO}.git" 2>/dev/null || git remote add "$SRC" "git@github.com:${SRC_REPO}.git"
+git remote set-url "$DST" "git@github.com:${DST_REPO}.git" 2>/dev/null || git remote add "$DST" "git@github.com:${DST_REPO}.git"
 
 # Fetch latest from source
 git fetch "$SRC"

@@ -5,7 +5,12 @@
       "Bash(pnpm outdated:*)",
       "Bash(pnpm audit:*)",
       "Bash(pnpm info:*)",
-      "Bash(pnpm install:*)"
+      "Bash(pnpm install:*)",
+      "Bash(git remote:*)",
+      "Bash(git fetch:*)",
+      "Bash(git branch:*)",
+      "Bash(bash:*)",
+      "Bash(git:*)"
     ]
   }
 }
