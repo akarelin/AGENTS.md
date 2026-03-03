@@ -12,9 +12,11 @@ DST_REPO="chairman-projects/AGENTS.md"
 git remote set-url "$SRC" "git@github.com:${SRC_REPO}.git" 2>/dev/null || git remote add "$SRC" "git@github.com:${SRC_REPO}.git"
 git remote set-url "$DST" "git@github.com:${DST_REPO}.git" 2>/dev/null || git remote add "$DST" "git@github.com:${DST_REPO}.git"
 
-# Fetch latest from source and rebase
+# Fetch both remotes and rebase onto each
 git fetch "$SRC"
+git fetch "$DST"
 git pull --rebase --autostash "$SRC" master
+git pull --rebase --autostash "$DST" master
 
 git push "$DST" master
 git push "$DST" --tags
