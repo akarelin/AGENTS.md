@@ -11,6 +11,9 @@
       "Bash(git branch:*)",
       "Bash(bash:*)",
       "Bash(git:*)"
+    ],
+    "additionalDirectories": [
+      "/mnt/d/SD/.claude"
     ]
   }
 }
