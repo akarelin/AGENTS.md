@@ -10,7 +10,7 @@ This guide covers server-side features including authentication, database, tRPC 
 |----------|-----------------|----------|
 | Data stays on device only | No | Use `AsyncStorage` |
 | Data syncs across devices | Yes | Database + tRPC |
-| User accounts / login | Yes | Manus OAuth |
+| User accounts / login | Yes | OAuth |
 | AI-powered features | Yes | LLM Integration |
 | User uploads files | Yes | S3 Storage |
 | Server-side validation | Yes | tRPC procedures |
@@ -21,7 +21,7 @@ This guide covers server-side features including authentication, database, tRPC 
 
 ### Overview
 
-The template uses **Manus OAuth** for user authentication. It works differently on native and web:
+The template uses **OAuth** for user authentication. It works differently on native and web:
 
 | Platform | Auth Method | Token Storage |
 |----------|-------------|---------------|
@@ -58,7 +58,7 @@ The `user` object contains:
 ```tsx
 interface User {
   id: number;
-  openId: string;        // Manus OAuth ID
+  openId: string;        // OAuth ID
   name: string | null;
   email: string | null;
   loginMethod: string;
@@ -70,7 +70,7 @@ interface User {
 ### Login Flow (Native)
 
 1. User taps Login button
-2. `WebBrowser.openAuthSessionAsync()` opens Manus OAuth
+2. `WebBrowser.openAuthSessionAsync()` opens OAuth
 3. User authenticates
 4. Deep link redirects to `app/oauth/callback.tsx`
 5. Callback exchanges code for session token
@@ -80,7 +80,7 @@ interface User {
 ### Login Flow (Web)
 
 1. User clicks Login button
-2. Browser redirects to Manus OAuth
+2. Browser redirects to OAuth
 3. User authenticates
 4. Redirect back with session cookie
 5. Cookie automatically sent with requests
@@ -522,13 +522,13 @@ Tips
 
 ## ☁️ Data API
 
-When you need external data, use the omni_search with search_type = 'api' to see there's any built-in api available in Manus API Hub access. You only have to connect other api if there's no suitable built-in api available.
+When you need external data, use the omni_search with search_type = 'api' to see there's any built-in api available in the API Hub. You only have to connect other api if there's no suitable built-in api available.
 
 ---
 
 ## Owner Notifications
 
-This template already ships with a `notifyOwner({ title, content })` helper (`server/_core/notification.ts`) and a protected tRPC mutation at `trpc.system.notifyOwner`. Use it whenever backend logic needs to push an operational update to the Manus project owner—common triggers are new form submissions, survey feedback, or workflow results.
+This template already ships with a `notifyOwner({ title, content })` helper (`server/_core/notification.ts`) and a protected tRPC mutation at `trpc.system.notifyOwner`. Use it whenever backend logic needs to push an operational update to the project owner—common triggers are new form submissions, survey feedback, or workflow results.
 
 1. On the server, call `await notifyOwner({ title, content })` or reuse the provided `system.notifyOwner` mutation from jobs/webhooks (`trpc.system.notifyOwner.useMutation()` on the client).
 2. Handle the boolean return (`true` on success, `false` if the upstream service is temporarily unavailable) to decide whether you need a fallback channel.
@@ -545,13 +545,13 @@ Available environment variables:
 |----------|-------------|
 | `DATABASE_URL` | MySQL/TiDB connection string |
 | `JWT_SECRET` | Session signing secret |
-| `VITE_APP_ID` | Manus OAuth app ID |
-| `OAUTH_SERVER_URL` | Manus OAuth backend URL |
-| `VITE_OAUTH_PORTAL_URL` | Manus login portal URL |
-| `OWNER_OPEN_ID` | Owner's Manus ID |
+| `VITE_APP_ID` | OAuth app ID |
+| `OAUTH_SERVER_URL` | OAuth backend URL |
+| `VITE_OAUTH_PORTAL_URL` | Login portal URL |
+| `OWNER_OPEN_ID` | Owner's OAuth ID |
 | `OWNER_NAME` | Owner's display name |
-| `BUILT_IN_FORGE_API_URL` | Manus API endpoint |
-| `BUILT_IN_FORGE_API_KEY` | Manus API key |
+| `BUILT_IN_FORGE_API_URL` | Forge API endpoint |
+| `BUILT_IN_FORGE_API_KEY` | Forge API key |
 
 Expo runtime variables (prefixed with `EXPO_PUBLIC_`):
 
@@ -614,7 +614,7 @@ export const users = mysqlTable("users", {
    * Use this for relations between tables.
    */
   id: int("id").autoincrement().primaryKey(),
-  /** Manus OAuth identifier (openId) returned from the OAuth callback. Unique per user. */
+  /** OAuth identifier (openId) returned from the OAuth callback. Unique per user. */
   openId: varchar("openId", { length: 64 }).notNull().unique(),
   name: text("name"),
   email: varchar("email", { length: 320 }),
@@ -761,7 +761,7 @@ export type AppRouter = typeof appRouter;
 
 `server/storage.ts`
 ```ts
-// Preconfigured storage helpers for Manus WebDev templates
+// Preconfigured storage helpers for WebDev templates
 // Uses the Biz-provided storage proxy (Authorization: Bearer <token>)
 
 import { ENV } from "./_core/env";
@@ -1073,7 +1073,7 @@ function createAuthContext(): { ctx: TrpcContext; clearedCookies: CookieCall[] }
     openId: "sample-user",
     email: "sample@example.com",
     name: "Sample User",
-    loginMethod: "manus",
+    loginMethod: "oauth",
     role: "user",
     createdAt: new Date(),
     updatedAt: new Date(),

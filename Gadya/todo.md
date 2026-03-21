@@ -99,7 +99,7 @@
 - [x] Create telemetry service for client-side logging
 - [x] Create server-side logging middleware
 - [x] Add log collection endpoint (tRPC telemetry routes)
-- [x] Implement log viewer/export for Manus analysis
+- [x] Implement log viewer/export for analysis
 
 ## Android Build Fix
 
@@ -109,7 +109,7 @@
 
 - [x] Remove login requirement - app should work without authentication
 - [x] Fix build warnings (100s of warnings reported) - Note: All warnings are from third-party libraries (react-native-screens, expo), not app code. Cannot be fixed in this codebase.
-- [x] Configure GitHub SSH access using id_rsa app secret for Manus to push code
+- [x] Configure GitHub SSH access using id_rsa app secret to push code
 - [x] Update microphone icon with custom Гадя SVG design with status colors
 
 ## Claude Integration

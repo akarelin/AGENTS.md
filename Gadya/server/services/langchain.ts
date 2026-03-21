@@ -15,7 +15,7 @@ import { ENV } from "../_core/env";
 const resolveBaseUrl = () => {
   const baseUrl = ENV.forgeApiUrl && ENV.forgeApiUrl.trim().length > 0
     ? ENV.forgeApiUrl.replace(/\/$/, "")
-    : "https://forge.manus.im";
+    : "";
   
   // LangChain's ChatOpenAI expects base URL without /v1/chat/completions
   // It will append the path automatically

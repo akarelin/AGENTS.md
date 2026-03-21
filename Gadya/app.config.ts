@@ -2,13 +2,13 @@
 import "./scripts/load-env.js";
 import type { ExpoConfig } from "expo/config";
 
-// Bundle ID format: space.manus.<project_name_dots>.<timestamp>
-// e.g., "my-app" created at 2024-01-15 10:30:45 -> "space.manus.my.app.t20240115103045"
-const bundleId = "space.manus.voice.ai.assistant.t20251216003848";
-// Extract timestamp from bundle ID and prefix with "manus" for deep link scheme
-// e.g., "space.manus.my.app.t20240115103045" -> "manus20240115103045"
+// Bundle ID format: space.gadya.<project_name_dots>.<timestamp>
+// e.g., "my-app" created at 2024-01-15 10:30:45 -> "space.gadya.my.app.t20240115103045"
+const bundleId = "space.gadya.voice.ai.assistant.t20251216003848";
+// Extract timestamp from bundle ID and prefix with "gadya" for deep link scheme
+// e.g., "space.gadya.my.app.t20240115103045" -> "gadya20240115103045"
 const timestamp = bundleId.split(".").pop()?.replace(/^t/, "") ?? "";
-const schemeFromBundleId = `manus${timestamp}`;
+const schemeFromBundleId = `gadya${timestamp}`;
 
 const env = {
   // App branding - update these values directly (do not use env vars)
@@ -16,7 +16,7 @@ const env = {
   appSlug: 'voice-ai-assistant',
   // S3 URL of the app logo - set this to the URL returned by generate_image when creating custom logo
   // Leave empty to use the default icon from assets/images/icon.png
-  logoUrl: 'https://files.manuscdn.com/user_upload_by_module/session_file/89604730/SLaEvhhjlDFRgOdz.png',
+  logoUrl: '',
   scheme: schemeFromBundleId,
   iosBundleId: bundleId,
   androidPackage: bundleId,

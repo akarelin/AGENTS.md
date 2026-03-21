@@ -1,8 +1,8 @@
 /**
- * Manus Runtime - Communication layer between Expo web app and parent container (next-agent-webapp)
+ * App Runtime - Communication layer between Expo web app and parent container (next-agent-webapp)
  *
  * Simplified flow:
- * 1. initManusRuntime() called
+ * 1. initAppRuntime() called
  * 2. Send 'appDevServerReady' to parent to signal app is ready
  *
  * User will manually login via the app's login page - no automatic cookie injection.
@@ -16,7 +16,7 @@ const DEBUG = true;
 const log = (msg: string) => {
   if (!DEBUG) return;
   const ts = new Date().toISOString();
-  console.log(`[ManusRuntime ${ts}] ${msg}`);
+  console.log(`[AppRuntime ${ts}] ${msg}`);
 };
 
 type MessageType = "appDevServerReady";
@@ -101,14 +101,14 @@ export function subscribeSafeAreaInsets(callback: SafeAreaCallback): () => void 
 }
 
 /**
- * Initialize Manus Runtime - just notifies parent that app is ready
+ * Initialize App Runtime - just notifies parent that app is ready
  */
-export function initManusRuntime(): void {
+export function initAppRuntime(): void {
   if (!isWeb() || !isInIframe()) return;
   if (initialized) return;
   initialized = true;
 
-  log("initManusRuntime called");
+  log("initAppRuntime called");
   window.addEventListener("message", handleMessage);
   sendToParent("appDevServerReady", {});
 }

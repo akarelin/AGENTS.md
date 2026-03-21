@@ -136,7 +136,7 @@ A voice-first iOS/Android mobile assistant built with React Native / Expo and Ty
 ### Core Capabilities
 
 - **Continuous voice mode** — tap once to start; the app listens, transcribes, sends to AI, speaks the response via TTS, then auto-resumes listening. Stop with "stop", "стоп", "хватит", or "enough".
-- **Dual LLM routing** — default model is Gemini 2.5 Flash (via Manus Forge API); say "Ask Claude..." or "Клод,..." to route to Claude Sonnet 4 via Anthropic API.
+- **Dual LLM routing** — default model is Gemini 2.5 Flash; say "Ask Claude..." or "Клод,..." to route to Claude Sonnet 4 via Anthropic API.
 - **Dictation mode** — record speech, transcribe, then rephrase with AI (formal / casual / concise / expanded) and save as a markdown note.
 - **Obsidian integration** — reads `.md` files from Android external storage, searches them for context, and injects the top 3 matching notes into the AI prompt (RAG).
 - **Background audio** — keeps listening while the app is backgrounded (iOS audio/voip/fetch/processing entitlements; Android foreground service with microphone).
