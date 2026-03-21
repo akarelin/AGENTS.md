@@ -416,9 +416,8 @@ class DAApp(App):
         border-right: tall $primary;
     }
     #sessions-detail { height: 1fr; padding: 0 1; }
-    #da-session-list { height: 1fr; }
+    #all-sessions-table { height: 1fr; }
     #claude-tree { height: 1fr; overflow-x: auto; }
-    #claude-table { height: 1fr; }
     TabPane { padding: 0; }
     """
 
@@ -465,16 +464,15 @@ class DAApp(App):
             yield Static("", id="status-bar")
             yield Input(placeholder="Ask anything... (/ for commands)", id="prompt-input")
 
-        # View 2: Sessions browser
+        # View 2: Sessions browser — unified table + tree with filter
         with Horizontal(id="sessions-view", classes="hidden"):
             with Vertical(id="sessions-sidebar"):
+                yield Input(placeholder="Filter sessions...", id="session-filter")
                 with TabbedContent(id="sidebar-tabs"):
-                    with TabPane("ДА", id="tab-da"):
-                        yield ListView(id="da-session-list")
-                    with TabPane("Claude Tree", id="tab-claude"):
+                    with TabPane("All", id="tab-all"):
+                        yield DataTable(id="all-sessions-table", cursor_type="row")
+                    with TabPane("Tree", id="tab-tree"):
                         yield Tree("Sessions", id="claude-tree")
-                    with TabPane("Claude Table", id="tab-claude-table"):
-                        yield DataTable(id="claude-table", cursor_type="row")
             yield DragHandle("sessions-sidebar")
             with Vertical():
                 yield RichLog(id="sessions-detail", wrap=True, markup=True)
@@ -517,18 +515,13 @@ class DAApp(App):
     # --- Session management ---
 
     def _refresh_da_sessions(self) -> None:
-        da_list = self.query_one("#da-session-list", ListView)
-        da_list.clear()
-        for s in self.store.list_sessions(limit=50):
-            da_list.append(DASessionItem(s["id"], s["name"]))
+        self._populate_all_sessions_table()
 
     def _create_new_session(self) -> None:
         sid = str(uuid.uuid4())
         self.store.create_session(sid, name="new session", project=os.getcwd())
         self.session_messages[sid] = []
-        self._refresh_da_sessions()
-        da_list = self.query_one("#da-session-list", ListView)
-        da_list.index = 0
+        self._populate_all_sessions_table()
         self.viewing_claude = False
         self.current_session_id = sid
 
@@ -561,38 +554,6 @@ class DAApp(App):
                     leaf.data = s
                     self.claude_session_info[s["id"]] = s
 
-    def _populate_claude_table(self, data: dict) -> None:
-        """Fill the Claude table with session stats. Sortable columns."""
-        table = self.query_one("#claude-table", DataTable)
-        table.clear(columns=True)
-        table.sort_key = None
-        table.add_column("Machine", key="machine")
-        table.add_column("Project", key="project")
-        table.add_column("#", key="count")
-        table.add_column("First", key="first")
-        table.add_column("Last", key="last")
-        table.add_column("Latest session", key="name")
-
-        for machine, projects in sorted(data.items()):
-            for proj, sessions in sorted(projects.items()):
-                short = proj.split("/")[-1] or proj.split("\\")[-1] or proj
-                dates = [s["date"] for s in sessions if s.get("date")]
-                first = min(dates) if dates else "—"
-                last = max(dates) if dates else "—"
-                latest_name = sessions[0]["name"] if sessions else "—"
-                table.add_row(
-                    _machine_label(machine), short, str(len(sessions)),
-                    first, last, latest_name,
-                    key=f"{machine}:{proj}",
-                )
-                for s in sessions:
-                    self.claude_session_info[s["id"]] = s
-
-    def on_data_table_header_selected(self, event: DataTable.HeaderSelected) -> None:
-        """Sort table by clicked column."""
-        table = self.query_one("#claude-table", DataTable)
-        table.sort(event.column_key)
-
     # --- Event handlers ---
 
     def on_data_table_row_selected(self, event: DataTable.RowSelected) -> None:
@@ -614,13 +575,6 @@ class DAApp(App):
                 self.current_session_id = s["id"]
                 self._update_status()
 
-    def _select_da_session(self, item: DASessionItem) -> None:
-        self.viewing_claude = False
-        self.current_session_id = item.session_id
-        if self.active_view == "sessions":
-            self._show_da_session_detail(item.session_id)
-        self._update_status()
-
     def _select_claude_session(self, data: dict) -> None:
         sid = data["id"]
         self.viewing_claude = True
@@ -635,18 +589,6 @@ class DAApp(App):
         if self.active_view == "sessions":
             self._show_claude_session_detail(data)
         self._update_status()
-
-    # Click (enter) on session
-    def on_list_view_selected(self, event: ListView.Selected) -> None:
-        item = event.item
-        if isinstance(item, DASessionItem):
-            self._select_da_session(item)
-
-    # Single click / highlight on session
-    def on_list_view_highlighted(self, event: ListView.Highlighted) -> None:
-        item = event.item
-        if isinstance(item, DASessionItem) and self.active_view == "sessions":
-            self._select_da_session(item)
 
     # Click (enter) on tree node
     def on_tree_node_selected(self, event: Tree.NodeSelected) -> None:
