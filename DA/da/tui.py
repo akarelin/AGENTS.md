@@ -257,6 +257,60 @@ def launch_claude_session(session_info: dict, hosts: dict) -> str:
         return f"Launch failed: {e}"
 
 
+# --- Drag handle for resizable split ---
+
+class DragHandle(Static):
+    """Vertical drag handle between two panels. Drag with mouse or use Ctrl+Left/Right."""
+
+    DEFAULT_CSS = """
+    DragHandle {
+        width: 1;
+        height: 1fr;
+        background: $primary;
+        color: $text;
+        content-align: center middle;
+    }
+    DragHandle:hover {
+        background: $accent;
+        cursor: col-resize;
+    }
+    DragHandle.-dragging {
+        background: $success;
+    }
+    """
+
+    def __init__(self, target_id: str, min_width: int = 20, max_width: int = 120, **kwargs):
+        super().__init__("┃", **kwargs)
+        self.target_id = target_id
+        self.min_width = min_width
+        self.max_width = max_width
+        self._dragging = False
+
+    def on_mouse_down(self, event) -> None:
+        self._dragging = True
+        self.add_class("-dragging")
+        self.capture_mouse()
+        event.stop()
+
+    def on_mouse_up(self, event) -> None:
+        if self._dragging:
+            self._dragging = False
+            self.remove_class("-dragging")
+            self.release_mouse()
+            event.stop()
+
+    def on_mouse_move(self, event) -> None:
+        if self._dragging:
+            # event.screen_x is the mouse X position on screen
+            new_width = max(self.min_width, min(self.max_width, event.screen_x))
+            try:
+                target = self.app.query_one(f"#{self.target_id}")
+                target.styles.width = new_width
+            except Exception:
+                pass
+            event.stop()
+
+
 # --- Menu item ---
 
 class MenuItem(Static):
@@ -353,6 +407,8 @@ class DAApp(App):
         Binding("ctrl+t", "toggle_tab", "Tab"),
         Binding("ctrl+d", "delete_session", "Del"),
         Binding("ctrl+o", "open_session", "Open"),
+        Binding("ctrl+left", "shrink_sidebar", "◄", show=False),
+        Binding("ctrl+right", "grow_sidebar", "►", show=False),
     ]
 
     current_session_id: reactive[str] = reactive("")
@@ -387,6 +443,7 @@ class DAApp(App):
                         yield Tree("Sessions", id="claude-tree")
                     with TabPane("Table", id="tab-claude-table"):
                         yield DataTable(id="claude-table", cursor_type="row")
+            yield DragHandle("sidebar")
             with Vertical():
                 yield RichLog(id="chat-log", wrap=True, markup=True)
                 yield Static("", id="status-bar")
@@ -742,8 +799,22 @@ class DAApp(App):
         tabs = self.query_one("#sidebar-tabs", TabbedContent)
         if tabs.active == "tab-da":
             tabs.active = "tab-claude"
+        elif tabs.active == "tab-claude":
+            tabs.active = "tab-claude-table"
         else:
             tabs.active = "tab-da"
+
+    def action_shrink_sidebar(self) -> None:
+        sidebar = self.query_one("#sidebar", Vertical)
+        current = sidebar.styles.width
+        w = current.value if hasattr(current, "value") else 34
+        sidebar.styles.width = max(20, int(w) - 5)
+
+    def action_grow_sidebar(self) -> None:
+        sidebar = self.query_one("#sidebar", Vertical)
+        current = sidebar.styles.width
+        w = current.value if hasattr(current, "value") else 34
+        sidebar.styles.width = min(120, int(w) + 5)
 
     def action_delete_session(self) -> None:
         self._do_delete_session()
@@ -863,21 +934,16 @@ class DAApp(App):
         self._log_msg("tool", "\n".join(lines))
 
     def _show_current_stats(self) -> None:
-        """Show stats for current session."""
+        """Show stats for current session using Rich Table."""
         import datetime
+        from rich.table import Table
+        from rich.panel import Panel
+
         sid = self.current_session_id
+        log = self.query_one("#chat-log", RichLog)
+
         if self.viewing_claude:
-            msgs = self.session_messages.get(sid, [])
-            roles = {}
-            for m in msgs:
-                roles[m["role"]] = roles.get(m["role"], 0) + 1
-            lines = [
-                f"Claude session: {sid[:12]}",
-                f"Messages: {len(msgs)}",
-            ]
-            for r, c in sorted(roles.items()):
-                lines.append(f"  {r}: {c}")
-            self._log_msg("tool", "\n".join(lines))
+            self._show_session_detail()
             return
 
         stats = self.store.get_session_stats(sid)
@@ -887,17 +953,19 @@ class DAApp(App):
 
         created = datetime.datetime.fromtimestamp(stats["created_at"]).strftime("%Y-%m-%d %H:%M") if stats["created_at"] else "?"
         updated = datetime.datetime.fromtimestamp(stats["updated_at"]).strftime("%Y-%m-%d %H:%M") if stats["updated_at"] else "?"
-        lines = [
-            f"Session: {stats['name'] or sid[:12]}",
-            f"ID: {sid}",
-            f"Project: {stats.get('project', '—')}",
-            f"Created: {created}",
-            f"Updated: {updated}",
-            f"Total messages: {stats['total_messages']}",
-        ]
+
+        t = Table(show_header=False, box=None, pad_edge=False, show_edge=False)
+        t.add_column("key", style="bold cyan", width=14, no_wrap=True)
+        t.add_column("val")
+        t.add_row("Name", stats["name"] or "—")
+        t.add_row("ID", sid[:12])
+        t.add_row("Project", stats.get("project", "—"))
+        t.add_row("Created", created)
+        t.add_row("Updated", updated)
+        t.add_row("Messages", str(stats["total_messages"]))
         for role, count in sorted(stats["message_counts"].items()):
-            lines.append(f"  {role}: {count}")
-        self._log_msg("tool", "\n".join(lines))
+            t.add_row(f"  {role}", str(count))
+        log.write(Panel(t, title="DA Session", border_style="green"))
 
     def _show_session_detail(self) -> None:
         """Show detailed view of current session with Rich Table."""
@@ -945,11 +1013,7 @@ class DAApp(App):
 
             log.write(Panel(t, title="Claude Session", border_style="cyan"))
             log.write(Text(info.get("name", ""), style="italic"))
-            return
-
-            self._log_msg("tool", "\n".join(lines))
         else:
-            # DA session — use stats
             self._show_current_stats()
 
     def _move_claude_sessions(self, dest: str) -> None:
