@@ -98,5 +98,46 @@ class SessionStore:
             return {"id": row[0], "name": row[1], "project": row[2], "updated_at": row[3]}
         return None
 
+    def delete_session(self, session_id: str) -> None:
+        self.conn.execute("DELETE FROM messages WHERE session_id = ?", (session_id,))
+        self.conn.execute("DELETE FROM sessions WHERE id = ?", (session_id,))
+        self.conn.commit()
+
+    def get_session_stats(self, session_id: str) -> dict:
+        row = self.conn.execute(
+            "SELECT id, name, project, created_at, updated_at, agent FROM sessions WHERE id = ?",
+            (session_id,),
+        ).fetchone()
+        if not row:
+            return {}
+        msg_counts = self.conn.execute(
+            "SELECT role, COUNT(*) FROM messages WHERE session_id = ? GROUP BY role",
+            (session_id,),
+        ).fetchall()
+        total = self.conn.execute(
+            "SELECT COUNT(*) FROM messages WHERE session_id = ?", (session_id,)
+        ).fetchone()[0]
+        return {
+            "id": row[0], "name": row[1], "project": row[2],
+            "created_at": row[3], "updated_at": row[4], "agent": row[5],
+            "message_counts": dict(msg_counts), "total_messages": total,
+        }
+
+    def list_sessions_detailed(self, limit: int = 50) -> list[dict]:
+        rows = self.conn.execute("""
+            SELECT s.id, s.name, s.project, s.created_at, s.updated_at,
+                   COUNT(m.id) as msg_count
+            FROM sessions s
+            LEFT JOIN messages m ON s.id = m.session_id
+            GROUP BY s.id
+            ORDER BY s.updated_at DESC
+            LIMIT ?
+        """, (limit,)).fetchall()
+        return [
+            {"id": r[0], "name": r[1], "project": r[2],
+             "created_at": r[3], "updated_at": r[4], "msg_count": r[5]}
+            for r in rows
+        ]
+
     def close(self):
         self.conn.close()
