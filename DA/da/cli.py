@@ -270,6 +270,64 @@ def analyze(ctx: click.Context, claude_dir: Optional[str]) -> None:
     console.print(Markdown(report))
 
 
+def _run_tool_shortcut_git(arg: str) -> str:
+    """Handle /git shortcuts: /git, /git diff, /git log N, /git commit msg."""
+    if not arg:
+        return execute_tool("git_status", {"repo_path": "."})
+    sub = arg.split(None, 1)
+    subcmd = sub[0].lower()
+    subarg = sub[1] if len(sub) > 1 else ""
+    if subcmd == "status":
+        return execute_tool("git_status", {"repo_path": subarg or "."})
+    elif subcmd == "diff":
+        inputs = {"repo_path": "."}
+        if subarg:
+            if subarg == "--staged":
+                inputs["staged"] = True
+            else:
+                inputs["ref"] = subarg
+        return execute_tool("git_diff", inputs)
+    elif subcmd == "log":
+        inputs = {"repo_path": ".", "oneline": True}
+        if subarg and subarg.isdigit():
+            inputs["count"] = int(subarg)
+        return execute_tool("git_log", inputs)
+    elif subcmd == "commit":
+        if subarg:
+            return execute_tool("git_commit_push", {"repo_path": ".", "message": subarg})
+        return "[yellow]Usage: /git commit <message>[/yellow]"
+    elif subcmd == "push":
+        return execute_tool("git_commit_push", {"repo_path": ".", "message": subarg or "push", "push": True})
+    else:
+        # Pass through as shell git command
+        return execute_tool("shell_exec", {"command": f"git {arg}"})
+
+
+def _run_tool_shortcut_docker(arg: str) -> str:
+    """Handle /docker shortcuts: /docker, /docker logs <c>, /docker exec <c> <cmd>."""
+    if not arg:
+        return execute_tool("docker_ps", {})
+    sub = arg.split(None, 1)
+    subcmd = sub[0].lower()
+    subarg = sub[1] if len(sub) > 1 else ""
+    if subcmd == "ps":
+        return execute_tool("docker_ps", {"all": bool(subarg and "--all" in subarg)})
+    elif subcmd == "logs":
+        if subarg:
+            parts = subarg.split(None, 1)
+            return execute_tool("docker_logs", {"container": parts[0], "tail": 50})
+        return "[yellow]Usage: /docker logs <container>[/yellow]"
+    elif subcmd == "exec":
+        parts = subarg.split(None, 1) if subarg else []
+        if len(parts) >= 2:
+            return execute_tool("docker_exec", {"container": parts[0], "command": parts[1]})
+        return "[yellow]Usage: /docker exec <container> <command>[/yellow]"
+    elif subcmd in ("up", "down", "restart", "build"):
+        return execute_tool("docker_compose", {"command": subcmd, "service": subarg or ""})
+    else:
+        return execute_tool("shell_exec", {"command": f"docker {arg}"})
+
+
 @cli.command()
 @click.option("--model", "-m", help="Model override")
 @click.option("--session", "-s", "session_id_opt", default=None, help="Resume existing session by ID")
@@ -299,7 +357,7 @@ def repl(ctx: click.Context, model: Optional[str], session_id_opt: Optional[str]
     from da import __version__
     from prompt_toolkit import PromptSession
     from prompt_toolkit.history import FileHistory
-    from prompt_toolkit.completion import Completer, Completion, merge_completers
+    from prompt_toolkit.completion import Completer, Completion
     from prompt_toolkit.completion import PathCompleter
     from prompt_toolkit.formatted_text import HTML
     from prompt_toolkit.key_binding import KeyBindings
@@ -324,6 +382,21 @@ def repl(ctx: click.Context, model: Optional[str], session_id_opt: Optional[str]
         "/help": "show all commands",
     }
 
+    # Direct tool shortcuts (like Claude Code's ! for shell)
+    TOOL_SHORTCUTS = {
+        "!": ("shell_exec", "command", "run shell command"),
+        "/git": ("git_status", None, "git status (or /git diff, /git log)"),
+        "/diff": ("git_diff", None, "git diff"),
+        "/log": ("git_log", None, "git log"),
+        "/ssh": ("ssh_exec", None, "ssh <host> <command>"),
+        "/docker": ("docker_ps", None, "docker ps (or /docker logs, /docker exec)"),
+        "/grep": ("grep_search", None, "grep <pattern> [path]"),
+        "/find": ("glob_find", None, "find files by glob pattern"),
+        "/cat": ("read_file", None, "read a file"),
+        "/ls": ("list_dir", None, "list directory"),
+        "/gh": ("gh_cli", None, "github cli command"),
+    }
+
     # Context words for natural language — host names, project names, tool names
     context_words = set()
     for h in cfg.hosts:
@@ -337,7 +410,7 @@ def repl(ctx: click.Context, model: Optional[str], session_id_opt: Optional[str]
                 context_words.add(part)
 
     class DACompleter(Completer):
-        """Claude Code-style completer: slash commands, paths, and context words."""
+        """Claude Code-style completer: slash commands, tool shortcuts, paths, and context words."""
 
         def __init__(self):
             self.path_completer = PathCompleter(expanduser=True)
@@ -345,7 +418,7 @@ def repl(ctx: click.Context, model: Optional[str], session_id_opt: Optional[str]
         def get_completions(self, document, complete_event):
             text = document.text_before_cursor
 
-            # Slash commands
+            # Slash commands and tool shortcuts
             if text.startswith("/"):
                 parts = text.split(None, 1)
                 cmd = parts[0]
@@ -358,15 +431,68 @@ def repl(ctx: click.Context, model: Optional[str], session_id_opt: Optional[str]
                             yield Completion(alias, start_position=-len(arg), display_meta=mid)
                     return
 
-                # Top-level slash commands
+                # /git <subcommand> completion
+                if cmd == "/git" and len(parts) > 1:
+                    arg = parts[1].lower()
+                    git_subs = {
+                        "status": "show working tree status",
+                        "diff": "show changes (--staged for staged)",
+                        "log": "show commit log (add N for count)",
+                        "commit": "commit with message",
+                        "push": "commit and push",
+                    }
+                    for sub, desc in git_subs.items():
+                        if sub.startswith(arg):
+                            yield Completion(sub, start_position=-len(arg), display_meta=desc)
+                    return
+
+                # /docker <subcommand> completion
+                if cmd == "/docker" and len(parts) > 1:
+                    arg = parts[1].split(None, 1)[0] if parts[1] else ""
+                    if " " not in parts[1]:
+                        docker_subs = {
+                            "ps": "list containers",
+                            "logs": "container logs",
+                            "exec": "exec in container",
+                            "up": "docker compose up",
+                            "down": "docker compose down",
+                            "restart": "docker compose restart",
+                            "build": "docker compose build",
+                        }
+                        for sub, desc in docker_subs.items():
+                            if sub.startswith(arg):
+                                yield Completion(sub, start_position=-len(arg), display_meta=desc)
+                    return
+
+                # /ssh <host> completion
+                if cmd == "/ssh" and len(parts) > 1:
+                    arg = parts[1].split(None, 1)[0] if parts[1] else ""
+                    if " " not in parts[1]:
+                        for host in cfg.hosts:
+                            if host.startswith(arg):
+                                yield Completion(host, start_position=-len(arg), display_meta=cfg.hosts[host].ssh)
+                    return
+
+                # Top-level: slash commands + tool shortcuts
                 for slash_cmd, desc in SLASH_COMMANDS.items():
                     if slash_cmd.startswith(text):
                         yield Completion(slash_cmd, start_position=-len(text), display_meta=desc)
+                for shortcut, (_, _, desc) in TOOL_SHORTCUTS.items():
+                    if shortcut.startswith("/") and shortcut.startswith(text):
+                        yield Completion(shortcut + " ", start_position=-len(text), display_meta=desc)
+                return
+
+            # ! shell shortcut completion — complete paths after !
+            if text.startswith("!"):
+                shell_part = text[1:].lstrip()
+                word = document.get_word_before_cursor(WORD=True)
+                if word and word.startswith(("/", "./", "../", "~/")):
+                    yield from self.path_completer.get_completions(document, complete_event)
                 return
 
             # Path completion — trigger on /, ./, ../, or ~/
             word = document.get_word_before_cursor(WORD=True)
-            if word and word.startswith(("/", "./", "../", "~/")):
+            if word and word.startswith(("./", "../", "~/")):
                 yield from self.path_completer.get_completions(document, complete_event)
                 return
 
@@ -453,17 +579,27 @@ def repl(ctx: click.Context, model: Optional[str], session_id_opt: Optional[str]
             if user_input.lower() in ("exit", "quit", "q"):
                 break
 
+            # ! shell shortcut — like Claude Code
+            if user_input.startswith("!"):
+                shell_cmd = user_input[1:].strip()
+                if shell_cmd:
+                    console.print(f"  [dim]→ shell_exec[/dim]")
+                    result = execute_tool("shell_exec", {"command": shell_cmd})
+                    console.print(result)
+                continue
+
             # Slash commands
             if user_input.startswith("/"):
                 parts = user_input.split(None, 1)
                 cmd = parts[0].lower()
+                arg = parts[1].strip() if len(parts) > 1 else ""
 
                 if cmd == "/model":
-                    if len(parts) > 1 and parts[1].strip().lower() in MODELS:
-                        cfg.model = MODELS[parts[1].strip().lower()]
+                    if arg and arg.lower() in MODELS:
+                        cfg.model = MODELS[arg.lower()]
                         console.print(f"[bold green]Model: {cfg.model}[/bold green]")
-                    elif len(parts) > 1:
-                        cfg.model = parts[1].strip()
+                    elif arg:
+                        cfg.model = arg
                         console.print(f"[bold green]Model: {cfg.model}[/bold green]")
                     else:
                         console.print(f"[bold]Current:[/bold] {cfg.model}")
@@ -473,10 +609,16 @@ def repl(ctx: click.Context, model: Optional[str], session_id_opt: Optional[str]
                     console.print("[bold]Commands:[/bold]")
                     for c, d in SLASH_COMMANDS.items():
                         console.print(f"  [cyan]{c:12s}[/cyan] — {d}")
+                    console.print(f"\n[bold]Tool shortcuts:[/bold]")
+                    console.print(f"  [cyan]{'!<cmd>':12s}[/cyan] — run shell command directly")
+                    for sc, (_, _, desc) in TOOL_SHORTCUTS.items():
+                        if sc != "!":
+                            console.print(f"  [cyan]{sc:12s}[/cyan] — {desc}")
+                    console.print(f"\n[bold]Models:[/bold]")
                     for alias in MODELS:
                         console.print(f"  [cyan]/model {alias:5s}[/cyan] — {MODELS[alias]}")
-                    console.print(f"  [cyan]{'exit':12s}[/cyan] — quit")
-                    console.print(f"\n[dim]  Enter=send  Esc+Enter=newline  \\\ at EOL=continue[/dim]")
+                    console.print(f"\n  [cyan]{'exit':12s}[/cyan] — quit")
+                    console.print(f"\n[dim]  Enter=send  Esc+Enter=newline  \\\\ at EOL=continue[/dim]")
                 elif cmd == "/tools":
                     for t in ALL_TOOL_DEFS:
                         console.print(f"  [cyan]{t['name']:18s}[/cyan] {t['description'][:55]}")
@@ -496,7 +638,6 @@ def repl(ctx: click.Context, model: Optional[str], session_id_opt: Optional[str]
                     console.print("[dim]Conversation cleared.[/dim]")
                 elif cmd == "/compact":
                     if len(messages) > 4:
-                        # Keep system context, summarize older messages
                         kept = messages[-4:]
                         dropped = len(messages) - 4
                         messages.clear()
@@ -504,6 +645,55 @@ def repl(ctx: click.Context, model: Optional[str], session_id_opt: Optional[str]
                         console.print(f"[dim]Compacted: dropped {dropped} older messages, kept last 4.[/dim]")
                     else:
                         console.print("[dim]Nothing to compact.[/dim]")
+
+                # --- Tool shortcuts ---
+                elif cmd == "/git":
+                    result = _run_tool_shortcut_git(arg)
+                    console.print(result)
+                elif cmd == "/diff":
+                    console.print(execute_tool("git_diff", {"repo_path": arg or "."}))
+                elif cmd == "/log":
+                    console.print(execute_tool("git_log", {"repo_path": arg or ".", "oneline": True}))
+                elif cmd == "/ssh":
+                    ssh_parts = arg.split(None, 1)
+                    if len(ssh_parts) >= 2:
+                        console.print(f"  [dim]→ ssh {ssh_parts[0]}[/dim]")
+                        console.print(execute_tool("ssh_exec", {"host": ssh_parts[0], "command": ssh_parts[1]}))
+                    elif len(ssh_parts) == 1:
+                        console.print(f"  [dim]→ ssh {ssh_parts[0]} uptime[/dim]")
+                        console.print(execute_tool("ssh_exec", {"host": ssh_parts[0], "command": "uptime"}))
+                    else:
+                        for name, h in cfg.hosts.items():
+                            console.print(f"  [cyan]{name:15s}[/cyan] {h.ssh}")
+                elif cmd == "/docker":
+                    result = _run_tool_shortcut_docker(arg)
+                    console.print(result)
+                elif cmd == "/grep":
+                    grep_parts = arg.split(None, 1)
+                    if grep_parts:
+                        inputs = {"pattern": grep_parts[0]}
+                        if len(grep_parts) > 1:
+                            inputs["path"] = grep_parts[1]
+                        console.print(execute_tool("grep_search", inputs))
+                    else:
+                        console.print("[yellow]Usage: /grep <pattern> [path][/yellow]")
+                elif cmd == "/find":
+                    if arg:
+                        console.print(execute_tool("glob_find", {"pattern": arg}))
+                    else:
+                        console.print("[yellow]Usage: /find <glob pattern>[/yellow]")
+                elif cmd == "/cat":
+                    if arg:
+                        console.print(execute_tool("read_file", {"path": arg}))
+                    else:
+                        console.print("[yellow]Usage: /cat <file path>[/yellow]")
+                elif cmd == "/ls":
+                    console.print(execute_tool("list_dir", {"path": arg or "."}))
+                elif cmd == "/gh":
+                    if arg:
+                        console.print(execute_tool("gh_cli", {"command": arg}))
+                    else:
+                        console.print("[yellow]Usage: /gh <command> (e.g. /gh pr list)[/yellow]")
                 else:
                     console.print(f"[yellow]Unknown: {cmd}. Type /help[/yellow]")
                 continue
