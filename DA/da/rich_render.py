@@ -1,22 +1,28 @@
-"""Rich rendering helpers for DA TUI.
+"""Rich rendering helpers for DA TUI, CLI, and session manager.
 
-Converts raw message content into Rich renderables for RichLog output:
-  - User messages: green-bordered Panel
-  - Assistant messages: Markdown with syntax-highlighted code blocks
-  - Tool messages: dim italic arrows
-  - Session banners: styled Panel with subtitle
+Centralizes all Rich renderable construction so tui.py, cli.py, and
+session_manager.py can import ready-made renderables instead of
+building them inline.
+
+Consumers call these functions and write the result to a RichLog (TUI)
+or Console (CLI).
 """
 
-from rich.console import Group
+from rich.console import Console, Group
 from rich.markdown import Markdown
 from rich.panel import Panel
 from rich.rule import Rule
 from rich.table import Table
 from rich.text import Text
 
+# Shared console for CLI commands
+console = Console()
+
+
+# ── Message rendering ────────────────────────────────────────────────
 
 def render_user(content: str):
-    """Render a user message as a green-bordered panel."""
+    """User message → green-bordered panel."""
     return Panel(
         Text(content, style="green"),
         title="[bold green]you[/bold green]",
@@ -26,7 +32,7 @@ def render_user(content: str):
 
 
 def render_assistant(content: str):
-    """Render assistant message as Markdown with syntax highlighting."""
+    """Assistant message → Markdown with syntax-highlighted code blocks."""
     try:
         return Group(
             Markdown(content, code_theme="monokai"),
@@ -37,20 +43,8 @@ def render_assistant(content: str):
 
 
 def render_tool(content: str):
-    """Render tool/system message as dim italic text."""
+    """Tool / system message → dim italic arrow."""
     return Text(f"  \u2192 {content}", style="dim italic")
-
-
-def render_banner(banner_text: str, version: str, model: str, tool_count: int):
-    """Render the welcome banner as a styled panel."""
-    return Group(
-        Panel(
-            Text(banner_text, style="bold cyan"),
-            subtitle=f"v{version} | {model} | {tool_count} tools",
-            border_style="cyan",
-        ),
-        Text("  type /help or Ctrl+Q to quit\n", style="dim"),
-    )
 
 
 def render_message(role: str, content: str):
@@ -63,12 +57,87 @@ def render_message(role: str, content: str):
         return render_assistant(content)
 
 
-def session_info_table(rows: list[tuple[str, str]], title: str = "Session",
-                       border_style: str = "cyan") -> Panel:
-    """Build a key-value info panel for session details."""
+def render_banner(banner_text: str, version: str, model: str, tool_count: int):
+    """Welcome banner → styled panel with subtitle."""
+    return Group(
+        Panel(
+            Text(banner_text, style="bold cyan"),
+            subtitle=f"v{version} | {model} | {tool_count} tools",
+            border_style="cyan",
+        ),
+        Text("  type /help or Ctrl+Q to quit\n", style="dim"),
+    )
+
+
+# ── Session info tables ─────────────────────────────────────────────
+
+def session_info_table(
+    rows: list[tuple[str, str]],
+    title: str = "Session",
+    border_style: str = "cyan",
+) -> Panel:
+    """Key-value info panel for session details."""
     t = Table(show_header=False, box=None, pad_edge=False, show_edge=False)
     t.add_column("key", style="bold cyan", width=14, no_wrap=True)
     t.add_column("val")
     for k, v in rows:
         t.add_row(k, v)
     return Panel(t, title=title, border_style=border_style)
+
+
+def render_message_preview(messages: list[dict], limit: int = 5):
+    """Render a 'Recent:' preview of the last N messages."""
+    items = []
+    items.append(Text("Recent:", style="bold"))
+    for m in messages[-limit:]:
+        content = m.get("content", "")
+        if not isinstance(content, str):
+            content = str(content)
+        if m["role"] == "user":
+            items.append(Text(f"> {content[:100]}", style="green"))
+        elif m["role"] == "assistant":
+            items.append(Text(content[:200]))
+    return Group(*items)
+
+
+# ── CLI panels ───────────────────────────────────────────────────────
+
+def query_panel(query: str) -> Panel:
+    """Wrap a user query in a cyan panel (CLI ask command)."""
+    return Panel(f"[bold cyan]{query}[/bold cyan]", title="Query", expand=False)
+
+
+def result_panel(content: str) -> Panel:
+    """Wrap an assistant result as Markdown in a green panel (CLI ask command)."""
+    return Panel(Markdown(content), title="[bold green]Result", expand=False)
+
+
+def response_panel(content: str) -> Panel:
+    """Generic assistant response panel (CLI REPL)."""
+    return Panel(Markdown(content), expand=False)
+
+
+# ── Help / command list ──────────────────────────────────────────────
+
+def render_help_lines(lines: list[tuple[str, str]], title: str = "Commands") -> Group:
+    """Render a list of (label, description) as styled help text."""
+    items = [Text(title, style="bold")]
+    for label, desc in lines:
+        items.append(Text(f"  {label:<18s} {desc}", style="dim"))
+    return Group(*items)
+
+
+# ── Sessions table ───────────────────────────────────────────────────
+
+def sessions_table(
+    columns: list[tuple[str, str]],
+    rows: list[list[str]],
+    title: str = "Sessions",
+) -> Table:
+    """Build a sortable sessions table. columns = [(label, key), ...]."""
+    t = Table(title=title)
+    for label, key in columns:
+        t.add_column(label, key=key)
+    for row in rows:
+        t.add_row(*row)
+    return t

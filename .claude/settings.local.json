@@ -26,7 +26,8 @@
       "Bash(wc -l /home/alex/AGENTS.md/DA/da/*.py)",
       "Bash(python3 -c \"import ast; ast.parse\\(open\\(''da/cli.py''\\).read\\(\\)\\); print\\(''OK''\\)\")",
       "Bash(python -c \"import ast; ast.parse\\(open\\(''DA/da/rich_render.py''\\).read\\(\\)\\); print\\(''rich_render.py OK''\\)\")",
-      "Bash(python -c \"import ast; ast.parse\\(open\\(''DA/da/tui.py''\\).read\\(\\)\\); print\\(''tui.py OK''\\)\")"
+      "Bash(python -c \"import ast; ast.parse\\(open\\(''DA/da/tui.py''\\).read\\(\\)\\); print\\(''tui.py OK''\\)\")",
+      "Bash(python3:*)"
     ],
     "additionalDirectories": [
       "/mnt/d/SD/.claude"
