@@ -35,6 +35,7 @@ from textual.widgets import (
     TabPane,
     Tree,
 )
+from textual.command import Hit, Hits, Provider
 
 from da import __version__
 from da.config import load_config, Config
@@ -271,14 +272,14 @@ class DASessionItem(ListItem):
 # --- Main TUI ---
 
 BANNER = r"""
-  ░████             ░██        ░██░██       ░███                                        ░██
-░██  ░██            ░██           ░██      ░██░██                                       ░██
-░██   ░██  ░███████  ░████████  ░██░██     ░██  ░██   ░████████  ░███████  ░████████  ░████████
-░██    ░██ ░██    ░██ ░██    ░██ ░██░██    ░█████████ ░██    ░██ ░██    ░██ ░██    ░██    ░██
-░██    ░██ ░█████████ ░██    ░██ ░██░██    ░██    ░██ ░██    ░██ ░█████████ ░██    ░██    ░██
-░██    ░██ ░██        ░███   ░██ ░██░██    ░██    ░██ ░██   ░███ ░██        ░██    ░██    ░██
-░█████████  ░███████  ░██░█████  ░██░██    ░██    ░██  ░█████░██  ░███████  ░██    ░██     ░████
-██        ░██                                                 ░██
+      ░████             ░██        ░██░██       ░███                                        ░██
+    ░██  ░██            ░██           ░██      ░██░██                                       ░██
+   ░██   ░██  ░███████  ░████████  ░██░██     ░██  ░██   ░████████  ░███████  ░████████  ░████████
+  ░██    ░██ ░██    ░██ ░██    ░██ ░██░██    ░█████████ ░██    ░██ ░██    ░██ ░██    ░██    ░██
+  ░██    ░██ ░█████████ ░██    ░██ ░██░██    ░██    ░██ ░██    ░██ ░█████████ ░██    ░██    ░██
+  ░██    ░██ ░██        ░███   ░██ ░██░██    ░██    ░██ ░██   ░███ ░██        ░██    ░██    ░██
+  ░█████████  ░███████  ░██░█████  ░██░██    ░██    ░██  ░█████░██  ░███████  ░██    ░██     ░████
+░██        ░██                                                 ░██
 Агент который только говорит ДА                          ░███████
 """
 
@@ -288,6 +289,23 @@ class DAApp(App):
     SUB_TITLE = f"v{__version__}"
 
     CSS = """
+    #menu-bar {
+        dock: top;
+        height: 1;
+        background: $accent;
+        color: $text;
+        padding: 0 1;
+    }
+    .menu-item {
+        width: auto;
+        padding: 0 2;
+        background: $accent;
+        color: $text;
+    }
+    .menu-item:hover {
+        background: $accent-lighten-2;
+        text-style: bold;
+    }
     #sidebar {
         width: 34;
         dock: left;
@@ -295,7 +313,10 @@ class DAApp(App):
         border-right: tall $primary;
     }
     #da-session-list { height: 1fr; }
-    #claude-tree { height: 1fr; }
+    #claude-tree {
+        height: 1fr;
+        overflow-x: auto;
+    }
     #new-session-btn {
         margin: 0 1; text-align: center; color: $success; height: 1;
     }
@@ -317,7 +338,7 @@ class DAApp(App):
         Binding("ctrl+down", "next_session", "Next"),
         Binding("ctrl+t", "toggle_tab", "Tab"),
         Binding("ctrl+d", "delete_session", "Del"),
-        Binding("ctrl+l", "launch_claude", "Launch"),
+        Binding("ctrl+o", "open_session", "Open"),
     ]
 
     current_session_id: reactive[str] = reactive("")
@@ -548,9 +569,11 @@ class DAApp(App):
                 "/detail — detailed view of current Claude session\n"
                 "/delete — delete current DA session\n"
                 "/launch — open Claude session in new terminal\n"
+                "/repl — open current DA session in REPL\n"
+                "/manage — open session manager\n"
                 "/move [path] — move Claude sessions folder\n"
                 "/clear — clear log\n"
-                "Ctrl+N — new | Ctrl+D — del | Ctrl+L — launch | Ctrl+T — tab | Ctrl+Q — quit"
+                "Ctrl+N — new | Ctrl+D — del | Ctrl+O — repl | Ctrl+L — launch | Ctrl+T — tab | Ctrl+Q — quit"
             )
         elif cmd == "/tools":
             lines = [f"{t['name']:18s} {t['description'][:45]}" for t in ALL_TOOL_DEFS]
@@ -566,8 +589,12 @@ class DAApp(App):
             self._do_delete_session()
         elif cmd == "/launch":
             self._do_launch_claude()
+        elif cmd == "/repl":
+            self._do_open_repl()
         elif cmd == "/detail":
             self._show_session_detail()
+        elif cmd == "/manage":
+            self._do_open_manager()
         elif cmd == "/move":
             dest = parts[1].strip() if len(parts) > 1 else ""
             self._move_claude_sessions(dest)
@@ -662,6 +689,52 @@ class DAApp(App):
 
     def action_launch_claude(self) -> None:
         self._do_launch_claude()
+
+    def action_open_repl(self) -> None:
+        self._do_open_repl()
+
+    def _do_open_repl(self) -> None:
+        """Suspend TUI, open current DA session in REPL, then resume."""
+        sid = self.current_session_id
+        if not sid or self.viewing_claude:
+            self._log_msg("tool", "Select a DA session first.")
+            return
+
+        import sys
+
+        with self.suspend():
+            subprocess.run(
+                [sys.executable, "-m", "da", "repl", "--session", sid],
+                stdin=sys.stdin,
+                stdout=sys.stdout,
+                stderr=sys.stderr,
+            )
+
+        # Reload messages that may have been added in the REPL
+        stored = self.store.get_messages(sid, limit=100)
+        self.session_messages[sid] = stored
+        self._render_log()
+        self._refresh_da_sessions()
+
+    def _do_open_manager(self) -> None:
+        """Suspend TUI, open session manager, then resume."""
+        import sys
+
+        with self.suspend():
+            subprocess.run(
+                [sys.executable, "-m", "da", "manage"],
+                stdin=sys.stdin,
+                stdout=sys.stdout,
+                stderr=sys.stderr,
+            )
+
+        # Reload after manager may have changed sessions
+        self._refresh_da_sessions()
+        self._load_claude_tree()
+        if self.current_session_id:
+            stored = self.store.get_messages(self.current_session_id, limit=100)
+            self.session_messages[self.current_session_id] = stored
+            self._render_log()
 
     def _do_launch_claude(self) -> None:
         """Launch current Claude session in a new Windows Terminal window."""

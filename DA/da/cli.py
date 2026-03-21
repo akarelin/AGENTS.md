@@ -272,20 +272,29 @@ def analyze(ctx: click.Context, claude_dir: Optional[str]) -> None:
 
 @cli.command()
 @click.option("--model", "-m", help="Model override")
+@click.option("--session", "-s", "session_id_opt", default=None, help="Resume existing session by ID")
 @click.pass_context
-def repl(ctx: click.Context, model: Optional[str]) -> None:
+def repl(ctx: click.Context, model: Optional[str], session_id_opt: Optional[str]) -> None:
     """Interactive REPL — chat with DeepAgents."""
     cfg = ctx.obj["config"]
     if model:
         cfg.model = model
     store = ctx.obj["session_store"]
-    session_id = str(uuid.uuid4())
-    store.create_session(session_id, name="repl", project=os.getcwd())
+
+    if session_id_opt:
+        session_id = session_id_opt
+        messages = [
+            m for m in store.get_messages(session_id, limit=100)
+            if m["role"] in ("user", "assistant")
+        ]
+    else:
+        session_id = str(uuid.uuid4())
+        store.create_session(session_id, name="repl", project=os.getcwd())
+        messages = []
 
     client = get_client(cfg)
     system = get_system_prompt(cfg)
     tools = _make_api_tools()
-    messages: list[dict] = []
 
     from da import __version__
     from prompt_toolkit import PromptSession
