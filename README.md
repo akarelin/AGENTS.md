@@ -36,55 +36,132 @@ An unfinished, evolving collection of everything agentic — prompt engineering 
 
 # DA (ДА)
 
-A personal multi-agent system built directly on the Anthropic SDK (no LangChain). Includes a CLI REPL, a full Textual TUI with session sidebar, and remote host tooling via SSH.
+A personal multi-agent system built directly on the Anthropic SDK (no LangChain). Two full-screen TUIs, an interactive REPL, a session manager, Obsidian vault integration, and remote host tooling via SSH — all driven by Claude.
 
 **Status:** Active development. Core agent loop, TUI, session management, and tool execution are working.
+
+### Screenshots
+
+#### Agent Chat
+
+The main conversation view — send messages to the orchestrator agent, watch tool calls execute in real time, and browse conversation history. The Rich TUI (`da rich`) provides a 5-tab layout with a menu bar, status line, and context-sensitive input prompt.
+
+<p align="center"><img src="docs/screenshots/da-chat.svg" width="800" alt="DA Chat — agent conversation view with ASCII banner and menu bar"></p>
+
+The sidebar TUI (`da tui`) takes a different approach: a persistent session list on the left with tabbed DA and Claude session panels, and the conversation on the right.
+
+<p align="center"><img src="docs/screenshots/tui-sidebar.svg" width="800" alt="DA TUI — sidebar layout with session list and conversation"></p>
+
+#### Projects
+
+Browse Obsidian notes tagged with `type: Project` in their YAML frontmatter. Color-coded status indicators (active/on-hold/archived), priority levels, categories, and owners — all extracted from note metadata. Filter by text, show only active projects, or drill into a full note preview.
+
+<p align="center"><img src="docs/screenshots/projects.svg" width="800" alt="Projects view — Obsidian project notes with status, priority, and category"></p>
+
+#### Sessions
+
+A unified session browser showing both DA sessions (from SQLite) and Claude Code sessions (from `.claude/` directories across multiple machines). The left panel is a sortable data table with type, machine, project, date, message count, and name. The right panel shows detail for the selected session — stats for DA sessions, file info and subagent counts for Claude sessions. Switch to a DA session with `/switch`, or copy and launch a Claude session locally with `/launch`.
+
+<p align="center"><img src="docs/screenshots/sessions.svg" width="800" alt="Sessions view — unified DA and Claude session browser with detail panel"></p>
+
+#### Obsidian Vault Browser
+
+Navigate the full Obsidian vault interactively: folder listing with note counts, recent notes, full markdown preview with tag extraction, full-text search with context snippets, and a tag cloud. Type a number to drill into a folder or note, `/search` to find content, `/tags` for the tag cloud.
+
+<p align="center"><img src="docs/screenshots/obsidian.svg" width="800" alt="Obsidian view — vault browser with folders and note counts"></p>
+
+#### Config Editor
+
+A tree-based browser for tools, agents, and YAML config files. The left panel organizes tools by category (shell, git, docker, ssh, files, search, sessions) and lists all agent types. Select a tool to see its description, parameters, and source file. Select a config file to see a validated YAML preview, then press Enter to open an inline editor with syntax highlighting and line numbers.
+
+<p align="center"><img src="docs/screenshots/config.svg" width="800" alt="Config Editor — tool and agent browser with YAML preview"></p>
+
+#### Session Manager
+
+A dedicated TUI (`da manage`) for session housekeeping. Two tabs — DA Sessions (table with rename/delete) and Claude Sessions (tree view organized by machine and project). The right panel shows global stats: total sessions, message counts by role, date ranges, and top projects. Claude sessions can be copied or moved across machines.
+
+<p align="center"><img src="docs/screenshots/session-manager.svg" width="800" alt="Session Manager — DA and Claude session management with global stats"></p>
 
 ### CLI Commands
 
 | Command | Description |
 |---------|-------------|
-| `da repl` | Interactive REPL with slash commands |
-| `da repl --session <id>` | Resume an existing session |
-| `da tui` | Full TUI with session sidebar and Claude session browser |
+| `da` | Launch full TUI (default) |
+| `da rich` | Rich TUI — 5-tab layout with Projects, Chat, Sessions, Obsidian, Config |
+| `da tui` | Sidebar TUI — session list + conversation layout |
+| `da repl` | Interactive REPL with slash commands and tab completion |
 | `da manage` | Session manager — browse, rename, copy, move, delete |
-| `da analyze` | Analyze Claude conversation history |
+| `da ask "<query>"` | One-shot query to the orchestrator agent |
+| `da sessions` | List recent sessions |
+| `da resume <id>` | Resume a previous session |
+| `da analyze` | Analyze Claude Code conversation history |
+| `da diag` | Show diagnostic info (model, hosts, tools) |
+| `da next` | Read 2Do.md, ROADMAP.md, git status — recommend what to do |
+| `da close` | Close session — update 2Do.md, document progress |
+| `da document` | Generate CHANGELOG.md from git diff |
+| `da push [msg]` | Commit and push with changelog verification |
 
-Flags: `--model / -m` (model override).
+Flags: `--model / -m` (model override), `--debug`, `--config / -c`.
 
-### Tools
+### Tools (23)
 
-| Tool | Purpose |
-|------|---------|
-| `shell` | Execute shell commands |
-| `git_*` | Git operations (status, diff, commit, push) |
-| `docker_*` | Docker container and image management |
-| `ssh_*` | Remote command execution via SSH |
-| `file_*` | File read, write, search, delete |
-| `search_*` | Grep, glob, code search |
-| `session_*` | List, delete, move Claude sessions |
+| Category | Tools |
+|----------|-------|
+| Shell | `shell_exec` — run arbitrary commands |
+| Git | `git_status`, `git_diff`, `git_log`, `git_commit_push` |
+| Docker | `docker_ps`, `docker_logs`, `docker_exec`, `docker_compose` |
+| SSH | `ssh_exec`, `ssh_batch` (parallel multi-host) |
+| Files | `read_file`, `write_file`, `list_dir`, `find_files`, `delete_file`, `copy_file`, `move_file`, `edit_file` |
+| Search | `grep_search`, `glob_find` |
+| Sessions | `list_sessions`, `get_session`, `delete_session` |
 
-### TUI Features
+### REPL Shortcuts
 
-- Multi-session sidebar with DA and Claude session tabs
-- Claude session browser — reads `.claude/` history from any configured path
-- Open DA sessions in REPL (`Ctrl+O`) or Claude sessions in terminal (`Ctrl+L`)
-- Slash commands: `/model`, `/tools`, `/hosts`, `/sessions`, `/stats`, `/detail`, `/launch`, `/repl`
-- Session auto-naming from first user message
+Slash commands in the REPL and TUI input:
+
+| Command | Action |
+|---------|--------|
+| `/model [opus\|sonnet\|haiku]` | Switch model or show current |
+| `/tools` | List all available tools |
+| `/hosts` | Show configured remote hosts |
+| `/git [status\|diff\|log\|commit\|push]` | Git operations |
+| `/docker [ps\|logs\|exec\|up\|down]` | Docker operations |
+| `/ssh <host> [cmd]` | Execute on remote host |
+| `/grep <pattern>`, `/find <glob>` | Search files |
+| `/cat <path>`, `/ls [path]` | Read file / list directory |
+| `/sessions`, `/switch <id>`, `/delete [id]` | Session management |
+| `/compact` | Summarize and trim conversation context |
+| `!<command>` | Direct shell execution |
+
+Tab completion for commands, model names, hosts, git/docker subcommands, and file paths.
+
+### Keyboard Shortcuts
+
+| Key | Action |
+|-----|--------|
+| `F1`–`F5` | Switch views: Projects, Chat, Sessions, Obsidian, Config |
+| `Ctrl+N` | New session |
+| `Ctrl+Q` | Quit |
+| `Esc` | Back / close editor |
 
 ### Architecture
 
 ```
 DA/
 ├── da/
-│   ├── cli.py              → Click CLI (repl, tui, manage, analyze)
-│   ├── tui.py              → Textual TUI app
-│   ├── session_manager.py  → Session browser TUI
+│   ├── cli.py              → Click CLI + REPL (repl, tui, manage, ask, etc.)
+│   ├── rich_tui.py         → Rich TUI — 5-view tabbed layout
+│   ├── tui.py              → Sidebar TUI — session list + conversation
+│   ├── session_manager.py  → Session manager TUI
 │   ├── session.py          → SQLite session persistence
 │   ├── client.py           → Anthropic SDK wrapper
 │   ├── config.py           → YAML config loader
-│   ├── agents/             → Orchestrator, infra, debug agents
+│   ├── obsidian.py         → Obsidian vault operations (scan, search, tags, projects)
+│   ├── claude_sessions.py  → Claude Code session discovery and management
+│   ├── rich_render.py      → Rich renderables (banner, menus, panels)
+│   ├── agents/             → Orchestrator + specialist agents (infra, debug, etc.)
 │   ├── tools/              → Shell, git, docker, SSH, files, search, sessions
+│   ├── views/              → Pluggable view modules (projects, chat, sessions, obsidian, config)
 │   └── prompts/            → System prompts (markdown)
 ├── pyproject.toml          → Hatchling build, Python >=3.11
 ├── config.yaml             → Model, hosts, tools, session settings

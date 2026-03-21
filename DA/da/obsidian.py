@@ -6,6 +6,7 @@ Obsidian vault notes.  No Rich, no Textual — just pathlib + re.
 
 import datetime
 import re
+import yaml
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -58,6 +59,76 @@ class VaultTree:
     note_count: int = 0         # only for dirs
     mtime_short: str = ""       # only for files
     children: list["VaultTree"] = field(default_factory=list)
+
+
+@dataclass
+class ProjectInfo:
+    """A note with type: Project frontmatter."""
+    path: Path
+    name: str
+    description: str
+    status: str
+    priority: str
+    category: str
+    owner_org: str
+    tags: list[str]
+    created: str
+    updated: str
+    folder: str       # relative parent folder
+
+
+# ── Frontmatter ──────────────────────────────────────────────────────
+
+def parse_frontmatter(content: str) -> dict:
+    """Parse YAML frontmatter from note content. Returns empty dict if none."""
+    if not content.startswith("---"):
+        return {}
+    end = content.find("---", 3)
+    if end < 0:
+        return {}
+    try:
+        return yaml.safe_load(content[3:end]) or {}
+    except Exception:
+        return {}
+
+
+def list_projects(vault: Path) -> list[ProjectInfo]:
+    """Find all notes with type: Project frontmatter."""
+    projects: list[ProjectInfo] = []
+    for p in _iter_notes(vault):
+        try:
+            content = p.read_text(encoding="utf-8", errors="replace")
+        except Exception:
+            continue
+        fm = parse_frontmatter(content)
+        if fm.get("type") != "Project":
+            continue
+        try:
+            rel = p.relative_to(vault)
+            folder = str(rel.parent) if rel.parent != Path(".") else ""
+        except ValueError:
+            folder = ""
+        tags = fm.get("tags") or []
+        if isinstance(tags, str):
+            tags = [tags]
+        projects.append(ProjectInfo(
+            path=p,
+            name=fm.get("name") or p.stem,
+            description=fm.get("description", ""),
+            status=fm.get("status", ""),
+            priority=fm.get("priority", ""),
+            category=fm.get("category", ""),
+            owner_org=str(fm.get("owner_org", "")).replace("[[", "").replace("]]", "").strip('"'),
+            tags=[t for t in tags if t],
+            created=str(fm.get("created", "")),
+            updated=str(fm.get("updated", "")),
+            folder=folder,
+        ))
+    # Sort: active first, then by updated descending
+    status_order = {"active": 0, "": 1, "on-hold": 2, "archived": 3}
+    projects.sort(key=lambda p: (status_order.get(p.status, 1), p.updated or ""), reverse=False)
+    projects.sort(key=lambda p: status_order.get(p.status, 1))
+    return projects
 
 
 # ── Helpers ───────────────────────────────────────────────────────────

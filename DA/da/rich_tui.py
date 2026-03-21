@@ -4,10 +4,11 @@ Uses Textual for full-screen layout, Rich renderables from rich_render.py,
 and pluggable view modules from da/views/.
 
 Menu bar with highlighted shortcut keys:
-  [Д]А        — chat with agent       (F1 / /da)
-  [S]essions  — live session browser   (F2 / /sessions)
-  [O]bsidian  — browse Obsidian vault  (F3 / /obsidian)
-  [C]onfig    — YAML config editor     (F4 / /config)
+  [P]rojects  — Obsidian projects      (F1 / /projects)
+  [Д]А        — chat with agent        (F2 / /da)
+  [S]essions  — live session browser   (F3 / /sessions)
+  [O]bsidian  — browse Obsidian vault  (F4 / /obsidian)
+  [C]onfig    — YAML config editor     (F5 / /config)
 
 Launch: da rich
 """
@@ -35,6 +36,7 @@ from da.views.da_chat import DAChatView
 from da.views.sessions import SessionsView
 from da.views.obsidian import ObsidianView
 from da.views.config_editor import ConfigEditorView
+from da.views.projects import ProjectsView
 from da.tui import (
     load_claude_sessions,
     load_claude_session_messages,
@@ -61,6 +63,7 @@ MODELS = {
 }
 
 MENU_TABS = [
+    ("P", "rojects", "projects"),
     ("Д", "А", "da"),
     ("S", "essions", "sessions"),
     ("O", "bsidian", "obsidian"),
@@ -78,6 +81,10 @@ class RichTUIApp(App):
         height: 1;
         background: $surface-darken-1;
     }
+    /* Projects view */
+    #projects-view { height: 1fr; }
+    #projects-view.hidden { display: none; }
+    #projects-log { height: 1fr; padding: 0 1; }
     /* ДА view */
     #da-view { height: 1fr; }
     #da-view.hidden { display: none; }
@@ -118,10 +125,11 @@ class RichTUIApp(App):
     """
 
     BINDINGS = [
-        Binding("f1", "switch_da", "[Д]А", show=True),
-        Binding("f2", "switch_sessions", "[S]essions", show=True),
-        Binding("f3", "switch_obsidian", "[O]bsidian", show=True),
-        Binding("f4", "switch_config", "[C]onfig", show=True),
+        Binding("f1", "switch_projects", "[P]rojects", show=True),
+        Binding("f2", "switch_da", "[Д]А", show=True),
+        Binding("f3", "switch_sessions", "[S]essions", show=True),
+        Binding("f4", "switch_obsidian", "[O]bsidian", show=True),
+        Binding("f5", "switch_config", "[C]onfig", show=True),
         Binding("escape", "config_escape", "Back", show=False, priority=True),
         Binding("ctrl+n", "new_session", "New", show=True),
         Binding("ctrl+q", "quit", "Quit", show=True),
@@ -139,6 +147,7 @@ class RichTUIApp(App):
         self._spinner_timer = None
 
         # Views
+        self.projects_view = ProjectsView(self.cfg)
         self.da_view = DAChatView(self.cfg, self.store)
         self.sessions_view = SessionsView(self.cfg, self.store)
         self.obsidian_view = ObsidianView(self.cfg)
@@ -149,6 +158,10 @@ class RichTUIApp(App):
 
     def compose(self) -> ComposeResult:
         yield Static("", id="menu-bar")
+
+        # View 0: Projects
+        with Vertical(id="projects-view", classes="hidden"):
+            yield RichLog(id="projects-log", wrap=True, markup=True)
 
         # View 1: ДА chat
         with Vertical(id="da-view"):
@@ -181,6 +194,10 @@ class RichTUIApp(App):
         da_log = self.query_one("#da-log", RichLog)
 
         # Wire output callbacks
+        proj_log = self.query_one("#projects-log", RichLog)
+        self.projects_view.output = proj_log.write
+        self.projects_view.clear = proj_log.clear
+
         obs_log = self.query_one("#obsidian-log", RichLog)
         self.da_view.output = da_log.write
         self.sessions_view.output = self.query_one("#sessions-detail", RichLog).write
@@ -388,19 +405,26 @@ class RichTUIApp(App):
     # ── View switching ───────────────────────────────────────────
 
     def _switch_view(self, name: str) -> None:
+        projects = self.query_one("#projects-view", Vertical)
         da = self.query_one("#da-view", Vertical)
         sessions = self.query_one("#sessions-view", Horizontal)
         obsidian = self.query_one("#obsidian-view", Vertical)
         config = self.query_one("#config-view", Horizontal)
         inp = self.query_one("#prompt-input", Input)
 
+        projects.add_class("hidden")
         da.add_class("hidden")
         sessions.add_class("hidden")
         obsidian.add_class("hidden")
         config.add_class("hidden")
 
         self.view = name
-        if name == "da":
+        if name == "projects":
+            projects.remove_class("hidden")
+            inp.placeholder = "<#> to view | /filter <text> | /active"
+            self.projects_view.show()
+            inp.focus()
+        elif name == "da":
             da.remove_class("hidden")
             inp.placeholder = "Ask anything... (/ for commands)"
             inp.focus()
@@ -433,6 +457,9 @@ class RichTUIApp(App):
             log.write(item)
 
     # ── Actions ──────────────────────────────────────────────────
+
+    def action_switch_projects(self) -> None:
+        self._switch_view("projects")
 
     def action_switch_da(self) -> None:
         self._switch_view("da")
@@ -473,7 +500,9 @@ class RichTUIApp(App):
             self._handle_slash(text)
             return
 
-        if self.view == "da":
+        if self.view == "projects":
+            self.projects_view.handle_input(text)
+        elif self.view == "da":
             if self.busy:
                 self.query_one("#da-log", RichLog).write(render_tool("Still thinking..."))
                 return
@@ -498,12 +527,15 @@ class RichTUIApp(App):
 
         # Get the right log for current view
         log_id = {
+            "projects": "#projects-log",
             "da": "#da-log", "sessions": "#sessions-detail",
             "obsidian": "#obsidian-log", "config": "#config-preview",
         }
         log = self.query_one(log_id.get(self.view, "#da-log"), RichLog)
 
-        if verb == "/da":
+        if verb == "/projects":
+            self._switch_view("projects")
+        elif verb == "/da":
             self._switch_view("da")
         elif verb == "/sessions":
             self._switch_view("sessions")
@@ -514,7 +546,7 @@ class RichTUIApp(App):
 
         elif verb in ("/help", "/"):
             log.write(render_tool(
-                "Views:  F1 /da  |  F2 /sessions  |  F3 /obsidian  |  F4 /config\n"
+                "Views:  F1 /projects  |  F2 /da  |  F3 /sessions  |  F4 /obsidian  |  F5 /config\n"
                 "\n"
                 "  /model [name] \u2014 switch model (opus/sonnet/haiku)\n"
                 "  /tools        \u2014 list tools\n"
