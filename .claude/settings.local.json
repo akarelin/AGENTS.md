@@ -30,7 +30,14 @@
       "Bash(python3:*)",
       "Bash(find /home/alex/CRAP -type f -name *yaml* -o -name *editor*)",
       "Bash(find /home/alex -path */gppu* -name *config_editor*)",
-      "Bash(find /home/alex/gppu -name README* -o -name *editor* -type f)"
+      "Bash(find /home/alex/gppu -name README* -o -name *editor* -type f)",
+      "Bash(python -c \"import ast; ast.parse\\(open\\(''da/views/config_editor.py''\\).read\\(\\)\\); print\\(''config_editor.py: OK''\\)\")",
+      "Bash(python -c \"import ast; ast.parse\\(open\\(''da/rich_tui.py''\\).read\\(\\)\\); print\\(''rich_tui.py: OK''\\)\")",
+      "Bash(.venv/bin/python -c \"from da.views.config_editor import ConfigEditorView, MENU_KEY, MENU_LABEL; print\\(f'[{MENU_KEY}]{MENU_LABEL} — OK'\\)\")",
+      "Bash(find /home/alex/AGENTS.md/DA/da -name *.yaml -o -name *.yml -o -name *.json -o -name *.toml)",
+      "Bash(find /home/alex/AGENTS.md/DA/da/tools /home/alex/AGENTS.md/DA/da/agents -type f -name *.py)",
+      "Bash(.venv/bin/python -c \"from da.views.config_editor import ConfigEditorView, _group_tools, _get_agent_prompt; groups = _group_tools\\(\\); print\\('Tool categories:', list\\(groups.keys\\(\\)\\)\\); print\\('Tools per category:', {k: len\\(v\\) for k, v in groups.items\\(\\)}\\); print\\(\\); from da.agents import AGENT_TYPES; print\\('Agents:', AGENT_TYPES\\); print\\(\\); for a in AGENT_TYPES: p = _get_agent_prompt\\(a\\); print\\(f'  {a}: {\\\\\"implemented\\\\\" if p else \\\\\"stub\\\\\"}'\\)\")",
+      "Bash(.venv/bin/python -c \"\nfrom da.views.config_editor import ConfigEditorView, _group_tools, _get_agent_prompt\ngroups = _group_tools\\(\\)\nprint\\('Tool categories:', list\\(groups.keys\\(\\)\\)\\)\nprint\\('Tools per category:', {k: len\\(v\\) for k, v in groups.items\\(\\)}\\)\nprint\\(\\)\nfrom da.agents import AGENT_TYPES\nprint\\('Agents:', AGENT_TYPES\\)\nfor a in AGENT_TYPES:\n    p = _get_agent_prompt\\(a\\)\n    status = 'implemented' if p else 'stub'\n    print\\(f'  {a}: {status}'\\)\n\")"
     ],
     "additionalDirectories": [
       "/mnt/d/SD/.claude"

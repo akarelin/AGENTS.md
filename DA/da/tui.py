@@ -34,6 +34,7 @@ from textual.widgets import (
     Header,
     Input,
     Markdown as MarkdownWidget,
+    MarkdownViewer,
     RichLog,
     Static,
     TabbedContent,
@@ -537,7 +538,7 @@ class DAApp(App):
     #obsidian-search { width: 1fr; }
     #obsidian-editor-pane { height: 1fr; }
     #obsidian-editor { height: 1fr; }
-    #obsidian-preview { height: 1fr; padding: 0 1; overflow-y: auto; }
+    #obsidian-preview { height: 1fr; }
     #obsidian-preview.hidden { display: none; }
     #obsidian-editor.hidden { display: none; }
     #obsidian-status { dock: bottom; height: 1; padding: 0 1; color: $text-muted; }
@@ -566,7 +567,7 @@ class DAApp(App):
         Binding("ctrl+r", "rename_session", "Rename"),
         Binding("ctrl+m", "move_session", "Move"),
         Binding("ctrl+g", "merge_sessions", "Merge"),
-        Binding("ctrl+p", "toggle_preview", "Preview"),
+        Binding("f4", "toggle_preview", "Preview"),
         Binding("ctrl+left", "shrink_sidebar", "◄", show=False),
         Binding("ctrl+right", "grow_sidebar", "►", show=False),
         Binding("f1", "switch_da", "ДА"),
@@ -631,7 +632,7 @@ class DAApp(App):
             with Vertical(id="obsidian-editor-pane"):
                 yield Static("No note selected", id="obsidian-status")
                 yield TextArea("", language="markdown", theme="monokai", show_line_numbers=True, id="obsidian-editor")
-                yield MarkdownWidget("", id="obsidian-preview", classes="hidden")
+                yield MarkdownViewer("", id="obsidian-preview", show_table_of_contents=True, classes="hidden")
 
         yield Footer()
 
@@ -734,9 +735,9 @@ class DAApp(App):
         editor.load_text(content)
         # Also update preview if visible
         try:
-            preview = self.query_one("#obsidian-preview", MarkdownWidget)
+            preview = self.query_one("#obsidian-preview", MarkdownViewer)
             if not preview.has_class("hidden"):
-                preview.update(content)
+                self.run_worker(preview.go(path))
         except Exception:
             pass
         self._obsidian_current_file = path
@@ -1434,7 +1435,7 @@ class DAApp(App):
             return
         try:
             editor = self.query_one("#obsidian-editor", TextArea)
-            preview = self.query_one("#obsidian-preview", MarkdownWidget)
+            preview = self.query_one("#obsidian-preview", MarkdownViewer)
         except Exception:
             return
 
@@ -1443,8 +1444,11 @@ class DAApp(App):
             editor.remove_class("hidden")
             preview.add_class("hidden")
         else:
-            # Switch to preview — render current editor content
-            preview.update(editor.text)
+            # Switch to preview — load file directly or render editor text
+            if hasattr(self, '_obsidian_current_file') and self._obsidian_current_file:
+                self.run_worker(preview.go(self._obsidian_current_file))
+            else:
+                preview.document.update(editor.text)
             editor.add_class("hidden")
             preview.remove_class("hidden")
 

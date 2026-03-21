@@ -7,6 +7,7 @@ Menu bar with highlighted shortcut keys:
   [Д]А        — chat with agent       (F1 / /da)
   [S]essions  — live session browser   (F2 / /sessions)
   [O]bsidian  — browse Obsidian vault  (F3 / /obsidian)
+  [C]onfig    — YAML config editor     (F4 / /config)
 
 Launch: da rich
 """
@@ -121,6 +122,7 @@ class RichTUIApp(App):
         Binding("f2", "switch_sessions", "[S]essions", show=True),
         Binding("f3", "switch_obsidian", "[O]bsidian", show=True),
         Binding("f4", "switch_config", "[C]onfig", show=True),
+        Binding("escape", "config_escape", "Back", show=False, priority=True),
         Binding("ctrl+n", "new_session", "New", show=True),
         Binding("ctrl+q", "quit", "Quit", show=True),
     ]
@@ -325,6 +327,33 @@ class RichTUIApp(App):
         table = self.query_one("#sessions-table", DataTable)
         table.sort(event.column_key)
 
+    # ── Config editor tree events ─────────────────────────────────
+
+    def on_tree_node_highlighted(self, event: Tree.NodeHighlighted) -> None:
+        if self.view != "config" or self.config_view.is_editing:
+            return
+        self.config_view.show_node(event.node.data)
+
+    def on_tree_node_selected(self, event: Tree.NodeSelected) -> None:
+        if self.view != "config":
+            return
+        if self.config_view.is_editing:
+            ok, msg = self.config_view.save_and_close()
+            self._set_config_status(msg)
+            return
+        # Only config files are editable (Enter to edit)
+        if self.config_view.is_editable_node(event.node.data):
+            fp = self.config_view.get_file_for_node(event.node.data)
+            if fp:
+                self.config_view.start_edit(fp)
+
+    def _set_config_status(self, text: str) -> None:
+        try:
+            bar = self.query_one("#status-bar", Static)
+            bar.update(f"[dim]{text}[/dim]")
+        except Exception:
+            pass
+
     # ── Menu bar / status ────────────────────────────────────────
 
     def _update_menu(self) -> None:
@@ -362,11 +391,13 @@ class RichTUIApp(App):
         da = self.query_one("#da-view", Vertical)
         sessions = self.query_one("#sessions-view", Horizontal)
         obsidian = self.query_one("#obsidian-view", Vertical)
+        config = self.query_one("#config-view", Horizontal)
         inp = self.query_one("#prompt-input", Input)
 
         da.add_class("hidden")
         sessions.add_class("hidden")
         obsidian.add_class("hidden")
+        config.add_class("hidden")
 
         self.view = name
         if name == "da":
@@ -382,6 +413,11 @@ class RichTUIApp(App):
             inp.placeholder = "Search notes..."
             self.obsidian_view.show()
             inp.focus()
+        elif name == "config":
+            config.remove_class("hidden")
+            inp.placeholder = "/validate | /refresh"
+            self.config_view.show()
+            self.query_one("#config-tree", Tree).focus()
 
         self._update_menu()
         self._update_status()
@@ -406,6 +442,15 @@ class RichTUIApp(App):
 
     def action_switch_obsidian(self) -> None:
         self._switch_view("obsidian")
+
+    def action_switch_config(self) -> None:
+        self._switch_view("config")
+
+    def action_config_escape(self) -> None:
+        if self.view == "config" and self.config_view.is_editing:
+            ok, msg = self.config_view.save_and_close()
+            self._set_config_status(msg)
+            self.query_one("#config-tree", Tree).focus()
 
     def action_new_session(self) -> None:
         log = self.query_one("#da-log", RichLog)
@@ -452,7 +497,10 @@ class RichTUIApp(App):
         arg = parts[1].strip() if len(parts) > 1 else ""
 
         # Get the right log for current view
-        log_id = {"da": "#da-log", "sessions": "#sessions-detail", "obsidian": "#obsidian-log"}
+        log_id = {
+            "da": "#da-log", "sessions": "#sessions-detail",
+            "obsidian": "#obsidian-log", "config": "#config-preview",
+        }
         log = self.query_one(log_id.get(self.view, "#da-log"), RichLog)
 
         if verb == "/da":
@@ -461,10 +509,12 @@ class RichTUIApp(App):
             self._switch_view("sessions")
         elif verb == "/obsidian":
             self._switch_view("obsidian")
+        elif verb == "/config":
+            self._switch_view("config")
 
         elif verb in ("/help", "/"):
             log.write(render_tool(
-                "Views:  F1 /da  |  F2 /sessions  |  F3 /obsidian\n"
+                "Views:  F1 /da  |  F2 /sessions  |  F3 /obsidian  |  F4 /config\n"
                 "\n"
                 "  /model [name] \u2014 switch model (opus/sonnet/haiku)\n"
                 "  /tools        \u2014 list tools\n"
@@ -534,6 +584,8 @@ class RichTUIApp(App):
                 self.sessions_view.launch_claude(int(arg))
             else:
                 log.write(render_tool("Usage: /launch <#>"))
+        elif verb in ("/validate", "/refresh") and self.view == "config":
+            self.config_view.handle_input(text)
         elif verb == "/clear":
             log.clear()
         elif verb in ("/quit", "/exit", "/q"):
