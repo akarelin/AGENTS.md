@@ -19,34 +19,12 @@ on:
 permissions:
   contents: write
 
-defaults:
-  run:
-    working-directory: DA
-
 jobs:
-  test:
+  bump:
     runs-on: [self-hosted, linux]
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          fetch-tags: true
-          fetch-depth: 0
-
-      - name: Setup and test
-        run: |
-          python3 -m venv .venv
-          .venv/bin/pip install setuptools-scm
-          .venv/bin/pip install -e .
-          .venv/bin/python -c "import da"
-
-  release:
-    needs: test
-    if: >-
-      always()
-      && github.event_name == 'workflow_dispatch'
-      && github.ref == 'refs/heads/master'
-      && (needs.test.result == 'success' || needs.test.result == 'skipped')
-    runs-on: [self-hosted, linux]
+    if: github.event_name == 'workflow_dispatch' && inputs.bump != 'none'
+    outputs:
+      tag: ${{ steps.version.outputs.tag }}
 
     steps:
       - uses: actions/checkout@v6
@@ -54,64 +32,126 @@ jobs:
           fetch-tags: true
           fetch-depth: 0
 
-      - name: Compute version
+      - name: Compute next version
+        id: version
         run: |
           BUMP="${{ inputs.bump }}"
           LATEST_TAG=$(git tag -l 'da-v*' --sort=-v:refname | grep -E '^da-v[0-9]+\.[0-9]+\.[0-9]+$' | head -1 | sed 's|^da-v||')
-          if [ -z "$LATEST_TAG" ]; then
-            echo "::error::No existing da-v* tags found. Create an initial tag first (e.g. git tag da-v0.1.0)."
-            exit 1
-          fi
-          if [ "$BUMP" = "none" ]; then
-            echo "TAG=da-v${LATEST_TAG}" >> $GITHUB_ENV
+          if [ -z "$LATEST_TAG" ]; then LATEST_TAG="0.0.0"; fi
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$LATEST_TAG"
+          if [ "$BUMP" = "minor" ]; then
+            MINOR=$((MINOR + 1))
+            PATCH=0
           else
-            IFS='.' read -r MAJOR MINOR PATCH <<< "$LATEST_TAG"
-            if [ "$BUMP" = "minor" ]; then
-              MINOR=$((MINOR + 1))
-              PATCH=0
-            else
-              PATCH=$((PATCH + 1))
-            fi
-            echo "TAG=da-v${MAJOR}.${MINOR}.${PATCH}" >> $GITHUB_ENV
+            PATCH=$((PATCH + 1))
           fi
+          echo "tag=da-v${MAJOR}.${MINOR}.${PATCH}" >> $GITHUB_OUTPUT
 
       - name: Create tag
-        if: inputs.bump != 'none'
         run: |
           git config user.name "${{ github.actor }}"
           git config user.email "${{ github.actor_id }}+${{ github.actor }}@users.noreply.github.com"
-          git tag "${TAG}"
-          git push origin "${TAG}"
+          git tag "${{ steps.version.outputs.tag }}"
+          git push origin "${{ steps.version.outputs.tag }}"
 
-      - name: Checkout tag for rebuild
-        if: inputs.bump == 'none'
-        run: git checkout "${TAG}"
+  build:
+    if: always() && (needs.bump.result == 'success' || needs.bump.result == 'skipped')
+    needs: bump
+    defaults:
+      run:
+        working-directory: DA
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: linux
+            runner: [self-hosted, linux]
+            artifact: da-linux-amd64
+            ext: ''
+          - os: macos
+            runner: macos-latest
+            artifact: da-macos-arm64
+            ext: ''
+          - os: windows
+            runner: [self-hosted, Windows]
+            artifact: da-windows-amd64.exe
+            ext: '.exe'
+    name: build (${{ matrix.os }})
+    runs-on: ${{ matrix.runner }}
 
-      - name: Build and release
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ needs.bump.outputs.tag || github.ref }}
+          fetch-tags: true
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v6
+        if: matrix.os != 'linux'
+        with:
+          python-version: '3.12'
+
+      - name: Build binary (Linux)
+        if: matrix.os == 'linux'
         run: |
           python3 -m venv .venv
-          .venv/bin/pip install build setuptools-scm
-          .venv/bin/python -m build
+          .venv/bin/pip install pyinstaller setuptools-scm
+          .venv/bin/pip install -e .
+          .venv/bin/pyinstaller --onefile --name da --hidden-import=da --hidden-import=da.cli --hidden-import=da.client --hidden-import=da.config --hidden-import=da.session --hidden-import=da.tui --hidden-import=da.rich_tui --hidden-import=da.rich_render --hidden-import=da.obsidian --hidden-import=da.claude_sessions --hidden-import=da.session_manager --hidden-import=da.history_analyzer --hidden-import=yaml --copy-metadata DA da/cli.py
 
-      - name: Compute release name
-        run: echo "VERSION=${TAG#da-v}" >> $GITHUB_ENV
+      - name: Build binary
+        if: matrix.os != 'linux'
+        run: |
+          pip install pyinstaller setuptools-scm
+          pip install -e .
+          pyinstaller --onefile --name da --hidden-import=da --hidden-import=da.cli --hidden-import=da.client --hidden-import=da.config --hidden-import=da.session --hidden-import=da.tui --hidden-import=da.rich_tui --hidden-import=da.rich_render --hidden-import=da.obsidian --hidden-import=da.claude_sessions --hidden-import=da.session_manager --hidden-import=da.history_analyzer --hidden-import=yaml --copy-metadata DA da/cli.py
 
-      - name: Create Release
-        if: inputs.bump != 'none'
+      - name: Rename artifact
+        if: matrix.os != 'windows'
+        run: mv dist/da dist/${{ matrix.artifact }}
+
+      - name: Rename artifact (Windows)
+        if: matrix.os == 'windows'
+        run: Move-Item dist/da.exe dist/${{ matrix.artifact }}
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: ${{ matrix.artifact }}
+          path: DA/dist/${{ matrix.artifact }}
+
+  release:
+    needs: [bump, build]
+    if: always() && needs.build.result == 'success' && (needs.bump.result == 'success' || startsWith(github.ref, 'refs/tags/'))
+    runs-on: [self-hosted, linux]
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-tags: true
+          fetch-depth: 0
+
+      - uses: actions/download-artifact@v8
+        with:
+          path: artifacts/
+          merge-multiple: true
+
+      - name: Compute version
+        id: version
+        run: |
+          TAG="${{ needs.bump.outputs.tag || github.ref_name }}"
+          echo "clean=${TAG#da-v}" >> $GITHUB_OUTPUT
+
+      - name: Create release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ env.TAG }}
-          name: DA v${{ env.VERSION }}
-          files: DA/dist/*
+          tag_name: ${{ needs.bump.outputs.tag || github.ref_name }}
+          name: DA v${{ steps.version.outputs.clean }}
+          files: artifacts/*
           generate_release_notes: true
-
-      - name: Upload assets to existing release
-        if: inputs.bump == 'none'
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: gh release upload "${TAG}" dist/* --clobber
 
       - name: Update da/latest tag
         run: |
+          git config user.name "${{ github.actor }}"
+          git config user.email "${{ github.actor_id }}+${{ github.actor }}@users.noreply.github.com"
           git tag -f da/latest
           git push -f origin da/latest
