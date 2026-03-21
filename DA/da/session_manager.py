@@ -49,19 +49,15 @@ class SessionManagerApp(App):
     TITLE = "ДА Session Manager"
     SUB_TITLE = f"v{__version__}"
 
+    left_width = reactive(60)
+
     CSS = """
-    #left-panel {
-        width: 2fr;
-    }
-    #right-panel {
-        width: 1fr;
-        border-left: tall $primary;
-    }
     #da-table {
         height: 1fr;
     }
     #claude-tree {
         height: 1fr;
+        overflow-x: auto;
     }
     #detail-log {
         height: 1fr;
@@ -76,6 +72,9 @@ class SessionManagerApp(App):
         padding: 0 1;
         color: $text-muted;
     }
+    #right-panel {
+        border-left: tall $primary;
+    }
     TabPane { padding: 0; }
     """
 
@@ -87,6 +86,8 @@ class SessionManagerApp(App):
         Binding("ctrl+m", "move_session", "Move"),
         Binding("ctrl+s", "global_stats", "Stats"),
         Binding("ctrl+t", "toggle_tab", "Tab"),
+        Binding("ctrl+left", "shrink_left", "◄"),
+        Binding("ctrl+right", "grow_left", "►"),
     ]
 
     selected_da_session: reactive[str] = reactive("")
@@ -108,9 +109,23 @@ class SessionManagerApp(App):
                         yield Tree("Claude", id="claude-tree")
             with Vertical(id="right-panel"):
                 yield RichLog(id="detail-log", wrap=True, markup=True)
-                yield Input(placeholder="Command: rename <name> | copy <path> | move <path>", id="cmd-input")
+                yield Input(placeholder="Command: rename | copy | move | delete | stats | help", id="cmd-input")
         yield Static("", id="status")
         yield Footer()
+
+    def watch_left_width(self, width: int) -> None:
+        """Resize panels when left_width changes."""
+        try:
+            left = self.query_one("#left-panel", Vertical)
+            left.styles.width = width
+        except Exception:
+            pass
+
+    def action_shrink_left(self) -> None:
+        self.left_width = max(20, self.left_width - 5)
+
+    def action_grow_left(self) -> None:
+        self.left_width = min(120, self.left_width + 5)
 
     def on_mount(self) -> None:
         self._load_da_table()
@@ -185,7 +200,7 @@ class SessionManagerApp(App):
                 short = proj.split("/")[-1] or proj.split("\\")[-1] or proj
                 pnode = mnode.add(f"[cyan]{short}[/cyan] ({len(sessions)})", expand=False)
                 for s in sessions:
-                    label = f"{s['date']} {s['name'][:30]}" if s["date"] else s["name"][:35]
+                    label = f"{s['date']} {s['name']}" if s["date"] else s["name"]
                     leaf = pnode.add_leaf(label)
                     leaf.data = s
 
