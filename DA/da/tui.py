@@ -540,11 +540,81 @@ class DAApp(App):
                     leaf.data = s
                     self.claude_session_info[s["id"]] = s
 
+    def _populate_all_sessions_table(self, filter_text: str = "") -> None:
+        """Build unified table with all DA + Claude sessions, optionally filtered."""
+        import datetime
+        table = self.query_one("#all-sessions-table", DataTable)
+        table.clear(columns=True)
+        table.add_column("Type", key="type")
+        table.add_column("Machine", key="machine")
+        table.add_column("Project", key="project")
+        table.add_column("Date", key="date")
+        table.add_column("Msgs", key="msgs")
+        table.add_column("Name", key="name")
+
+        ft = filter_text.lower()
+
+        # DA sessions
+        for s in self.store.list_sessions_detailed(limit=100):
+            name = s["name"] or "—"
+            project = (s["project"] or "").split("/")[-1] or "—"
+            date = datetime.datetime.fromtimestamp(s["updated_at"]).strftime("%Y-%m-%d") if s["updated_at"] else "—"
+            row = ("ДА", "local", project, date, str(s["msg_count"]), name)
+            row_key = f"da:{s['id']}"
+            if ft and ft not in " ".join(row).lower():
+                continue
+            table.add_row(*row, key=row_key)
+
+        # Claude sessions
+        for sid, info in self.claude_session_info.items():
+            machine = info.get("machine_dir", "?")
+            project = _decode_project_dir(info.get("project_dir", "?")).split("/")[-1]
+            project = project.split("\\")[-1] if "\\" in project else project
+            date = info.get("date", "—")
+            name = info.get("name", "—")
+            row = ("Claude", _machine_label(machine), project, date, "—", name)
+            row_key = f"claude:{sid}"
+            if ft and ft not in " ".join(row).lower():
+                continue
+            table.add_row(*row, key=row_key)
+
+    def on_data_table_header_selected(self, event: DataTable.HeaderSelected) -> None:
+        """Sort table by clicked column."""
+        table = self.query_one("#all-sessions-table", DataTable)
+        table.sort(event.column_key)
+
+    def on_input_changed(self, event: Input.Changed) -> None:
+        """Filter sessions as user types in filter box."""
+        if event.input.id == "session-filter":
+            self._populate_all_sessions_table(event.value)
+
     # --- Event handlers ---
 
     def on_data_table_row_selected(self, event: DataTable.RowSelected) -> None:
-        """Handle Claude table row selection — show project sessions."""
+        """Handle table row selection."""
         key = str(event.row_key.value)
+        self._select_table_row(key)
+
+    def on_data_table_row_highlighted(self, event: DataTable.RowHighlighted) -> None:
+        """Show detail on highlight (single click)."""
+        if event.row_key and self.active_view == "sessions":
+            key = str(event.row_key.value)
+            self._select_table_row(key)
+
+    def _select_table_row(self, key: str) -> None:
+        """Select a session from the unified table."""
+        if key.startswith("da:"):
+            sid = key[3:]
+            self.viewing_claude = False
+            self.current_session_id = sid
+            if self.active_view == "sessions":
+                self._show_da_session_detail(sid)
+            self._update_status()
+        elif key.startswith("claude:"):
+            sid = key[7:]
+            info = self.claude_session_info.get(sid)
+            if info:
+                self._select_claude_session(info)
         if ":" in key:
             # Claude table row — show sessions for this project
             machine, proj = key.split(":", 1)
