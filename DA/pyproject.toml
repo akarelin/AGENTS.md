@@ -1,10 +1,10 @@
 [build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
+requires = ["setuptools>=64", "setuptools-scm>=8"]
+build-backend = "setuptools.build_meta"
 
 [project]
 name = "DA"
-version = "0.1.0"
+dynamic = ["version"]
 description = "Дebil Аgent: Personal multi-agent system that says ДА"
 requires-python = ">=3.11"
 dependencies = [
@@ -30,8 +30,13 @@ dev = [
 [project.scripts]
 da = "da.cli:cli"
 
-[tool.hatch.build.targets.wheel]
-packages = ["da"]
+[tool.setuptools_scm]
+tag_regex = "^da-v(?P<version>.*)$"
+git_describe_command = ["git", "describe", "--dirty", "--tags", "--long", "--match", "da-v*"]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["da*"]
 
 [tool.ruff]
 line-length = 100
