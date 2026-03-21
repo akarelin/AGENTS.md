@@ -27,7 +27,10 @@
       "Bash(python3 -c \"import ast; ast.parse\\(open\\(''da/cli.py''\\).read\\(\\)\\); print\\(''OK''\\)\")",
       "Bash(python -c \"import ast; ast.parse\\(open\\(''DA/da/rich_render.py''\\).read\\(\\)\\); print\\(''rich_render.py OK''\\)\")",
       "Bash(python -c \"import ast; ast.parse\\(open\\(''DA/da/tui.py''\\).read\\(\\)\\); print\\(''tui.py OK''\\)\")",
-      "Bash(python3:*)"
+      "Bash(python3:*)",
+      "Bash(find /home/alex/CRAP -type f -name *yaml* -o -name *editor*)",
+      "Bash(find /home/alex -path */gppu* -name *config_editor*)",
+      "Bash(find /home/alex/gppu -name README* -o -name *editor* -type f)"
     ],
     "additionalDirectories": [
       "/mnt/d/SD/.claude"

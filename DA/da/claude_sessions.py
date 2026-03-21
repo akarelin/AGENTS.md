@@ -289,6 +289,16 @@ class ClaudeSessionManager:
             "msg_count": session_info.get("msg_count") or fast_msg_count(session_info.get("file", "")),
         }
 
+    def rename_session(self, session_id: str, new_name: str) -> str:
+        """Rename a Claude session. TODO: implement."""
+        # Possible approach: update the first user message or add metadata file
+        raise NotImplementedError("Claude session rename not yet implemented")
+
+    def merge_sessions(self, session_ids: list[str]) -> str:
+        """Merge multiple sessions into one. TODO: implement."""
+        # Possible approach: concatenate JSONLs, deduplicate, fix parent UUIDs
+        raise NotImplementedError("Session merge not yet implemented")
+
     def list_hosts(self) -> list[dict]:
         """List all hosts with session counts."""
         cpath = Path(self.claude_dir)

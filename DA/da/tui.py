@@ -25,13 +25,15 @@ from rich.text import Text
 from textual import work
 from textual.app import App, ComposeResult
 from textual.binding import Binding
-from textual.containers import Horizontal, Vertical
+from textual.containers import Horizontal, Vertical, Center
 from textual.reactive import reactive
+from textual.screen import ModalScreen
 from textual.widgets import (
     DataTable,
     Footer,
     Header,
     Input,
+    Markdown as MarkdownWidget,
     RichLog,
     Static,
     TabbedContent,
@@ -392,6 +394,105 @@ BANNER = r"""
 """
 
 
+class ConfirmDialog(ModalScreen[bool]):
+    """Modal confirmation dialog."""
+
+    DEFAULT_CSS = """
+    ConfirmDialog {
+        align: center middle;
+    }
+    #confirm-box {
+        width: 50;
+        height: auto;
+        max-height: 12;
+        border: thick $accent;
+        background: $surface;
+        padding: 1 2;
+    }
+    #confirm-message {
+        margin-bottom: 1;
+    }
+    #confirm-buttons {
+        height: 3;
+        align: center middle;
+    }
+    .confirm-btn {
+        margin: 0 2;
+        min-width: 10;
+    }
+    """
+
+    BINDINGS = [
+        Binding("y", "confirm", "Yes"),
+        Binding("n", "cancel", "No"),
+        Binding("escape", "cancel", "Cancel"),
+    ]
+
+    def __init__(self, message: str, **kwargs):
+        super().__init__(**kwargs)
+        self._message = message
+
+    def compose(self) -> ComposeResult:
+        with Vertical(id="confirm-box"):
+            yield Static(self._message, id="confirm-message")
+            with Center(id="confirm-buttons"):
+                yield Static("[bold green]Y[/bold green]es  /  [bold red]N[/bold red]o")
+
+    def action_confirm(self) -> None:
+        self.dismiss(True)
+
+    def action_cancel(self) -> None:
+        self.dismiss(False)
+
+
+class InputDialog(ModalScreen[str]):
+    """Modal dialog with text input. Returns entered text or empty string on cancel."""
+
+    DEFAULT_CSS = """
+    InputDialog {
+        align: center middle;
+    }
+    #input-box {
+        width: 60;
+        height: auto;
+        max-height: 10;
+        border: thick $accent;
+        background: $surface;
+        padding: 1 2;
+    }
+    #input-label {
+        margin-bottom: 1;
+    }
+    #input-field {
+        width: 1fr;
+    }
+    """
+
+    BINDINGS = [
+        Binding("escape", "cancel", "Cancel"),
+    ]
+
+    def __init__(self, label: str, default: str = "", **kwargs):
+        super().__init__(**kwargs)
+        self._label = label
+        self._default = default
+
+    def compose(self) -> ComposeResult:
+        with Vertical(id="input-box"):
+            yield Static(self._label, id="input-label")
+            yield Input(value=self._default, id="input-field")
+
+    def on_mount(self) -> None:
+        self.query_one("#input-field", Input).focus()
+
+    def on_input_submitted(self, event: Input.Submitted) -> None:
+        if event.input.id == "input-field":
+            self.dismiss(event.value.strip())
+
+    def action_cancel(self) -> None:
+        self.dismiss("")
+
+
 class DAApp(App):
     TITLE = "ДА"
     SUB_TITLE = f"v{__version__}"
@@ -436,6 +537,9 @@ class DAApp(App):
     #obsidian-search { width: 1fr; }
     #obsidian-editor-pane { height: 1fr; }
     #obsidian-editor { height: 1fr; }
+    #obsidian-preview { height: 1fr; padding: 0 1; overflow-y: auto; }
+    #obsidian-preview.hidden { display: none; }
+    #obsidian-editor.hidden { display: none; }
     #obsidian-status { dock: bottom; height: 1; padding: 0 1; color: $text-muted; }
     /* --- Sessions view --- */
     #sessions-view { height: 1fr; }
@@ -458,7 +562,11 @@ class DAApp(App):
         Binding("ctrl+down", "next_session", "Next"),
         Binding("ctrl+t", "toggle_tab", "Tab"),
         Binding("ctrl+d", "delete_session", "Del"),
-        Binding("ctrl+o", "open_session", "Open"),
+        Binding("ctrl+o", "open_session", "Resume"),
+        Binding("ctrl+r", "rename_session", "Rename"),
+        Binding("ctrl+m", "move_session", "Move"),
+        Binding("ctrl+g", "merge_sessions", "Merge"),
+        Binding("ctrl+p", "toggle_preview", "Preview"),
         Binding("ctrl+left", "shrink_sidebar", "◄", show=False),
         Binding("ctrl+right", "grow_sidebar", "►", show=False),
         Binding("f1", "switch_da", "ДА"),
@@ -487,8 +595,6 @@ class DAApp(App):
         )
         self.busy = False
         self.loading_sessions = False
-        self._pending_delete: str | None = None
-        self._pending_delete_type: str | None = None
 
     def compose(self) -> ComposeResult:
         # Top menu bar
@@ -525,6 +631,7 @@ class DAApp(App):
             with Vertical(id="obsidian-editor-pane"):
                 yield Static("No note selected", id="obsidian-status")
                 yield TextArea("", language="markdown", theme="monokai", show_line_numbers=True, id="obsidian-editor")
+                yield MarkdownWidget("", id="obsidian-preview", classes="hidden")
 
         yield Footer()
 
@@ -625,6 +732,13 @@ class DAApp(App):
             return
         editor = self.query_one("#obsidian-editor", TextArea)
         editor.load_text(content)
+        # Also update preview if visible
+        try:
+            preview = self.query_one("#obsidian-preview", MarkdownWidget)
+            if not preview.has_class("hidden"):
+                preview.update(content)
+        except Exception:
+            pass
         self._obsidian_current_file = path
         self._obsidian_dirty = False
         # Status line from note_info
@@ -1050,19 +1164,8 @@ class DAApp(App):
             self._obsidian_search(text)
             return
 
-        # Session filter input — handle delete confirmation or ignore
+        # Session filter — just a filter, on_input_changed handles it
         if input_id == "session-filter":
-            if self._pending_delete and text.lower() == "yes":
-                event.input.value = ""
-                self._confirm_delete()
-                return
-            elif self._pending_delete:
-                event.input.value = ""
-                self._pending_delete = None
-                self._pending_delete_type = None
-                self._msg_to_active_view("tool", "Delete cancelled.")
-                return
-            # Otherwise it's just a filter — on_input_changed handles it
             return
 
         # Main prompt input
@@ -1070,16 +1173,6 @@ class DAApp(App):
         inp.value = ""
 
         if not text:
-            return
-
-        # Handle delete confirmation from main input
-        if self._pending_delete:
-            if text.lower() == "yes":
-                self._confirm_delete()
-            else:
-                self._pending_delete = None
-                self._pending_delete_type = None
-                self._log_msg("tool", "Delete cancelled.")
             return
 
         if text.startswith("/"):
@@ -1282,6 +1375,79 @@ class DAApp(App):
     def action_delete_session(self) -> None:
         self._do_delete_session()
 
+    def action_rename_session(self) -> None:
+        """Rename current session via modal input."""
+        sid = self.current_session_id
+        if not sid:
+            return
+        current_name = ""
+        if self.viewing_claude:
+            info = self.claude_session_info.get(sid)
+            current_name = info.get("name", "") if info else ""
+        else:
+            for m in self.session_messages.get(sid, []):
+                if m["role"] == "user":
+                    current_name = m["content"][:60]
+                    break
+
+        def on_rename(new_name: str) -> None:
+            if not new_name:
+                return
+            if self.viewing_claude:
+                # TODO: implement Claude session rename
+                self._log_msg("tool", "Claude session rename not yet implemented.")
+            else:
+                self.store.rename_session(sid, new_name)
+                self._populate_all_sessions_table()
+                self._log_msg("tool", f"Renamed to: {new_name}")
+
+        self.push_screen(InputDialog("Rename session:", current_name), on_rename)
+
+    def action_move_session(self) -> None:
+        """Move current session to a different directory via modal input."""
+        sid = self.current_session_id
+        if not sid:
+            return
+        if not self.viewing_claude:
+            self._log_msg("tool", "Only Claude sessions can be moved.")
+            return
+
+        def on_move(dest: str) -> None:
+            if not dest:
+                return
+            # TODO: implement session move
+            self._log_msg("tool", f"Move session not yet implemented. Target: {dest}")
+
+        self.push_screen(InputDialog("Move session to:"), on_move)
+
+    def action_merge_sessions(self) -> None:
+        """Merge two sessions together."""
+        sid = self.current_session_id
+        if not sid:
+            return
+        # TODO: implement session merge
+        self._log_msg("tool", "Session merge not yet implemented.")
+
+    def action_toggle_preview(self) -> None:
+        """Toggle between editor and rendered markdown preview in Obsidian view."""
+        if self.active_view != "obsidian":
+            return
+        try:
+            editor = self.query_one("#obsidian-editor", TextArea)
+            preview = self.query_one("#obsidian-preview", MarkdownWidget)
+        except Exception:
+            return
+
+        if editor.has_class("hidden"):
+            # Switch back to editor
+            editor.remove_class("hidden")
+            preview.add_class("hidden")
+        else:
+            # Switch to preview — render current editor content
+            preview.update(editor.text)
+            editor.add_class("hidden")
+            preview.remove_class("hidden")
+
     def action_open_session(self) -> None:
         """Open current session — switch to DA view for DA sessions, new terminal for Claude."""
         if self.viewing_claude:
@@ -1354,25 +1520,12 @@ class DAApp(App):
         result = launch_claude_session(info, {n: h for n, h in self.cfg.hosts.items()})
         self._log_msg("tool", result)
 
-    def _msg_to_active_view(self, role: str, content: str) -> None:
-        """Write message to whichever view is active."""
-        if self.active_view == "sessions":
-            try:
-                detail = self.query_one("#sessions-detail", RichLog)
-                detail.write(content)
-            except Exception:
-                self._log_msg(role, content)
-        else:
-            self._log_msg(role, content)
-
     def _do_delete_session(self) -> None:
-        """Prompt for confirmation before deleting."""
+        """Show modal confirmation, then delete."""
         sid = self.current_session_id
         if not sid:
-            self._msg_to_active_view("tool", "No session selected.")
             return
 
-        # Get session name for the prompt
         if self.viewing_claude:
             info = self.claude_session_info.get(sid)
             name = info.get("name", sid[:12]) if info else sid[:12]
@@ -1386,29 +1539,14 @@ class DAApp(App):
             name = name or sid[:12]
             stype = "ДА"
 
-        self._msg_to_active_view("tool", f"Delete {stype} session: {name}?")
-        self._msg_to_active_view("tool", "Type 'yes' to confirm, anything else to cancel.")
-        self._pending_delete = sid
-        self._pending_delete_type = stype
+        def on_confirm(confirmed: bool) -> None:
+            if confirmed:
+                self._execute_delete(sid, stype)
 
-        # Focus the right input
-        if self.active_view == "sessions":
-            try:
-                filt = self.query_one("#session-filter", Input)
-                filt.value = ""
-                filt.focus()
-            except Exception:
-                pass
-
-    def _confirm_delete(self) -> None:
-        """Execute the pending delete with loading indicator."""
-        sid = self._pending_delete
-        stype = self._pending_delete_type
-        self._pending_delete = None
-        self._pending_delete_type = None
-
-        self._msg_to_active_view("tool", "Deleting...")
-        self._execute_delete(sid, stype)
+        self.push_screen(
+            ConfirmDialog(f"Delete {stype} session?\n\n[bold]{name}[/bold]"),
+            on_confirm,
+        )
 
     @work(thread=True)
     def _execute_delete(self, sid: str, stype: str) -> None:
@@ -1418,7 +1556,7 @@ class DAApp(App):
                 result = self.claude_mgr.delete_session(sid)
                 self.session_messages.pop(sid, None)
                 self.claude_session_info.pop(sid, None)
-                self.call_from_thread(self._msg_to_active_view, "tool", result)
+                self.call_from_thread(self._log_msg, "tool", result)
                 self.call_from_thread(self._populate_tree_from_flat,
                     list(self.claude_session_info.values()))
                 self.call_from_thread(self._populate_all_sessions_table)
