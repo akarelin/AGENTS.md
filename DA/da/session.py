@@ -139,5 +139,31 @@ class SessionStore:
             for r in rows
         ]
 
+    def rename_session(self, session_id: str, new_name: str) -> None:
+        self.conn.execute(
+            "UPDATE sessions SET name = ? WHERE id = ?", (new_name, session_id)
+        )
+        self.conn.commit()
+
+    def get_global_stats(self) -> dict:
+        total_sessions = self.conn.execute("SELECT COUNT(*) FROM sessions").fetchone()[0]
+        total_messages = self.conn.execute("SELECT COUNT(*) FROM messages").fetchone()[0]
+        roles = dict(self.conn.execute(
+            "SELECT role, COUNT(*) FROM messages GROUP BY role"
+        ).fetchall())
+        projects = dict(self.conn.execute(
+            "SELECT project, COUNT(*) FROM sessions WHERE project != '' GROUP BY project ORDER BY COUNT(*) DESC LIMIT 10"
+        ).fetchall())
+        oldest = self.conn.execute("SELECT MIN(created_at) FROM sessions").fetchone()[0]
+        newest = self.conn.execute("SELECT MAX(updated_at) FROM sessions").fetchone()[0]
+        return {
+            "total_sessions": total_sessions,
+            "total_messages": total_messages,
+            "roles": roles,
+            "projects": projects,
+            "oldest": oldest,
+            "newest": newest,
+        }
+
     def close(self):
         self.conn.close()

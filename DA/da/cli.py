@@ -468,5 +468,13 @@ def tui(ctx: click.Context) -> None:
     run_tui(ctx.obj["config"])
 
 
+@cli.command()
+@click.pass_context
+def manage(ctx: click.Context) -> None:
+    """Session manager — browse, rename, copy, move, delete sessions."""
+    from da.session_manager import run_manager
+    run_manager(ctx.obj["config"])
+
+
 if __name__ == "__main__":
     cli()
