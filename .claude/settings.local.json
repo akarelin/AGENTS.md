@@ -10,7 +10,11 @@
       "Bash(git fetch:*)",
       "Bash(git branch:*)",
       "Bash(bash:*)",
-      "Bash(git:*)"
+      "Bash(git:*)",
+      "Read(//home/alex/DA/**)",
+      "Bash(.venv/bin/pip install:*)",
+      "Bash(export PATH=\"$HOME/bin:$PATH\")",
+      "Bash(da repl:*)"
     ],
     "additionalDirectories": [
       "/mnt/d/SD/.claude"
