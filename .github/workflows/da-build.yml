@@ -91,8 +91,18 @@ jobs:
         with:
           python-version: '3.12'
 
+      - name: Detect version
+        id: scm
+        shell: bash
+        working-directory: .
+        run: |
+          TAG="${{ needs.bump.outputs.tag }}"
+          echo "version=${TAG#da-v}" >> $GITHUB_OUTPUT
+
       - name: Build binary (Linux)
         if: matrix.os == 'linux'
+        env:
+          SETUPTOOLS_SCM_PRETEND_VERSION: ${{ steps.scm.outputs.version }}
         run: |
           python3 -m venv .venv
           .venv/bin/pip install pyinstaller setuptools-scm
@@ -101,6 +111,8 @@ jobs:
 
       - name: Build binary
         if: matrix.os != 'linux'
+        env:
+          SETUPTOOLS_SCM_PRETEND_VERSION: ${{ steps.scm.outputs.version }}
         run: |
           pip install pyinstaller setuptools-scm
           pip install -e .
