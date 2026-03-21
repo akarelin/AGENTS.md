@@ -72,7 +72,7 @@ def cli(ctx: click.Context, debug: bool, model: Optional[str], config: Optional[
     ctx.obj["session_store"] = SessionStore(cfg.session.db_path)
 
     if ctx.invoked_subcommand is None:
-        ctx.invoke(repl)
+        ctx.invoke(tui)
 
 
 @cli.command()
@@ -458,6 +458,14 @@ def _repl_turn(client, cfg, system, messages, tools) -> str:
         working_messages.append({"role": "user", "content": tool_results})
 
     return "\n".join(text_parts) if text_parts else "(max iterations)"
+
+
+@cli.command()
+@click.pass_context
+def tui(ctx: click.Context) -> None:
+    """Full TUI with session sidebar and multi-session support."""
+    from da.tui import run_tui
+    run_tui(ctx.obj["config"])
 
 
 if __name__ == "__main__":

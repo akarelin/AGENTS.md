@@ -18,7 +18,9 @@
       "Bash(da)",
       "Bash(rm:*)",
       "Bash(python3 -m venv .venv)",
-      "Bash(da version:*)"
+      "Bash(da version:*)",
+      "Bash(.venv/bin/python -c \"from da.tui import DAApp; print\\(''''TUI import OK''''\\)\")",
+      "Bash(.venv/bin/python -c \"from da.tui import DAApp; print\\(''''TUI OK''''\\)\")"
     ],
     "additionalDirectories": [
       "/mnt/d/SD/.claude"
