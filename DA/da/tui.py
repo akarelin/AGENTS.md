@@ -535,12 +535,70 @@ class DAApp(App):
         else:
             bar.update(f" {self.cfg.model} | {len(self.api_tools)} tools | /help")
 
-    @work(thread=True)
     def _load_claude_tree(self) -> None:
+        """Load Claude sessions — from cache first, then refresh in background."""
+        cached = self.store.get_cached_claude_sessions(max_age=3600)
+        if cached:
+            # Populate from cache instantly
+            for s in cached:
+                self.claude_session_info[s["id"]] = s
+            self._populate_tree_from_flat(cached)
+            self._populate_all_sessions_table()
+        # Always refresh in background
+        self._refresh_claude_from_disk()
+
+    @work(thread=True)
+    def _refresh_claude_from_disk(self) -> None:
+        """Scan .claude directory and update cache + UI."""
         claude_dir = self.cfg.claude_history or "/mnt/d/SD/.claude"
         data = load_claude_sessions(claude_dir)
+
+        # Flatten and add msg counts + file sizes for cache
+        all_sessions = []
+        for machine, projects in data.items():
+            for proj, sessions in projects.items():
+                for s in sessions:
+                    s["msg_count"] = _fast_msg_count(s.get("file", ""))
+                    fpath = Path(s["file"])
+                    s["file_size"] = fpath.stat().st_size if fpath.exists() else 0
+                    s["project_path"] = _decode_project_dir(s.get("project_dir", ""))
+                    subdir = fpath.parent / fpath.stem / "subagents"
+                    s["subagent_count"] = len(list(subdir.glob("*.jsonl"))) if subdir.is_dir() else 0
+                    all_sessions.append(s)
+
+        # Update cache
+        self.store.clear_claude_cache()
+        self.store.cache_claude_sessions_bulk(all_sessions)
+
+        # Update UI
+        for s in all_sessions:
+            self.claude_session_info[s["id"]] = s
         self.call_from_thread(self._populate_tree, data)
         self.call_from_thread(self._populate_all_sessions_table)
+
+    def _populate_tree_from_flat(self, sessions: list[dict]) -> None:
+        """Populate tree from flat cached session list."""
+        tree = self.query_one("#claude-tree", Tree)
+        tree.clear()
+        tree.root.expand()
+
+        # Group by machine -> project
+        grouped: dict[str, dict[str, list[dict]]] = {}
+        for s in sessions:
+            machine = s.get("machine_dir", "?")
+            proj = s.get("project_dir", "?")
+            grouped.setdefault(machine, {}).setdefault(proj, []).append(s)
+
+        for machine, projects in sorted(grouped.items()):
+            mnode = tree.root.add(f"[bold]{_machine_label(machine)}[/bold]", expand=False)
+            for proj_dir, sess_list in sorted(projects.items()):
+                proj_path = _decode_project_dir(proj_dir)
+                short = proj_path.split("/")[-1] or proj_path.split("\\")[-1] or proj_path
+                pnode = mnode.add(f"[cyan]{short}[/cyan] ({len(sess_list)})", expand=False)
+                for s in sess_list:
+                    label = f"{s['date']} {s['name']}" if s.get("date") else s.get("name", "")
+                    leaf = pnode.add_leaf(label)
+                    leaf.data = s
 
     def _populate_tree(self, data: dict) -> None:
         tree = self.query_one("#claude-tree", Tree)
@@ -589,7 +647,7 @@ class DAApp(App):
             project = project.split("\\")[-1] if "\\" in project else project
             date = info.get("date", "—")
             name = info.get("name", "—")
-            msgs = _fast_msg_count(info.get("file", ""))
+            msgs = info.get("msg_count", 0) or _fast_msg_count(info.get("file", ""))
             row = ("Claude", _machine_label(machine), project, date, msgs, name)
             row_key = f"claude:{sid}"
             if ft and ft not in " ".join(row).lower():
@@ -1160,8 +1218,11 @@ class DAApp(App):
                     shutil.rmtree(session_dir)
                 self.session_messages.pop(sid, None)
                 self.claude_session_info.pop(sid, None)
+                self.store.delete_cached_claude_session(sid)
                 self.call_from_thread(self._log_msg, "tool", f"Deleted Claude session: {name}")
-                self.call_from_thread(self._load_claude_tree)
+                self.call_from_thread(self._populate_tree_from_flat,
+                    list(self.claude_session_info.values()))
+                self.call_from_thread(self._populate_all_sessions_table)
             else:
                 name = ""
                 for m in self.session_messages.get(sid, []):
