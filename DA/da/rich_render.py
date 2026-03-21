@@ -21,39 +21,33 @@ console = Console()
 
 # ── Menu bar ─────────────────────────────────────────────────────────
 
-def render_menu_bar(active: str, model: str = "", tool_count: int = 0) -> Text:
+def render_menu_bar(
+    tabs: list[tuple[str, str, str]],
+    active: str,
+    status: str = "",
+) -> Text:
     """Render a menu bar with highlighted shortcut letters.
 
-    active: "da" or "sessions"
-    Renders:  [Д]А   [S]essions   model | tools | /help
+    tabs: [(key, label, view_name), ...] e.g. [("Д", "ДА", "da"), ("S", "essions", "sessions")]
+          key is the highlighted shortcut letter, label is the rest of the text.
+    active: which view_name is currently active
+    status: right-side status text
     """
     bar = Text()
-    # ДА tab
-    if active == "da":
-        bar.append(" [", style="bold white on blue")
-        bar.append("Д", style="bold yellow on blue underline")
-        bar.append("]А ", style="bold white on blue")
-    else:
-        bar.append(" [", style="dim")
-        bar.append("Д", style="yellow underline")
-        bar.append("]А ", style="dim")
+    for key, label, view_name in tabs:
+        is_active = (view_name == active)
+        if is_active:
+            bar.append(" [", style="bold white on blue")
+            bar.append(key, style="bold yellow on blue underline")
+            bar.append(f"]{label} ", style="bold white on blue")
+        else:
+            bar.append(" [", style="dim")
+            bar.append(key, style="yellow underline")
+            bar.append(f"]{label} ", style="dim")
+        bar.append(" ")
 
-    bar.append("  ")
-
-    # Sessions tab
-    if active == "sessions":
-        bar.append(" [", style="bold white on blue")
-        bar.append("S", style="bold yellow on blue underline")
-        bar.append("]essions ", style="bold white on blue")
-    else:
-        bar.append(" [", style="dim")
-        bar.append("S", style="yellow underline")
-        bar.append("]essions ", style="dim")
-
-    # Right-aligned status
-    if model or tool_count:
-        bar.append("  ")
-        bar.append(f"{model} | {tool_count} tools | /help", style="dim")
+    if status:
+        bar.append(f" {status}", style="dim")
 
     return bar
 

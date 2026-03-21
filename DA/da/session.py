@@ -38,6 +38,22 @@ class SessionStore:
                 timestamp REAL
             );
             CREATE INDEX IF NOT EXISTS idx_messages_session ON messages(session_id);
+
+            CREATE TABLE IF NOT EXISTS claude_sessions (
+                id TEXT PRIMARY KEY,
+                machine TEXT,
+                project_dir TEXT,
+                project_path TEXT,
+                name TEXT,
+                date TEXT,
+                file TEXT,
+                msg_count INTEGER DEFAULT 0,
+                file_size INTEGER DEFAULT 0,
+                subagent_count INTEGER DEFAULT 0,
+                cached_at REAL
+            );
+            CREATE INDEX IF NOT EXISTS idx_claude_machine ON claude_sessions(machine);
+            CREATE INDEX IF NOT EXISTS idx_claude_project ON claude_sessions(project_dir);
         """)
         self.conn.commit()
 
