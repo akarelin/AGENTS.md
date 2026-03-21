@@ -330,6 +330,7 @@ class DAApp(App):
         height: 1fr;
         overflow-x: auto;
     }
+    #claude-table { height: 1fr; }
     #new-session-btn {
         margin: 0 1; text-align: center; color: $success; height: 1;
     }
@@ -432,6 +433,7 @@ class DAApp(App):
         claude_dir = self.cfg.claude_history or "/mnt/d/SD/.claude"
         data = load_claude_sessions(claude_dir)
         self.call_from_thread(self._populate_tree, data)
+        self.call_from_thread(self._populate_claude_table, data)
 
     def _populate_tree(self, data: dict) -> None:
         tree = self.query_one("#claude-tree", Tree)
@@ -448,7 +450,48 @@ class DAApp(App):
                     leaf.data = s
                     self.claude_session_info[s["id"]] = s
 
+    def _populate_claude_table(self, data: dict) -> None:
+        """Fill the Claude table with session stats."""
+        table = self.query_one("#claude-table", DataTable)
+        table.clear(columns=True)
+        table.add_columns("Machine", "Project", "Sessions", "First", "Last", "Name")
+
+        for machine, projects in sorted(data.items()):
+            for proj, sessions in sorted(projects.items()):
+                short = proj.split("/")[-1] or proj.split("\\")[-1] or proj
+                dates = [s["date"] for s in sessions if s.get("date")]
+                first = min(dates) if dates else "—"
+                last = max(dates) if dates else "—"
+                latest_name = sessions[0]["name"] if sessions else "—"
+                table.add_row(
+                    machine, short, str(len(sessions)),
+                    first, last, latest_name,
+                    key=f"{machine}:{proj}",
+                )
+                # Also store individual sessions for drill-down
+                for s in sessions:
+                    self.claude_session_info[s["id"]] = s
+
     # --- Event handlers ---
+
+    def on_data_table_row_selected(self, event: DataTable.RowSelected) -> None:
+        """Handle Claude table row selection — show project sessions."""
+        key = str(event.row_key.value)
+        if ":" in key:
+            # Claude table row — show sessions for this project
+            machine, proj = key.split(":", 1)
+            sessions = [s for s in self.claude_session_info.values()
+                        if s.get("machine_dir") == machine
+                        and _decode_project_dir(s.get("project_dir", "")) == proj]
+            if sessions:
+                # Show first session
+                s = sessions[0]
+                self.viewing_claude = True
+                if s["id"] not in self.session_messages:
+                    msgs = load_claude_session_messages(s["file"])
+                    self.session_messages[s["id"]] = msgs
+                self.current_session_id = s["id"]
+                self._update_status()
 
     def on_list_view_selected(self, event: ListView.Selected) -> None:
         item = event.item
@@ -857,55 +900,52 @@ class DAApp(App):
         self._log_msg("tool", "\n".join(lines))
 
     def _show_session_detail(self) -> None:
-        """Show detailed view of current Claude session — file info, size, messages breakdown."""
+        """Show detailed view of current session with Rich Table."""
+        from rich.table import Table
+        from rich.panel import Panel
+
         sid = self.current_session_id
         info = self.claude_session_info.get(sid)
         msgs = self.session_messages.get(sid, [])
 
+        log = self.query_one("#chat-log", RichLog)
+
         if info:
-            # Claude session
             fpath = Path(info["file"])
             fsize = fpath.stat().st_size if fpath.exists() else 0
             machine = info.get("machine_dir", "?")
             project = _decode_project_dir(info.get("project_dir", "?"))
 
-            # Count subagents
             subagent_dir = fpath.parent / fpath.stem / "subagents"
             subagent_count = len(list(subagent_dir.glob("*.jsonl"))) if subagent_dir.is_dir() else 0
-
-            # Count tool results
             tool_results_dir = fpath.parent / fpath.stem / "tool-results"
             tool_result_count = len(list(tool_results_dir.iterdir())) if tool_results_dir.is_dir() else 0
 
-            # Message breakdown
             roles: dict[str, int] = {}
             for m in msgs:
                 roles[m["role"]] = roles.get(m["role"], 0) + 1
 
-            lines = [
-                f"Claude Session Detail",
-                f"{'─' * 50}",
-                f"ID:           {sid}",
-                f"Machine:      {machine}",
-                f"Project:      {project}",
-                f"File:         {info['file']}",
-                f"Size:         {fsize:,} bytes",
-                f"Date:         {info.get('date', '?')}",
-                f"First msg:    {info.get('name', '?')}",
-                f"{'─' * 50}",
-                f"Messages:     {len(msgs)}",
-            ]
-            for r, c in sorted(roles.items()):
-                lines.append(f"  {r:12s} {c}")
-            lines.append(f"Subagents:    {subagent_count}")
-            lines.append(f"Tool results: {tool_result_count}")
-
-            # Show if session is copied locally
             local_path = Path.home() / ".claude" / "projects" / info.get("project_dir", "") / fpath.name
-            lines.append(f"{'─' * 50}")
-            lines.append(f"Local copy:   {'yes' if local_path.exists() else 'no'}")
-            if local_path.exists():
-                lines.append(f"  {local_path}")
+
+            # Info table
+            t = Table(show_header=False, box=None, pad_edge=False, show_edge=False)
+            t.add_column("key", style="bold cyan", width=14, no_wrap=True)
+            t.add_column("val")
+            t.add_row("ID", sid[:12])
+            t.add_row("Machine", machine)
+            t.add_row("Project", project)
+            t.add_row("Date", info.get("date", "?"))
+            t.add_row("Size", f"{fsize:,} bytes")
+            t.add_row("Messages", str(len(msgs)))
+            for r, c in sorted(roles.items()):
+                t.add_row(f"  {r}", str(c))
+            t.add_row("Subagents", str(subagent_count))
+            t.add_row("Tool results", str(tool_result_count))
+            t.add_row("Local copy", "[green]yes[/green]" if local_path.exists() else "[dim]no[/dim]")
+
+            log.write(Panel(t, title="Claude Session", border_style="cyan"))
+            log.write(Text(info.get("name", ""), style="italic"))
+            return
 
             self._log_msg("tool", "\n".join(lines))
         else:
