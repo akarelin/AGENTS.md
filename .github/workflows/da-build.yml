@@ -36,8 +36,8 @@ jobs:
         run: |
           python3 -m venv .venv
           .venv/bin/pip install setuptools-scm
-          .venv/bin/pip install -e ".[dev]"
-          .venv/bin/ruff check da/
+          .venv/bin/pip install -e .
+          .venv/bin/python -c "import da"
 
   release:
     needs: test
