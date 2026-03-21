@@ -15,6 +15,11 @@ import subprocess
 import uuid
 from pathlib import Path
 
+from rich.markdown import Markdown
+from rich.panel import Panel
+from rich.rule import Rule
+from rich.syntax import Syntax
+from rich.table import Table
 from rich.text import Text
 
 from textual import work
@@ -378,23 +383,23 @@ class DAApp(App):
     #menu-bar {
         dock: top;
         height: 1;
-        background: $accent;
-        color: $text;
-        padding: 0 1;
+        background: $surface-darken-1;
     }
-    .menu-item {
+    .menu-tab {
         width: auto;
-        padding: 0 2;
-        background: $accent;
+        padding: 0 3;
+        background: $surface-darken-1;
+        color: $text-muted;
+    }
+    .menu-tab:hover {
+        background: $surface;
         color: $text;
     }
-    .menu-item:hover {
-        background: $accent-lighten-2;
+    .menu-tab.-active {
+        background: $panel;
+        color: $text;
         text-style: bold;
-    }
-    .menu-item.-active {
-        background: $accent-lighten-3;
-        text-style: bold underline;
+        border-bottom: tall $accent;
     }
     /* --- ДА view --- */
     #da-view { height: 1fr; }
@@ -451,8 +456,8 @@ class DAApp(App):
     def compose(self) -> ComposeResult:
         # Top menu bar
         with Horizontal(id="menu-bar"):
-            yield MenuItem(" ДА ", "switch_da", id="menu-da", classes="menu-item -active")
-            yield MenuItem(" Sessions ", "switch_sessions", id="menu-sessions", classes="menu-item")
+            yield MenuItem(" ДА ", "switch_da", id="menu-da", classes="menu-tab -active")
+            yield MenuItem(" Sessions ", "switch_sessions", id="menu-sessions", classes="menu-tab")
 
         # View 1: ДА interactive terminal
         with Vertical(id="da-view"):
@@ -609,31 +614,52 @@ class DAApp(App):
                 self.current_session_id = s["id"]
                 self._update_status()
 
+    def _select_da_session(self, item: DASessionItem) -> None:
+        self.viewing_claude = False
+        self.current_session_id = item.session_id
+        if self.active_view == "sessions":
+            self._show_da_session_detail(item.session_id)
+        self._update_status()
+
+    def _select_claude_session(self, data: dict) -> None:
+        sid = data["id"]
+        self.viewing_claude = True
+        try:
+            copy_session_to_local(data)
+        except Exception:
+            pass
+        if sid not in self.session_messages:
+            msgs = load_claude_session_messages(data["file"])
+            self.session_messages[sid] = msgs
+        self.current_session_id = sid
+        if self.active_view == "sessions":
+            self._show_claude_session_detail(data)
+        self._update_status()
+
+    # Click (enter) on session
     def on_list_view_selected(self, event: ListView.Selected) -> None:
         item = event.item
         if isinstance(item, DASessionItem):
-            self.viewing_claude = False
-            self.current_session_id = item.session_id
-            if self.active_view == "sessions":
-                self._show_da_session_detail(item.session_id)
-            self._update_status()
+            self._select_da_session(item)
 
+    # Single click / highlight on session
+    def on_list_view_highlighted(self, event: ListView.Highlighted) -> None:
+        item = event.item
+        if isinstance(item, DASessionItem) and self.active_view == "sessions":
+            self._select_da_session(item)
+
+    # Click (enter) on tree node
     def on_tree_node_selected(self, event: Tree.NodeSelected) -> None:
         node = event.node
         if node.data and isinstance(node.data, dict) and "file" in node.data:
-            sid = node.data["id"]
-            self.viewing_claude = True
-            try:
-                copy_session_to_local(node.data)
-            except Exception:
-                pass
-            if sid not in self.session_messages:
-                msgs = load_claude_session_messages(node.data["file"])
-                self.session_messages[sid] = msgs
-            self.current_session_id = sid
+            self._select_claude_session(node.data)
+
+    # Single click / highlight on tree node
+    def on_tree_node_highlighted(self, event: Tree.NodeHighlighted) -> None:
+        node = event.node
+        if node.data and isinstance(node.data, dict) and "file" in node.data:
             if self.active_view == "sessions":
-                self._show_claude_session_detail(node.data)
-            self._update_status()
+                self._select_claude_session(node.data)
 
     def watch_current_session_id(self, session_id: str) -> None:
         if not session_id:
