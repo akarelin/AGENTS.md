@@ -288,26 +288,66 @@ def repl(ctx: click.Context, model: Optional[str]) -> None:
     messages: list[dict] = []
 
     from da import __version__
+    from prompt_toolkit import PromptSession
+    from prompt_toolkit.history import FileHistory
+    from prompt_toolkit.completion import WordCompleter, Completer, Completion
+    from prompt_toolkit.formatted_text import HTML
 
+    # Slash command completer — triggers on /
+    SLASH_COMMANDS = {
+        "/model": "switch model (opus/sonnet/haiku)",
+        "/model opus": "claude-opus-4-6",
+        "/model sonnet": "claude-sonnet-4-6",
+        "/model haiku": "claude-haiku-4-5",
+        "/tools": "list available tools",
+        "/hosts": "list configured hosts",
+        "/session": "show current session ID",
+        "/help": "show all commands",
+    }
+
+    class SlashCompleter(Completer):
+        def get_completions(self, document, complete_event):
+            text = document.text_before_cursor
+            if text.startswith("/"):
+                for cmd, desc in SLASH_COMMANDS.items():
+                    if cmd.startswith(text):
+                        yield Completion(cmd, start_position=-len(text), display_meta=desc)
+
+    # Banner
     BANNER = r"""
-      ░████             ░██        ░██░██       ░███                                        ░██    
-    ░██  ░██            ░██           ░██      ░██░██                                       ░██    
-   ░██   ░██  ░███████  ░████████  ░██░██     ░██  ░██   ░████████  ░███████  ░████████  ░████████ 
-  ░██    ░██ ░██    ░██ ░██    ░██ ░██░██    ░█████████ ░██    ░██ ░██    ░██ ░██    ░██    ░██    
-  ░██    ░██ ░█████████ ░██    ░██ ░██░██    ░██    ░██ ░██    ░██ ░█████████ ░██    ░██    ░██    
-  ░██    ░██ ░██        ░███   ░██ ░██░██    ░██    ░██ ░██   ░███ ░██        ░██    ░██    ░██    
-  ░█████████  ░███████  ░██░█████  ░██░██    ░██    ░██  ░█████░██  ░███████  ░██    ░██     ░████ 
-░██        ░██                                                 ░██                                 
-Агент который только говорит ДА                          ░███████                                  
+      ░████             ░██        ░██░██       ░███                                        ░██
+    ░██  ░██            ░██           ░██      ░██░██                                       ░██
+   ░██   ░██  ░███████  ░████████  ░██░██     ░██  ░██   ░████████  ░███████  ░████████  ░████████
+  ░██    ░██ ░██    ░██ ░██    ░██ ░██░██    ░█████████ ░██    ░██ ░██    ░██ ░██    ░██    ░██
+  ░██    ░██ ░█████████ ░██    ░██ ░██░██    ░██    ░██ ░██    ░██ ░█████████ ░██    ░██    ░██
+  ░██    ░██ ░██        ░███   ░██ ░██░██    ░██    ░██ ░██   ░███ ░██        ░██    ░██    ░██
+  ░█████████  ░███████  ░██░█████  ░██░██    ░██    ░██  ░█████░██  ░███████  ░██    ░██     ░████
+░██        ░██                                                 ░██
+Агент который только говорит ДА                          ░███████
 """
     console.print(f"[bold cyan]{BANNER}[/bold cyan]", highlight=False)
-    console.print(f"  v{__version__} | {cfg.model} | {len(tools)} hands | {len(cfg.hosts)} heads", style="dim")
-    console.print("  type 'exit' or Ctrl+C to quit\n", style="dim")
+    console.print(f"  v{__version__} | {cfg.model} | {len(tools)} tools | {len(cfg.hosts)} hosts", style="dim")
+    console.print("  type /help or Ctrl+C to quit\n", style="dim")
+
+    # prompt_toolkit session with history + completion
+    history_path = Path.home() / ".da" / "history.txt"
+    history_path.parent.mkdir(parents=True, exist_ok=True)
+    session = PromptSession(
+        history=FileHistory(str(history_path)),
+        completer=SlashCompleter(),
+        complete_while_typing=True,
+    )
+
+    MODELS = {
+        "opus": "claude-opus-4-6",
+        "sonnet": "claude-sonnet-4-6",
+        "haiku": "claude-haiku-4-5-20251001",
+    }
 
     try:
         while True:
             try:
-                user_input = console.input("[bold green]da>[/bold green] ").strip()
+                user_input = session.prompt("da> ").strip()
             except EOFError:
                 break
 
@@ -316,67 +356,41 @@ def repl(ctx: click.Context, model: Optional[str]) -> None:
             if user_input.lower() in ("exit", "quit", "q"):
                 break
 
-            # REPL slash commands
+            # Slash commands
             if user_input.startswith("/"):
                 parts = user_input.split(None, 1)
                 cmd = parts[0].lower()
 
-                if cmd == "/":
-                    console.print("  [cyan]/model[/cyan]   — switch model (opus/sonnet/haiku)")
-                    console.print("  [cyan]/tools[/cyan]   — list available tools")
-                    console.print("  [cyan]/hosts[/cyan]   — list configured hosts")
-                    console.print("  [cyan]/session[/cyan] — show current session ID")
-                    console.print("  [cyan]/help[/cyan]    — detailed help")
-                    console.print("  [cyan]exit[/cyan]     — quit")
-                    continue
-
-                elif cmd == "/model":
-                    models = {
-                        "opus": "claude-opus-4-6",
-                        "sonnet": "claude-sonnet-4-6",
-                        "haiku": "claude-haiku-4-5-20251001",
-                    }
-                    if len(parts) > 1 and parts[1].strip().lower() in models:
-                        cfg.model = models[parts[1].strip().lower()]
+                if cmd == "/model":
+                    if len(parts) > 1 and parts[1].strip().lower() in MODELS:
+                        cfg.model = MODELS[parts[1].strip().lower()]
                         console.print(f"[bold green]Model: {cfg.model}[/bold green]")
                     elif len(parts) > 1:
                         cfg.model = parts[1].strip()
                         console.print(f"[bold green]Model: {cfg.model}[/bold green]")
                     else:
                         console.print(f"[bold]Current:[/bold] {cfg.model}")
-                        console.print("[dim]  /model opus   — claude-opus-4-6[/dim]")
-                        console.print("[dim]  /model sonnet — claude-sonnet-4-6[/dim]")
-                        console.print("[dim]  /model haiku  — claude-haiku-4-5[/dim]")
-                    continue
-
+                        for alias, mid in MODELS.items():
+                            console.print(f"[dim]  /model {alias:7s} — {mid}[/dim]")
                 elif cmd == "/help":
-                    console.print("[bold]REPL Commands:[/bold]")
-                    console.print("  /model [name]  — switch model (opus/sonnet/haiku)")
-                    console.print("  /tools         — list available tools")
-                    console.print("  /hosts         — list configured hosts")
-                    console.print("  /session       — show current session ID")
-                    console.print("  /help          — this help")
-                    console.print("  exit           — quit")
-                    continue
-
+                    console.print("[bold]Commands:[/bold]")
+                    for c, d in SLASH_COMMANDS.items():
+                        if not c.startswith("/model "):
+                            console.print(f"  [cyan]{c:10s}[/cyan] — {d}")
+                    console.print("  [cyan]exit      [/cyan] — quit")
                 elif cmd == "/tools":
                     for t in ALL_TOOL_DEFS:
-                        console.print(f"  [cyan]{t['name']}[/cyan] — {t['description'][:60]}")
-                    continue
-
+                        console.print(f"  [cyan]{t['name']:18s}[/cyan] {t['description'][:55]}")
                 elif cmd == "/hosts":
                     for name, h in cfg.hosts.items():
-                        console.print(f"  [cyan]{name}[/cyan] — {h.ssh} [{', '.join(h.roles)}]")
-                    continue
-
+                        console.print(f"  [cyan]{name:15s}[/cyan] {h.ssh} [{', '.join(h.roles)}]")
                 elif cmd == "/session":
                     console.print(f"  [dim]{session_id}[/dim]")
-                    continue
-
                 else:
-                    console.print(f"[yellow]Unknown command: {cmd}. Type /help[/yellow]")
-                    continue
+                    console.print(f"[yellow]Unknown: {cmd}. Type /help[/yellow]")
+                continue
 
+            # Agent turn
             messages.append({"role": "user", "content": user_input})
             store.add_message(session_id, "user", user_input)
 
