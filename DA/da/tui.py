@@ -99,6 +99,21 @@ def _first_user_message(path: Path) -> str:
     return path.stem[:12]
 
 
+def _fast_msg_count(filepath: str) -> int:
+    """Fast message count — scans for type markers without full JSON parse."""
+    try:
+        count = 0
+        with open(filepath, "r", encoding="utf-8", errors="replace") as f:
+            for line in f:
+                if '"type":"user"' in line or '"type": "user"' in line:
+                    count += 1
+                elif '"type":"assistant"' in line or '"type": "assistant"' in line:
+                    count += 1
+        return count
+    except Exception:
+        return 0
+
+
 def _session_timestamp(path: Path) -> str:
     try:
         with open(path, "r", encoding="utf-8", errors="replace") as f:
@@ -572,7 +587,8 @@ class DAApp(App):
             project = project.split("\\")[-1] if "\\" in project else project
             date = info.get("date", "—")
             name = info.get("name", "—")
-            row = ("Claude", _machine_label(machine), project, date, "—", name)
+            msgs = _fast_msg_count(info.get("file", ""))
+            row = ("Claude", _machine_label(machine), project, date, str(msgs), name)
             row_key = f"claude:{sid}"
             if ft and ft not in " ".join(row).lower():
                 continue

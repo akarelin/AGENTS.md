@@ -778,6 +778,14 @@ def tui(ctx: click.Context) -> None:
 
 @cli.command()
 @click.pass_context
+def rich(ctx: click.Context) -> None:
+    """Rich console REPL — lightweight alternative to full TUI."""
+    from da.rich_tui import run_rich_tui
+    run_rich_tui(ctx.obj["config"])
+
+
+@cli.command()
+@click.pass_context
 def manage(ctx: click.Context) -> None:
     """Session manager — browse, rename, copy, move, delete sessions."""
     from da.session_manager import run_manager
