@@ -392,29 +392,28 @@ class DAApp(App):
         background: $accent-lighten-2;
         text-style: bold;
     }
-    #sidebar {
+    .menu-item.-active {
+        background: $accent-lighten-3;
+        text-style: bold underline;
+    }
+    /* --- ДА view --- */
+    #da-view { height: 1fr; }
+    #da-view.hidden { display: none; }
+    #chat-log { height: 1fr; padding: 0 1; }
+    #prompt-input { width: 1fr; }
+    #status-bar { dock: bottom; height: 1; padding: 0 1; color: $text-muted; }
+    /* --- Sessions view --- */
+    #sessions-view { height: 1fr; }
+    #sessions-view.hidden { display: none; }
+    #sessions-sidebar {
         width: 34;
-        dock: left;
         background: $surface;
         border-right: tall $primary;
     }
+    #sessions-detail { height: 1fr; padding: 0 1; }
     #da-session-list { height: 1fr; }
-    #claude-tree {
-        height: 1fr;
-        overflow-x: auto;
-    }
+    #claude-tree { height: 1fr; overflow-x: auto; }
     #claude-table { height: 1fr; }
-    #new-session-btn {
-        margin: 0 1; text-align: center; color: $success; height: 1;
-    }
-    #chat-log {
-        height: 1fr;
-        padding: 0 1;
-    }
-    #prompt-input { width: 1fr; }
-    #status-bar {
-        dock: bottom; height: 1; padding: 0 1; color: $text-muted;
-    }
     TabPane { padding: 0; }
     """
 
@@ -428,6 +427,8 @@ class DAApp(App):
         Binding("ctrl+o", "open_session", "Open"),
         Binding("ctrl+left", "shrink_sidebar", "◄", show=False),
         Binding("ctrl+right", "grow_sidebar", "►", show=False),
+        Binding("f1", "switch_da", "ДА"),
+        Binding("f2", "switch_sessions", "Sessions"),
     ]
 
     current_session_id: reactive[str] = reactive("")
@@ -448,35 +449,64 @@ class DAApp(App):
         self.busy = False
 
     def compose(self) -> ComposeResult:
+        # Top menu bar
         with Horizontal(id="menu-bar"):
-            yield Static(" ДА ", classes="menu-item")
-            yield MenuItem(" REPLs ", "open_session", classes="menu-item")
-            yield MenuItem(" Manage Sessions ", "open_manager", classes="menu-item")
-        with Horizontal():
-            with Vertical(id="sidebar"):
+            yield MenuItem(" ДА ", "switch_da", id="menu-da", classes="menu-item -active")
+            yield MenuItem(" Sessions ", "switch_sessions", id="menu-sessions", classes="menu-item")
+
+        # View 1: ДА interactive terminal
+        with Vertical(id="da-view"):
+            yield RichLog(id="chat-log", wrap=True, markup=True)
+            yield Static("", id="status-bar")
+            yield Input(placeholder="Ask anything... (/ for commands)", id="prompt-input")
+
+        # View 2: Sessions browser
+        with Horizontal(id="sessions-view", classes="hidden"):
+            with Vertical(id="sessions-sidebar"):
                 with TabbedContent(id="sidebar-tabs"):
                     with TabPane("ДА", id="tab-da"):
                         yield ListView(id="da-session-list")
-                        yield Static(" [Ctrl+N] New", id="new-session-btn")
-                    with TabPane("Tree", id="tab-claude"):
+                    with TabPane("Claude Tree", id="tab-claude"):
                         yield Tree("Sessions", id="claude-tree")
-                    with TabPane("Table", id="tab-claude-table"):
+                    with TabPane("Claude Table", id="tab-claude-table"):
                         yield DataTable(id="claude-table", cursor_type="row")
-            yield DragHandle("sidebar")
+            yield DragHandle("sessions-sidebar")
             with Vertical():
-                yield RichLog(id="chat-log", wrap=True, markup=True)
-                yield Static("", id="status-bar")
-                yield Input(placeholder="Ask anything... (/ for commands)", id="prompt-input")
+                yield RichLog(id="sessions-detail", wrap=True, markup=True)
+
         yield Footer()
+
+    active_view: reactive[str] = reactive("da")
 
     def on_mount(self) -> None:
         self._refresh_da_sessions()
         self._load_claude_tree()
-        da_list = self.query_one("#da-session-list", ListView)
-        if da_list.children:
-            da_list.index = 0
+        self._create_new_session()
+        self._update_status()
+
+    def action_switch_da(self) -> None:
+        self.active_view = "da"
+
+    def action_switch_sessions(self) -> None:
+        self.active_view = "sessions"
+
+    def watch_active_view(self, view: str) -> None:
+        da_view = self.query_one("#da-view", Vertical)
+        sessions_view = self.query_one("#sessions-view", Horizontal)
+        menu_da = self.query_one("#menu-da", MenuItem)
+        menu_sessions = self.query_one("#menu-sessions", MenuItem)
+
+        if view == "da":
+            da_view.remove_class("hidden")
+            sessions_view.add_class("hidden")
+            menu_da.add_class("-active")
+            menu_sessions.remove_class("-active")
+            self.query_one("#prompt-input", Input).focus()
         else:
-            self._create_new_session()
+            da_view.add_class("hidden")
+            sessions_view.remove_class("hidden")
+            menu_da.remove_class("-active")
+            menu_sessions.add_class("-active")
         self._update_status()
 
     # --- Session management ---
@@ -584,6 +614,8 @@ class DAApp(App):
         if isinstance(item, DASessionItem):
             self.viewing_claude = False
             self.current_session_id = item.session_id
+            if self.active_view == "sessions":
+                self._show_da_session_detail(item.session_id)
             self._update_status()
 
     def on_tree_node_selected(self, event: Tree.NodeSelected) -> None:
@@ -591,17 +623,16 @@ class DAApp(App):
         if node.data and isinstance(node.data, dict) and "file" in node.data:
             sid = node.data["id"]
             self.viewing_claude = True
-
-            # Copy session to local .claude so 'claude --resume' would work
             try:
                 copy_session_to_local(node.data)
             except Exception:
                 pass
-
             if sid not in self.session_messages:
                 msgs = load_claude_session_messages(node.data["file"])
                 self.session_messages[sid] = msgs
             self.current_session_id = sid
+            if self.active_view == "sessions":
+                self._show_claude_session_detail(node.data)
             self._update_status()
 
     def watch_current_session_id(self, session_id: str) -> None:
@@ -610,7 +641,99 @@ class DAApp(App):
         if session_id not in self.session_messages:
             stored = self.store.get_messages(session_id, limit=100)
             self.session_messages[session_id] = stored
-        self._render_log()
+        if self.active_view == "da":
+            self._render_log()
+
+    def _show_da_session_detail(self, sid: str) -> None:
+        """Show DA session stats in sessions detail panel."""
+        import datetime
+        from rich.table import Table
+        from rich.panel import Panel
+
+        detail = self.query_one("#sessions-detail", RichLog)
+        detail.clear()
+        stats = self.store.get_session_stats(sid)
+        if not stats:
+            detail.write("No session data.")
+            return
+        created = datetime.datetime.fromtimestamp(stats["created_at"]).strftime("%Y-%m-%d %H:%M") if stats["created_at"] else "?"
+        updated = datetime.datetime.fromtimestamp(stats["updated_at"]).strftime("%Y-%m-%d %H:%M") if stats["updated_at"] else "?"
+        t = Table(show_header=False, box=None, pad_edge=False, show_edge=False)
+        t.add_column("key", style="bold cyan", width=14, no_wrap=True)
+        t.add_column("val")
+        t.add_row("Name", stats["name"] or "—")
+        t.add_row("ID", sid[:12])
+        t.add_row("Project", stats.get("project", "—"))
+        t.add_row("Created", created)
+        t.add_row("Updated", updated)
+        t.add_row("Messages", str(stats["total_messages"]))
+        for role, count in sorted(stats["message_counts"].items()):
+            t.add_row(f"  {role}", str(count))
+        detail.write(Panel(t, title="ДА Session", border_style="green"))
+
+        # Show last few messages preview
+        msgs = self.session_messages.get(sid, [])
+        if msgs:
+            detail.write("")
+            detail.write(Text("Recent:", style="bold"))
+            for m in msgs[-5:]:
+                if m["role"] == "user":
+                    detail.write(Text(f"> {m['content'][:100]}", style="green"))
+                elif m["role"] == "assistant":
+                    detail.write(m["content"][:200])
+
+    def _show_claude_session_detail(self, info: dict) -> None:
+        """Show Claude session stats in sessions detail panel."""
+        from rich.table import Table
+        from rich.panel import Panel
+
+        detail = self.query_one("#sessions-detail", RichLog)
+        detail.clear()
+
+        fpath = Path(info["file"])
+        fsize = fpath.stat().st_size if fpath.exists() else 0
+        machine = info.get("machine_dir", "?")
+        project = _decode_project_dir(info.get("project_dir", "?"))
+        sid = info["id"]
+
+        subagent_dir = fpath.parent / fpath.stem / "subagents"
+        subagent_count = len(list(subagent_dir.glob("*.jsonl"))) if subagent_dir.is_dir() else 0
+        tool_results_dir = fpath.parent / fpath.stem / "tool-results"
+        tool_result_count = len(list(tool_results_dir.iterdir())) if tool_results_dir.is_dir() else 0
+
+        msgs = self.session_messages.get(sid, [])
+        roles: dict[str, int] = {}
+        for m in msgs:
+            roles[m["role"]] = roles.get(m["role"], 0) + 1
+
+        local_path = Path.home() / ".claude" / "projects" / info.get("project_dir", "") / fpath.name
+
+        t = Table(show_header=False, box=None, pad_edge=False, show_edge=False)
+        t.add_column("key", style="bold cyan", width=14, no_wrap=True)
+        t.add_column("val")
+        t.add_row("ID", sid[:12])
+        t.add_row("Machine", _machine_label(machine))
+        t.add_row("Project", project)
+        t.add_row("Date", info.get("date", "?"))
+        t.add_row("Size", f"{fsize:,} bytes")
+        t.add_row("Messages", str(len(msgs)))
+        for r, c in sorted(roles.items()):
+            t.add_row(f"  {r}", str(c))
+        t.add_row("Subagents", str(subagent_count))
+        t.add_row("Tool results", str(tool_result_count))
+        t.add_row("Local copy", "[green]yes[/green]" if local_path.exists() else "[dim]no[/dim]")
+        detail.write(Panel(t, title="Claude Session", border_style="cyan"))
+        detail.write(Text(info.get("name", ""), style="italic"))
+
+        # Show last few messages preview
+        if msgs:
+            detail.write("")
+            detail.write(Text("Recent:", style="bold"))
+            for m in msgs[-5:]:
+                if m["role"] == "user":
+                    detail.write(Text(f"> {m['content'][:100]}", style="green"))
+                elif m["role"] == "assistant":
+                    detail.write(m["content"][:200])
 
     def _render_log(self) -> None:
         """Render current session into RichLog."""
@@ -825,38 +948,49 @@ class DAApp(App):
             sl.index += 1
 
     def action_toggle_tab(self) -> None:
-        tabs = self.query_one("#sidebar-tabs", TabbedContent)
-        if tabs.active == "tab-da":
-            tabs.active = "tab-claude"
-        elif tabs.active == "tab-claude":
-            tabs.active = "tab-claude-table"
+        if self.active_view == "da":
+            self.active_view = "sessions"
         else:
-            tabs.active = "tab-da"
+            # Cycle session tabs
+            tabs = self.query_one("#sidebar-tabs", TabbedContent)
+            if tabs.active == "tab-da":
+                tabs.active = "tab-claude"
+            elif tabs.active == "tab-claude":
+                tabs.active = "tab-claude-table"
+            else:
+                tabs.active = "tab-da"
 
     def action_shrink_sidebar(self) -> None:
-        sidebar = self.query_one("#sidebar", Vertical)
-        current = sidebar.styles.width
-        w = current.value if hasattr(current, "value") else 34
-        sidebar.styles.width = max(20, int(w) - 5)
+        try:
+            sidebar = self.query_one("#sessions-sidebar", Vertical)
+            current = sidebar.styles.width
+            w = current.value if hasattr(current, "value") else 34
+            sidebar.styles.width = max(20, int(w) - 5)
+        except Exception:
+            pass
 
     def action_grow_sidebar(self) -> None:
-        sidebar = self.query_one("#sidebar", Vertical)
-        current = sidebar.styles.width
-        w = current.value if hasattr(current, "value") else 34
-        sidebar.styles.width = min(120, int(w) + 5)
+        try:
+            sidebar = self.query_one("#sessions-sidebar", Vertical)
+            current = sidebar.styles.width
+            w = current.value if hasattr(current, "value") else 34
+            sidebar.styles.width = min(120, int(w) + 5)
+        except Exception:
+            pass
 
     def action_delete_session(self) -> None:
         self._do_delete_session()
 
     def action_open_session(self) -> None:
-        """Open current session — REPL for DA, new terminal for Claude."""
+        """Open current session — switch to DA view for DA sessions, new terminal for Claude."""
         if self.viewing_claude:
             self._do_launch_claude()
+        elif self.active_view == "sessions":
+            # Switch to DA view with the selected session loaded
+            self._render_log()
+            self.active_view = "da"
         else:
             self._do_open_repl()
-
-    def action_open_manager(self) -> None:
-        self._do_open_manager()
 
     def _do_open_repl(self) -> None:
         """Suspend TUI, open current DA session in REPL, then resume."""
