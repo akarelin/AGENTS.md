@@ -299,28 +299,118 @@ def repl(ctx: click.Context, model: Optional[str], session_id_opt: Optional[str]
     from da import __version__
     from prompt_toolkit import PromptSession
     from prompt_toolkit.history import FileHistory
-    from prompt_toolkit.completion import WordCompleter, Completer, Completion
+    from prompt_toolkit.completion import Completer, Completion, merge_completers
+    from prompt_toolkit.completion import PathCompleter
     from prompt_toolkit.formatted_text import HTML
+    from prompt_toolkit.key_binding import KeyBindings
+    from prompt_toolkit.keys import Keys
+    from prompt_toolkit.styles import Style
+
+    MODELS = {
+        "opus": "claude-opus-4-6",
+        "sonnet": "claude-sonnet-4-6",
+        "haiku": "claude-haiku-4-5-20251001",
+    }
 
     # Slash command completer — triggers on /
     SLASH_COMMANDS = {
         "/model": "switch model (opus/sonnet/haiku)",
-        "/model opus": "claude-opus-4-6",
-        "/model sonnet": "claude-sonnet-4-6",
-        "/model haiku": "claude-haiku-4-5",
         "/tools": "list available tools",
         "/hosts": "list configured hosts",
         "/session": "show current session ID",
+        "/sessions": "list all sessions",
+        "/clear": "clear conversation",
+        "/compact": "summarize and trim context",
         "/help": "show all commands",
     }
 
-    class SlashCompleter(Completer):
+    # Context words for natural language — host names, project names, tool names
+    context_words = set()
+    for h in cfg.hosts:
+        context_words.add(h)
+    for p in cfg.projects:
+        context_words.add(p)
+    for t in ALL_TOOL_DEFS:
+        # Add tool name fragments: "git_status" -> "git", "status"
+        for part in t["name"].split("_"):
+            if len(part) > 2:
+                context_words.add(part)
+
+    class DACompleter(Completer):
+        """Claude Code-style completer: slash commands, paths, and context words."""
+
+        def __init__(self):
+            self.path_completer = PathCompleter(expanduser=True)
+
         def get_completions(self, document, complete_event):
             text = document.text_before_cursor
+
+            # Slash commands
             if text.startswith("/"):
-                for cmd, desc in SLASH_COMMANDS.items():
-                    if cmd.startswith(text):
-                        yield Completion(cmd, start_position=-len(text), display_meta=desc)
+                parts = text.split(None, 1)
+                cmd = parts[0]
+
+                # /model <alias> completion
+                if cmd == "/model" and len(parts) > 1:
+                    arg = parts[1].lower()
+                    for alias, mid in MODELS.items():
+                        if alias.startswith(arg):
+                            yield Completion(alias, start_position=-len(arg), display_meta=mid)
+                    return
+
+                # Top-level slash commands
+                for slash_cmd, desc in SLASH_COMMANDS.items():
+                    if slash_cmd.startswith(text):
+                        yield Completion(slash_cmd, start_position=-len(text), display_meta=desc)
+                return
+
+            # Path completion — trigger on /, ./, ../, or ~/
+            word = document.get_word_before_cursor(WORD=True)
+            if word and word.startswith(("/", "./", "../", "~/")):
+                yield from self.path_completer.get_completions(document, complete_event)
+                return
+
+            # Context word completion — only when typing 3+ chars
+            if word and len(word) >= 3:
+                lower = word.lower()
+                for cw in sorted(context_words):
+                    if cw.lower().startswith(lower) and cw.lower() != lower:
+                        yield Completion(cw, start_position=-len(word))
+
+    # Key bindings: Enter sends, Escape+Enter / Alt+Enter for newline
+    kb = KeyBindings()
+
+    @kb.add(Keys.Enter)
+    def _submit(event):
+        """Submit on Enter (unless in paste mode or text ends with \\)."""
+        buf = event.app.current_buffer
+        text = buf.text
+        # Allow continuation with trailing backslash
+        if text.rstrip().endswith("\\"):
+            buf.insert_text("\n")
+        else:
+            buf.validate_and_handle()
+
+    @kb.add(Keys.Escape, Keys.Enter)
+    def _newline_escape(event):
+        """Insert newline on Escape+Enter."""
+        event.app.current_buffer.insert_text("\n")
+
+    # Style
+    style = Style.from_dict({
+        "prompt": "bold cyan",
+        "bottom-toolbar": "bg:#333333 #aaaaaa",
+    })
+
+    def bottom_toolbar():
+        model_short = cfg.model.split("-")[-1] if "-" in cfg.model else cfg.model
+        return HTML(
+            f" <b>{model_short}</b>"
+            f" │ {len(tools)} tools │ {len(cfg.hosts)} hosts"
+            f" │ session: {session_id[:8]}"
+            f" │ {len(messages)} msgs"
+            f"  <i>Enter</i>=send <i>Esc+Enter</i>=newline <i>/help</i>"
+        )
 
     # Banner
     BANNER = r"""
@@ -343,20 +433,18 @@ def repl(ctx: click.Context, model: Optional[str], session_id_opt: Optional[str]
     history_path.parent.mkdir(parents=True, exist_ok=True)
     session = PromptSession(
         history=FileHistory(str(history_path)),
-        completer=SlashCompleter(),
+        completer=DACompleter(),
         complete_while_typing=True,
+        key_bindings=kb,
+        style=style,
+        bottom_toolbar=bottom_toolbar,
+        multiline=True,
     )
-
-    MODELS = {
-        "opus": "claude-opus-4-6",
-        "sonnet": "claude-sonnet-4-6",
-        "haiku": "claude-haiku-4-5-20251001",
-    }
 
     try:
         while True:
             try:
-                user_input = session.prompt("da> ").strip()
+                user_input = session.prompt(HTML("<prompt>da&gt; </prompt>")).strip()
             except EOFError:
                 break
 
@@ -384,9 +472,11 @@ def repl(ctx: click.Context, model: Optional[str], session_id_opt: Optional[str]
                 elif cmd == "/help":
                     console.print("[bold]Commands:[/bold]")
                     for c, d in SLASH_COMMANDS.items():
-                        if not c.startswith("/model "):
-                            console.print(f"  [cyan]{c:10s}[/cyan] — {d}")
-                    console.print("  [cyan]exit      [/cyan] — quit")
+                        console.print(f"  [cyan]{c:12s}[/cyan] — {d}")
+                    for alias in MODELS:
+                        console.print(f"  [cyan]/model {alias:5s}[/cyan] — {MODELS[alias]}")
+                    console.print(f"  [cyan]{'exit':12s}[/cyan] — quit")
+                    console.print(f"\n[dim]  Enter=send  Esc+Enter=newline  \\\ at EOL=continue[/dim]")
                 elif cmd == "/tools":
                     for t in ALL_TOOL_DEFS:
                         console.print(f"  [cyan]{t['name']:18s}[/cyan] {t['description'][:55]}")
@@ -395,6 +485,25 @@ def repl(ctx: click.Context, model: Optional[str], session_id_opt: Optional[str]
                         console.print(f"  [cyan]{name:15s}[/cyan] {h.ssh} [{', '.join(h.roles)}]")
                 elif cmd == "/session":
                     console.print(f"  [dim]{session_id}[/dim]")
+                elif cmd == "/sessions":
+                    all_sessions = store.list_sessions(limit=20)
+                    for s in all_sessions:
+                        marker = " *" if s["id"] == session_id else ""
+                        console.print(f"  [dim]{s['id'][:12]}[/dim]  {s['name'] or '—'}{marker}")
+                elif cmd == "/clear":
+                    messages.clear()
+                    console.clear()
+                    console.print("[dim]Conversation cleared.[/dim]")
+                elif cmd == "/compact":
+                    if len(messages) > 4:
+                        # Keep system context, summarize older messages
+                        kept = messages[-4:]
+                        dropped = len(messages) - 4
+                        messages.clear()
+                        messages.extend(kept)
+                        console.print(f"[dim]Compacted: dropped {dropped} older messages, kept last 4.[/dim]")
+                    else:
+                        console.print("[dim]Nothing to compact.[/dim]")
                 else:
                     console.print(f"[yellow]Unknown: {cmd}. Type /help[/yellow]")
                 continue
