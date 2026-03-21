@@ -13,13 +13,13 @@ hosts:
     roles: [docker, services]
   kolme:
     ssh: alex@kolme
-    roles: [homeassistant, docker]
+    roles: [homeassistant, docker, services]
   trix:
     ssh: alex@trix
     roles: [docker, airflow, services]
   alex-xsolla:
     ssh: alex@alex-xsolla
-    roles: [work, docker]
+    roles: [gcp, docker, airflow, services]
 
 # Project paths
 projects:
