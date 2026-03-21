@@ -53,7 +53,8 @@
       "Bash(find . -maxdepth 2 -name *.env* -o -name *credentials* -o -name *secret*)",
       "Bash(find /home/alex/AGENTS.md -type f -name *.md ! -path */.venv/* ! -path */.git/* -exec grep -l \"sk-\\\\|BEGIN.*KEY\\\\|password\\\\|secret\" {})",
       "Bash(2)",
-      "Bash(find /home/alex/AGENTS.md -name \"*.md\" -type f ! -path \"*/.venv/*\" ! -path \"*/archive/*\" -exec wc -l {} +)"
+      "Bash(find /home/alex/AGENTS.md -name \"*.md\" -type f ! -path \"*/.venv/*\" ! -path \"*/archive/*\" -exec wc -l {} +)",
+      "Bash(ls /home/alex/AGENTS.md/DA/da/*.py)"
     ],
     "additionalDirectories": [
       "/mnt/d/SD/.claude"
