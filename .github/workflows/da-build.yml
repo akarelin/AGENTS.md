@@ -97,14 +97,14 @@ jobs:
           python3 -m venv .venv
           .venv/bin/pip install pyinstaller setuptools-scm
           .venv/bin/pip install -e .
-          .venv/bin/pyinstaller --onefile --name da --hidden-import=da --hidden-import=da.cli --hidden-import=da.client --hidden-import=da.config --hidden-import=da.session --hidden-import=da.tui --hidden-import=da.rich_tui --hidden-import=da.rich_render --hidden-import=da.obsidian --hidden-import=da.claude_sessions --hidden-import=da.session_manager --hidden-import=da.history_analyzer --hidden-import=yaml --copy-metadata DA da/cli.py
+          .venv/bin/pyinstaller --onefile --name da --hidden-import=da --hidden-import=da.cli --hidden-import=da.client --hidden-import=da.config --hidden-import=da.session --hidden-import=da.tui --hidden-import=da.rich_tui --hidden-import=da.rich_render --hidden-import=da.obsidian --hidden-import=da.claude_sessions --hidden-import=da.session_manager --hidden-import=da.history_analyzer --hidden-import=yaml --hidden-import=gppu --hidden-import=anthropic --hidden-import=paramiko --collect-all textual --collect-all rich --collect-all prompt_toolkit --copy-metadata DA da/cli.py
 
       - name: Build binary
         if: matrix.os != 'linux'
         run: |
           pip install pyinstaller setuptools-scm
           pip install -e .
-          pyinstaller --onefile --name da --hidden-import=da --hidden-import=da.cli --hidden-import=da.client --hidden-import=da.config --hidden-import=da.session --hidden-import=da.tui --hidden-import=da.rich_tui --hidden-import=da.rich_render --hidden-import=da.obsidian --hidden-import=da.claude_sessions --hidden-import=da.session_manager --hidden-import=da.history_analyzer --hidden-import=yaml --copy-metadata DA da/cli.py
+          pyinstaller --onefile --name da --hidden-import=da --hidden-import=da.cli --hidden-import=da.client --hidden-import=da.config --hidden-import=da.session --hidden-import=da.tui --hidden-import=da.rich_tui --hidden-import=da.rich_render --hidden-import=da.obsidian --hidden-import=da.claude_sessions --hidden-import=da.session_manager --hidden-import=da.history_analyzer --hidden-import=yaml --hidden-import=gppu --hidden-import=anthropic --hidden-import=paramiko --collect-all textual --collect-all rich --collect-all prompt_toolkit --copy-metadata DA da/cli.py
 
       - name: Rename artifact
         if: matrix.os != 'windows'
