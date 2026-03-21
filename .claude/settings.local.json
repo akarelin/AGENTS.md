@@ -14,7 +14,10 @@
       "Read(//home/alex/DA/**)",
       "Bash(.venv/bin/pip install:*)",
       "Bash(export PATH=\"$HOME/bin:$PATH\")",
-      "Bash(da repl:*)"
+      "Bash(da repl:*)",
+      "Bash(da)",
+      "Bash(rm:*)",
+      "Bash(python3 -m venv .venv)"
     ],
     "additionalDirectories": [
       "/mnt/d/SD/.claude"
