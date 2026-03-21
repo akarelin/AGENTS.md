@@ -1,0 +1,46 @@
+# DeepAgents configuration
+model: claude-sonnet-4-6
+max_tokens: 8192
+temperature: 0
+
+# Hosts for multi-machine operations
+hosts:
+  five:
+    ssh: alex@five
+    roles: [docker, services]
+  seven:
+    ssh: alex@seven
+    roles: [docker, services]
+  kolme:
+    ssh: alex@kolme
+    roles: [homeassistant, docker]
+  trix:
+    ssh: alex@trix
+    roles: [docker, airflow, services]
+  alex-xsolla:
+    ssh: alex@alex-xsolla
+    roles: [work, docker]
+
+# Project paths
+projects:
+  crap: ~/CRAP
+  ran: ~/RAN
+  agents: ~/AGENTS.md
+  dotfiles: ~/dotfiles
+  gppu: ~/gppu
+
+# Session management
+session:
+  persist: true
+  db_path: ~/.da/sessions.db
+  history_dir: ~/.da/history
+
+# Tools that require approval
+approval_required:
+  - git_push
+  - docker_rm
+  - ssh_exec_destructive
+  - file_delete
+
+# Claude Code history (for pattern analysis)
+claude_history: /mnt/d/SD/.claude
