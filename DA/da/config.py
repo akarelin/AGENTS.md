@@ -45,6 +45,7 @@ class Config(BaseModel):
     session: SessionConfig = SessionConfig()
     approval_required: list[str] = Field(default_factory=list)
     claude_history: str = ""
+    obsidian_vault: str = "~/_"
     debug: bool = False
 
     @property

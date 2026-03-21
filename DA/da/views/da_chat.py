@@ -15,7 +15,7 @@ from da.client import get_client, call_agent
 from da.agents.orchestrator import get_system_prompt
 from da.tools import ALL_TOOL_DEFS, execute_tool
 from da.session import SessionStore
-from da.rich_render import render_message, render_tool
+from da.rich_render import render_message, render_tool, render_tool_call, render_thinking
 
 MENU_KEY = "Д"
 MENU_LABEL = "А"
@@ -82,6 +82,7 @@ class DAChatView:
             self.output(render_message(m["role"], content))
 
     def _run_agent(self) -> None:
+        self.output(render_thinking())
         try:
             result = self._agent_loop()
             self.store.add_message(self.session_id, "assistant", result)
@@ -90,8 +91,13 @@ class DAChatView:
             )
             self.output(render_message("assistant", result))
         except Exception as e:
+            from rich.panel import Panel
             from rich.text import Text
-            self.output(Text(f"Error: {e}", style="bold red"))
+            self.output(Panel(
+                Text(f"Error: {e}", style="bold red"),
+                border_style="red",
+                title="[bold red]error[/bold red]",
+            ))
 
     def _agent_loop(self) -> str:
         for _ in range(20):
@@ -121,15 +127,18 @@ class DAChatView:
             if not tool_uses:
                 return "\n".join(text_parts)
 
+            # Show tool calls as a grouped panel
+            for tu in tool_uses:
+                self.output(render_tool_call(tu.name, status="running"))
             tool_results = []
             for tu in tool_uses:
-                self.output(render_tool(tu.name))
                 result = execute_tool(tu.name, tu.input)
                 tool_results.append({
                     "type": "tool_result",
                     "tool_use_id": tu.id,
                     "content": str(result),
                 })
+                self.output(render_tool_call(tu.name, status="done"))
 
             self.api_messages.append({"role": "user", "content": tool_results})
 

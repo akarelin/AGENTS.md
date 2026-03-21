@@ -48,5 +48,8 @@ approval_required:
   - ssh_exec_destructive
   - file_delete
 
+# Obsidian vault path
+obsidian_vault: ~/_
+
 # Claude Code history (for pattern analysis)
 claude_history: /mnt/d/SD/.claude

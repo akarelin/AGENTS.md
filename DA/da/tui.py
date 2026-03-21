@@ -36,6 +36,7 @@ from textual.widgets import (
     Static,
     TabbedContent,
     TabPane,
+    TextArea,
     Tree,
 )
 
@@ -45,6 +46,21 @@ from da.client import get_client, call_agent
 from da.agents.orchestrator import get_system_prompt
 from da.tools import ALL_TOOL_DEFS, execute_tool
 from da.session import SessionStore
+from da.claude_sessions import (
+    ClaudeSessionManager,
+    decode_project_dir,
+    fast_msg_count,
+    load_session_messages,
+    machine_label,
+)
+from da.obsidian import (
+    vault_path as obsidian_vault_path,
+    vault_tree as obsidian_vault_tree,
+    search as obsidian_search,
+    extract_tags,
+    read_note,
+    write_note,
+)
 
 
 # --- Machine icon helper ---
@@ -408,6 +424,19 @@ class DAApp(App):
     #chat-log { height: 1fr; padding: 0 1; }
     #prompt-input { width: 1fr; }
     #status-bar { dock: bottom; height: 1; padding: 0 1; color: $text-muted; }
+    /* --- Obsidian view --- */
+    #obsidian-view { height: 1fr; }
+    #obsidian-view.hidden { display: none; }
+    #obsidian-sidebar {
+        width: 36;
+        background: $surface;
+        border-right: tall $primary;
+    }
+    #obsidian-tree { height: 1fr; overflow-x: auto; }
+    #obsidian-search { width: 1fr; }
+    #obsidian-editor-pane { height: 1fr; }
+    #obsidian-editor { height: 1fr; }
+    #obsidian-status { dock: bottom; height: 1; padding: 0 1; color: $text-muted; }
     /* --- Sessions view --- */
     #sessions-view { height: 1fr; }
     #sessions-view.hidden { display: none; }
@@ -434,6 +463,8 @@ class DAApp(App):
         Binding("ctrl+right", "grow_sidebar", "►", show=False),
         Binding("f1", "switch_da", "ДА"),
         Binding("f2", "switch_sessions", "Sessions"),
+        Binding("f3", "switch_obsidian", "Obsidian"),
+        Binding("ctrl+s", "save_note", "Save", show=False),
     ]
 
     current_session_id: reactive[str] = reactive("")
@@ -451,7 +482,11 @@ class DAApp(App):
         ]
         self.session_messages: dict[str, list[dict]] = {}
         self.claude_session_info: dict[str, dict] = {}
+        self.claude_mgr = ClaudeSessionManager(
+            self.cfg.claude_history or "/mnt/d/SD/.claude", store=self.store
+        )
         self.busy = False
+        self.loading_sessions = False
         self._pending_delete: str | None = None
         self._pending_delete_type: str | None = None
 
@@ -460,6 +495,7 @@ class DAApp(App):
         with Horizontal(id="menu-bar"):
             yield MenuItem(" ДА ", "switch_da", id="menu-da", classes="menu-tab -active")
             yield MenuItem(" Sessions ", "switch_sessions", id="menu-sessions", classes="menu-tab")
+            yield MenuItem(" Obsidian ", "switch_obsidian", id="menu-obsidian", classes="menu-tab")
 
         # View 1: ДА interactive terminal
         with Vertical(id="da-view"):
@@ -480,14 +516,23 @@ class DAApp(App):
             with Vertical():
                 yield RichLog(id="sessions-detail", wrap=True, markup=True)
 
+        # View 3: Obsidian vault browser — 2 panel
+        with Horizontal(id="obsidian-view", classes="hidden"):
+            with Vertical(id="obsidian-sidebar"):
+                yield Input(placeholder="Search vault...", id="obsidian-search")
+                yield Tree("Vault", id="obsidian-tree")
+            yield DragHandle("obsidian-sidebar")
+            with Vertical(id="obsidian-editor-pane"):
+                yield Static("No note selected", id="obsidian-status")
+                yield TextArea("", language="markdown", theme="monokai", show_line_numbers=True, id="obsidian-editor")
+
         yield Footer()
 
     active_view: reactive[str] = reactive("da")
 
     def on_mount(self) -> None:
-        self._refresh_da_sessions()
-        self._load_claude_tree()
         self._create_new_session()
+        self._load_claude_tree()
         self._update_status()
 
     def action_switch_da(self) -> None:
@@ -496,24 +541,148 @@ class DAApp(App):
     def action_switch_sessions(self) -> None:
         self.active_view = "sessions"
 
+    def action_switch_obsidian(self) -> None:
+        self.active_view = "obsidian"
+
     def watch_active_view(self, view: str) -> None:
         da_view = self.query_one("#da-view", Vertical)
         sessions_view = self.query_one("#sessions-view", Horizontal)
+        obsidian_view = self.query_one("#obsidian-view", Horizontal)
         menu_da = self.query_one("#menu-da", MenuItem)
         menu_sessions = self.query_one("#menu-sessions", MenuItem)
+        menu_obsidian = self.query_one("#menu-obsidian", MenuItem)
+
+        # Hide all views
+        da_view.add_class("hidden")
+        sessions_view.add_class("hidden")
+        obsidian_view.add_class("hidden")
+        menu_da.remove_class("-active")
+        menu_sessions.remove_class("-active")
+        menu_obsidian.remove_class("-active")
 
         if view == "da":
             da_view.remove_class("hidden")
-            sessions_view.add_class("hidden")
             menu_da.add_class("-active")
-            menu_sessions.remove_class("-active")
             self.query_one("#prompt-input", Input).focus()
-        else:
-            da_view.add_class("hidden")
+        elif view == "sessions":
             sessions_view.remove_class("hidden")
-            menu_da.remove_class("-active")
             menu_sessions.add_class("-active")
+        elif view == "obsidian":
+            obsidian_view.remove_class("hidden")
+            menu_obsidian.add_class("-active")
+            self._init_obsidian_tree()
+            self.query_one("#obsidian-tree", Tree).focus()
         self._update_status()
+
+    # --- Obsidian ---
+
+    _obsidian_tree_loaded: bool = False
+    _obsidian_current_file: Path | None = None
+    _obsidian_dirty: bool = False
+
+    def _init_obsidian_tree(self) -> None:
+        """Lazy-load vault tree on first switch."""
+        if self._obsidian_tree_loaded:
+            return
+        vault = obsidian_vault_path(self.cfg)
+        if not vault.exists():
+            self._obsidian_set_status(f"Vault not found: {vault}")
+            return
+        tree = self.query_one("#obsidian-tree", Tree)
+        self._populate_obsidian_tree(tree, vault)
+        self._obsidian_tree_loaded = True
+        self._obsidian_set_status(f"Vault: {vault}")
+
+    @staticmethod
+    def _populate_obsidian_tree(tree: Tree, vault: Path) -> None:
+        """Render VaultTree dataclass into a Textual Tree widget."""
+        from da.obsidian import VaultTree as VT
+        vtree = obsidian_vault_tree(vault)
+        tree.clear()
+        tree.root.data = vault
+        tree.root.expand()
+
+        def _add(parent, children: list[VT]) -> None:
+            for node in children:
+                if node.is_dir:
+                    label = f"[cyan]{node.name}/[/cyan] [dim]({node.note_count})[/dim]"
+                    branch = parent.add(label, data=node.path, expand=False)
+                    _add(branch, node.children)
+                else:
+                    label = f"{node.name} [dim]{node.mtime_short}[/dim]"
+                    parent.add_leaf(label, data=node.path)
+
+        _add(tree.root, vtree.children)
+
+    def _obsidian_open_file(self, path: Path) -> None:
+        """Load a file into the editor."""
+        if self._obsidian_dirty:
+            self._obsidian_save()
+        try:
+            content = read_note(path)
+        except Exception as e:
+            self._obsidian_set_status(f"Error: {e}")
+            return
+        editor = self.query_one("#obsidian-editor", TextArea)
+        editor.load_text(content)
+        self._obsidian_current_file = path
+        self._obsidian_dirty = False
+        # Status line from note_info
+        from da.obsidian import note_info
+        vault = obsidian_vault_path(self.cfg)
+        info = note_info(path, vault)
+        tags = extract_tags(content)
+        tag_str = "  #" + " #".join(tags[:8]) if tags else ""
+        rel = f"{info.folder}/{info.name}" if info.folder else info.name
+        self._obsidian_set_status(f"{rel}.md  |  {info.size:,}b  |  {info.mtime_str}{tag_str}")
+
+    def _obsidian_save(self) -> None:
+        """Save current editor content back to file."""
+        path = self._obsidian_current_file
+        if not path:
+            return
+        editor = self.query_one("#obsidian-editor", TextArea)
+        try:
+            write_note(path, editor.text)
+            self._obsidian_dirty = False
+            self._obsidian_set_status(f"Saved: {path.name}")
+        except Exception as e:
+            self._obsidian_set_status(f"Save failed: {e}")
+
+    def _obsidian_set_status(self, text: str) -> None:
+        try:
+            bar = self.query_one("#obsidian-status", Static)
+            bar.update(f" {text}")
+        except Exception:
+            pass
+
+    def _obsidian_search(self, query: str) -> None:
+        """Filter tree to show search results."""
+        vault = obsidian_vault_path(self.cfg)
+        tree = self.query_one("#obsidian-tree", Tree)
+        if not query.strip():
+            self._populate_obsidian_tree(tree, vault)
+            self._obsidian_set_status(f"Vault: {vault}")
+            return
+
+        results = obsidian_search(vault, query)
+        tree.clear()
+        tree.root.data = vault
+        tree.root.expand()
+        for r in results:
+            label = f"{r.note.name} [dim]{r.note.folder} {r.note.mtime_short}[/dim]"
+            tree.root.add_leaf(label, data=r.note.path)
+        self._obsidian_set_status(f"Search: \"{query}\" — {len(results)} results")
+
+    def action_save_note(self) -> None:
+        """Ctrl+S — save current note if in Obsidian view."""
+        if self.active_view == "obsidian" and self._obsidian_current_file:
+            self._obsidian_save()
+
+    def on_text_area_changed(self, event: TextArea.Changed) -> None:
+        """Mark obsidian note as dirty when edited."""
+        if event.text_area.id == "obsidian-editor":
+            self._obsidian_dirty = True
 
     # --- Session management ---
 
@@ -530,51 +699,37 @@ class DAApp(App):
 
     def _update_status(self) -> None:
         bar = self.query_one("#status-bar", Static)
+        loading = " [yellow]⟳ loading sessions...[/yellow]" if self.loading_sessions else ""
         if self.viewing_claude:
-            bar.update(" [dim]Claude session (read-only) | Ctrl+N for new DA session[/dim]")
+            bar.update(f" [dim]Claude session (read-only) | Ctrl+N for new DA session[/dim]{loading}")
         else:
-            bar.update(f" {self.cfg.model} | {len(self.api_tools)} tools | /help")
+            bar.update(f" {self.cfg.model} | {len(self.api_tools)} tools | /help{loading}")
 
     def _load_claude_tree(self) -> None:
         """Load Claude sessions — from cache first, then refresh in background."""
         cached = self.store.get_cached_claude_sessions(max_age=3600)
         if cached:
-            # Populate from cache instantly
             for s in cached:
                 self.claude_session_info[s["id"]] = s
             self._populate_tree_from_flat(cached)
             self._populate_all_sessions_table()
         # Always refresh in background
+        self.loading_sessions = True
+        self._update_status()
         self._refresh_claude_from_disk()
 
     @work(thread=True)
     def _refresh_claude_from_disk(self) -> None:
-        """Scan .claude directory and update cache + UI."""
-        claude_dir = self.cfg.claude_history or "/mnt/d/SD/.claude"
-        data = load_claude_sessions(claude_dir)
+        """Scan .claude directory and update cache + UI via ClaudeSessionManager."""
+        all_sessions = self.claude_mgr.refresh_cache()
+        data = self.claude_mgr.scan_all()
 
-        # Flatten and add msg counts + file sizes for cache
-        all_sessions = []
-        for machine, projects in data.items():
-            for proj, sessions in projects.items():
-                for s in sessions:
-                    s["msg_count"] = _fast_msg_count(s.get("file", ""))
-                    fpath = Path(s["file"])
-                    s["file_size"] = fpath.stat().st_size if fpath.exists() else 0
-                    s["project_path"] = _decode_project_dir(s.get("project_dir", ""))
-                    subdir = fpath.parent / fpath.stem / "subagents"
-                    s["subagent_count"] = len(list(subdir.glob("*.jsonl"))) if subdir.is_dir() else 0
-                    all_sessions.append(s)
-
-        # Update cache
-        self.store.clear_claude_cache()
-        self.store.cache_claude_sessions_bulk(all_sessions)
-
-        # Update UI
         for s in all_sessions:
             self.claude_session_info[s["id"]] = s
         self.call_from_thread(self._populate_tree, data)
         self.call_from_thread(self._populate_all_sessions_table)
+        self.loading_sessions = False
+        self.call_from_thread(self._update_status)
 
     def _populate_tree_from_flat(self, sessions: list[dict]) -> None:
         """Populate tree from flat cached session list."""
@@ -618,7 +773,10 @@ class DAApp(App):
     def _populate_all_sessions_table(self, filter_text: str = "") -> None:
         """Build unified table with all DA + Claude sessions, optionally filtered."""
         import datetime
-        table = self.query_one("#all-sessions-table", DataTable)
+        try:
+            table = self.query_one("#all-sessions-table", DataTable)
+        except Exception:
+            return  # Widget not mounted yet
         table.clear(columns=True)
         table.add_column("Type", key="type")
         table.add_column("Machine", key="machine")
@@ -725,13 +883,21 @@ class DAApp(App):
     # Click (enter) on tree node
     def on_tree_node_selected(self, event: Tree.NodeSelected) -> None:
         node = event.node
-        if node.data and isinstance(node.data, dict) and "file" in node.data:
+        if not node.data:
+            return
+        # Obsidian: Path objects for .md files
+        if isinstance(node.data, Path) and node.data.suffix == ".md":
+            self._obsidian_open_file(node.data)
+        # Claude sessions: dict with "file" key
+        elif isinstance(node.data, dict) and "file" in node.data:
             self._select_claude_session(node.data)
 
     # Single click / highlight on tree node
     def on_tree_node_highlighted(self, event: Tree.NodeHighlighted) -> None:
         node = event.node
-        if node.data and isinstance(node.data, dict) and "file" in node.data:
+        if not node.data:
+            return
+        if isinstance(node.data, dict) and "file" in node.data:
             if self.active_view == "sessions":
                 self._select_claude_session(node.data)
 
@@ -877,13 +1043,36 @@ class DAApp(App):
 
     def on_input_submitted(self, event: Input.Submitted) -> None:
         text = event.value.strip()
+        input_id = event.input.id
+
+        # Obsidian search — enter triggers search
+        if input_id == "obsidian-search":
+            self._obsidian_search(text)
+            return
+
+        # Session filter input — handle delete confirmation or ignore
+        if input_id == "session-filter":
+            if self._pending_delete and text.lower() == "yes":
+                event.input.value = ""
+                self._confirm_delete()
+                return
+            elif self._pending_delete:
+                event.input.value = ""
+                self._pending_delete = None
+                self._pending_delete_type = None
+                self._msg_to_active_view("tool", "Delete cancelled.")
+                return
+            # Otherwise it's just a filter — on_input_changed handles it
+            return
+
+        # Main prompt input
         inp = self.query_one("#prompt-input", Input)
         inp.value = ""
 
         if not text:
             return
 
-        # Handle delete confirmation
+        # Handle delete confirmation from main input
         if self._pending_delete:
             if text.lower() == "yes":
                 self._confirm_delete()
@@ -951,6 +1140,7 @@ class DAApp(App):
                 "/launch — open Claude session in new terminal\n"
                 "/repl — open current DA session in REPL\n"
                 "/manage — open session manager\n"
+                "/obsidian — vault browser\n"
                 "/move [path] — move Claude sessions folder\n"
                 "/clear — clear log\n"
                 "Ctrl+N — new | Ctrl+D — del | Ctrl+O — repl | Ctrl+L — launch | Ctrl+T — tab | Ctrl+Q — quit"
@@ -978,6 +1168,8 @@ class DAApp(App):
         elif cmd == "/move":
             dest = parts[1].strip() if len(parts) > 1 else ""
             self._move_claude_sessions(dest)
+        elif cmd == "/obsidian":
+            self.active_view = "obsidian"
         elif cmd == "/clear":
             self.session_messages[self.current_session_id] = []
             self._render_log()
@@ -1064,12 +1256,10 @@ class DAApp(App):
     def action_toggle_tab(self) -> None:
         if self.active_view == "da":
             self.active_view = "sessions"
+        elif self.active_view == "sessions":
+            self.active_view = "obsidian"
         else:
-            tabs = self.query_one("#sidebar-tabs", TabbedContent)
-            if tabs.active == "tab-all":
-                tabs.active = "tab-tree"
-            else:
-                tabs.active = "tab-all"
+            self.active_view = "da"
 
     def action_shrink_sidebar(self) -> None:
         try:
@@ -1164,11 +1354,22 @@ class DAApp(App):
         result = launch_claude_session(info, {n: h for n, h in self.cfg.hosts.items()})
         self._log_msg("tool", result)
 
+    def _msg_to_active_view(self, role: str, content: str) -> None:
+        """Write message to whichever view is active."""
+        if self.active_view == "sessions":
+            try:
+                detail = self.query_one("#sessions-detail", RichLog)
+                detail.write(content)
+            except Exception:
+                self._log_msg(role, content)
+        else:
+            self._log_msg(role, content)
+
     def _do_delete_session(self) -> None:
         """Prompt for confirmation before deleting."""
         sid = self.current_session_id
         if not sid:
-            self._log_msg("tool", "No session selected.")
+            self._msg_to_active_view("tool", "No session selected.")
             return
 
         # Get session name for the prompt
@@ -1185,10 +1386,19 @@ class DAApp(App):
             name = name or sid[:12]
             stype = "ДА"
 
-        self._log_msg("tool", f"Delete {stype} session: {name}?")
-        self._log_msg("tool", "Type 'yes' to confirm, anything else to cancel.")
+        self._msg_to_active_view("tool", f"Delete {stype} session: {name}?")
+        self._msg_to_active_view("tool", "Type 'yes' to confirm, anything else to cancel.")
         self._pending_delete = sid
         self._pending_delete_type = stype
+
+        # Focus the right input
+        if self.active_view == "sessions":
+            try:
+                filt = self.query_one("#session-filter", Input)
+                filt.value = ""
+                filt.focus()
+            except Exception:
+                pass
 
     def _confirm_delete(self) -> None:
         """Execute the pending delete with loading indicator."""
@@ -1197,7 +1407,7 @@ class DAApp(App):
         self._pending_delete = None
         self._pending_delete_type = None
 
-        self._log_msg("tool", "Deleting...")
+        self._msg_to_active_view("tool", "Deleting...")
         self._execute_delete(sid, stype)
 
     @work(thread=True)
@@ -1205,21 +1415,10 @@ class DAApp(App):
         """Run delete in background thread."""
         try:
             if stype == "Claude":
-                info = self.claude_session_info.get(sid)
-                if not info:
-                    self.call_from_thread(self._log_msg, "tool", "Session not found.")
-                    return
-                fpath = Path(info["file"])
-                session_dir = fpath.parent / fpath.stem
-                name = info.get("name", sid[:12])
-                fpath.unlink(missing_ok=True)
-                if session_dir.is_dir():
-                    import shutil
-                    shutil.rmtree(session_dir)
+                result = self.claude_mgr.delete_session(sid)
                 self.session_messages.pop(sid, None)
                 self.claude_session_info.pop(sid, None)
-                self.store.delete_cached_claude_session(sid)
-                self.call_from_thread(self._log_msg, "tool", f"Deleted Claude session: {name}")
+                self.call_from_thread(self._msg_to_active_view, "tool", result)
                 self.call_from_thread(self._populate_tree_from_flat,
                     list(self.claude_session_info.values()))
                 self.call_from_thread(self._populate_all_sessions_table)

@@ -17,6 +17,7 @@ dependencies = [
     "python-dotenv>=1.0.0",
     "prompt_toolkit>=3.0.0",
     "textual>=3.0.0",
+    "gppu",
 ]
 
 [project.optional-dependencies]

@@ -1,18 +1,19 @@
 """Sessions view — browse DA and Claude sessions.
 
 Menu: [S]essions  |  F2  |  /sessions
+
+The view writes Rich renderables via self.output(renderable).
 """
 
 import datetime
 from pathlib import Path
-
-from prompt_toolkit.formatted_text import HTML
+from typing import Callable
 
 from da.config import Config
 from da.session import SessionStore
 from da.rich_render import (
-    console,
     render_tool,
+    render_loading,
     session_info_table,
     render_message_preview,
     sessions_table,
@@ -23,39 +24,43 @@ from da.tui import (
     copy_session_to_local,
     launch_claude_session,
     _machine_label,
-    _decode_project_dir,
 )
 
 MENU_KEY = "S"
-MENU_LABEL = "Sessions"
+MENU_LABEL = "essions"
 
 
 class SessionsView:
-    def __init__(self, cfg: Config, store: SessionStore):
+    def __init__(self, cfg: Config, store: SessionStore, output: Callable | None = None):
         self.cfg = cfg
         self.store = store
         self.claude_data: dict = {}
         self.claude_flat: list[dict] = []
-
-    def get_prompt(self) -> HTML:
-        return HTML("<ansicyan><b>sessions</b></ansicyan> <ansigray>\u203a</ansigray> ")
+        self.output = output or (lambda x: None)
 
     def show(self) -> None:
         """Show combined DA + Claude sessions overview."""
         self._show_da_sessions()
-        self._show_claude_summary()
-        console.print(render_tool(
-            "/switch <id> \u2014 switch DA session  |  "
+        if self.claude_flat:
+            self._show_claude_summary()
+        else:
+            self.output(render_loading("Loading Claude sessions\u2026"))
+        self.output(render_tool(
+            "/switch <id> \u2014 DA session  |  "
             "/detail <#> \u2014 Claude detail  |  "
             "/launch <#> \u2014 open in terminal"
         ))
 
+    @property
+    def claude_loaded(self) -> bool:
+        return bool(self.claude_flat)
+
     def handle_input(self, text: str) -> None:
-        """Bare numbers inspect Claude sessions; otherwise hint."""
+        """Bare numbers inspect Claude sessions."""
         if text.isdigit():
             self.show_claude_detail(int(text))
         else:
-            console.print(render_tool("Enter a session # or use /switch, /detail, /launch"))
+            self.output(render_tool("Enter a session # or use /switch, /detail, /launch"))
 
     # ── DA sessions ──────────────────────────────────────────────
 
@@ -76,17 +81,16 @@ class SessionsView:
             ],
             title=f"\u0414\u0410 Sessions ({len(sessions)})",
         )
-        console.print(t)
+        self.output(t)
 
     def show_da_sessions_list(self, current_sid: str = "") -> None:
-        """Public method for /sessions command from other views."""
         self._show_da_sessions(current_sid)
-        console.print(render_tool("Use /switch <id-prefix> to switch"))
+        self.output(render_tool("Use /switch <id-prefix> to switch"))
 
     def show_stats(self, session_id: str) -> None:
         stats = self.store.get_session_stats(session_id)
         if not stats:
-            console.print(render_tool("No stats yet."))
+            self.output(render_tool("No stats yet."))
             return
         created = datetime.datetime.fromtimestamp(stats["created_at"]).strftime("%Y-%m-%d %H:%M") if stats["created_at"] else "?"
         updated = datetime.datetime.fromtimestamp(stats["updated_at"]).strftime("%Y-%m-%d %H:%M") if stats["updated_at"] else "?"
@@ -100,52 +104,48 @@ class SessionsView:
         ]
         for role, count in sorted(stats["message_counts"].items()):
             rows.append((f"  {role}", str(count)))
-        console.print(session_info_table(rows, title="\u0414\u0410 Session", border_style="green"))
+        self.output(session_info_table(rows, title="\u0414\u0410 Session", border_style="green"))
 
     def switch_session(self, prefix: str) -> str | None:
         """Find session by prefix. Returns full ID or None."""
         sessions = self.store.list_sessions_detailed(limit=100)
         matches = [s for s in sessions if s["id"].startswith(prefix)]
         if not matches:
-            console.print(render_tool(f"No session matching '{prefix}'"))
+            self.output(render_tool(f"No session matching '{prefix}'"))
             return None
         if len(matches) > 1:
-            console.print(render_tool(f"Ambiguous prefix \u2014 {len(matches)} matches."))
+            self.output(render_tool(f"Ambiguous prefix \u2014 {len(matches)} matches."))
             return None
         return matches[0]["id"]
 
     def delete_session(self, target: str) -> bool:
-        """Delete session by prefix. Returns True if deleted."""
         sessions = self.store.list_sessions_detailed(limit=100)
         matches = [s for s in sessions if s["id"].startswith(target)]
         if not matches:
-            console.print(render_tool(f"No session matching '{target}'"))
+            self.output(render_tool(f"No session matching '{target}'"))
             return False
         if len(matches) > 1:
-            console.print(render_tool(f"Ambiguous \u2014 {len(matches)} matches."))
+            self.output(render_tool(f"Ambiguous \u2014 {len(matches)} matches."))
             return False
         sid = matches[0]["id"]
         name = matches[0]["name"] or sid[:12]
         self.store.delete_session(sid)
-        console.print(render_tool(f"Deleted: {name}"))
+        self.output(render_tool(f"Deleted: {name}"))
         return True
 
     # ── Claude sessions ──────────────────────────────────────────
 
-    def _load_claude_data(self) -> None:
-        claude_dir = self.cfg.claude_history or "/mnt/d/SD/.claude"
-        self.claude_data = load_claude_sessions(claude_dir)
-        self.claude_flat = []
-        for machine, projects in self.claude_data.items():
-            for proj, sessions in projects.items():
-                for s in sessions:
-                    s["_machine"] = machine
-                    s["_project"] = proj
-                    self.claude_flat.append(s)
-
     def _ensure_claude_data(self) -> None:
         if not self.claude_flat:
-            self._load_claude_data()
+            claude_dir = self.cfg.claude_history or "/mnt/d/SD/.claude"
+            self.claude_data = load_claude_sessions(claude_dir)
+            self.claude_flat = []
+            for machine, projects in self.claude_data.items():
+                for proj, sessions in projects.items():
+                    for s in sessions:
+                        s["_machine"] = machine
+                        s["_project"] = proj
+                        self.claude_flat.append(s)
 
     def _show_claude_summary(self) -> None:
         self._ensure_claude_data()
@@ -162,13 +162,12 @@ class SessionsView:
             ],
             title=f"Claude Sessions ({len(self.claude_flat)})",
         )
-        console.print(t)
+        self.output(t)
 
     def show_claude_sessions(self) -> None:
-        """Full Claude sessions list."""
         self._ensure_claude_data()
         if not self.claude_flat:
-            console.print(render_tool("No Claude sessions found."))
+            self.output(render_tool("No Claude sessions found."))
             return
         t = sessions_table(
             columns=[("#", "idx"), ("Machine", "machine"), ("Project", "project"),
@@ -181,13 +180,13 @@ class SessionsView:
             ],
             title="Claude Sessions",
         )
-        console.print(t)
-        console.print(render_tool("Use /detail <#> to inspect, /launch <#> to open in terminal"))
+        self.output(t)
+        self.output(render_tool("/detail <#> to inspect, /launch <#> to open in terminal"))
 
     def show_claude_detail(self, idx: int) -> None:
         self._ensure_claude_data()
         if idx < 1 or idx > len(self.claude_flat):
-            console.print(render_tool(f"Invalid index. Use 1-{len(self.claude_flat)}"))
+            self.output(render_tool(f"Invalid index. Use 1-{len(self.claude_flat)}"))
             return
         info = self.claude_flat[idx - 1]
         fpath = Path(info["file"])
@@ -211,14 +210,14 @@ class SessionsView:
             rows.append((f"  {r}", str(c)))
         rows.append(("Subagents", str(subagent_count)))
         rows.append(("Local copy", "[green]yes[/green]" if local_path.exists() else "[dim]no[/dim]"))
-        console.print(session_info_table(rows, title="Claude Session", border_style="cyan"))
+        self.output(session_info_table(rows, title="Claude Session", border_style="cyan"))
         if msgs:
-            console.print(render_message_preview(msgs))
+            self.output(render_message_preview(msgs))
 
     def launch_claude(self, idx: int) -> None:
         self._ensure_claude_data()
         if idx < 1 or idx > len(self.claude_flat):
-            console.print(render_tool(f"Invalid index. Use 1-{len(self.claude_flat)}"))
+            self.output(render_tool(f"Invalid index. Use 1-{len(self.claude_flat)}"))
             return
         info = self.claude_flat[idx - 1]
         try:
@@ -226,4 +225,4 @@ class SessionsView:
         except Exception:
             pass
         result = launch_claude_session(info, {n: h for n, h in self.cfg.hosts.items()})
-        console.print(render_tool(result))
+        self.output(render_tool(result))

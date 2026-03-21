@@ -8,10 +8,12 @@ Consumers call these functions and write the result to a RichLog (TUI)
 or Console (CLI).
 """
 
+from rich.box import ROUNDED, SIMPLE, HEAVY
 from rich.console import Console, Group
 from rich.markdown import Markdown
 from rich.panel import Panel
 from rich.rule import Rule
+from rich.spinner import Spinner
 from rich.table import Table
 from rich.text import Text
 
@@ -60,24 +62,67 @@ def render_user(content: str):
         Text(content, style="green"),
         title="[bold green]you[/bold green]",
         border_style="green",
+        box=ROUNDED,
         padding=(0, 1),
     )
 
 
 def render_assistant(content: str):
-    """Assistant message → Markdown with syntax-highlighted code blocks."""
+    """Assistant message → Markdown in a cyan panel."""
     try:
-        return Group(
-            Markdown(content, code_theme="monokai"),
-            Rule(style="dim"),
-        )
+        body = Markdown(content, code_theme="monokai")
     except Exception:
-        return Group(Text(content), Rule(style="dim"))
+        body = Text(content)
+    return Panel(
+        body,
+        title="[bold cyan]\u0414\u0410[/bold cyan]",
+        border_style="cyan",
+        box=ROUNDED,
+        padding=(0, 1),
+    )
 
 
 def render_tool(content: str):
-    """Tool / system message → dim italic arrow."""
-    return Text(f"  \u2192 {content}", style="dim italic")
+    """Tool / system message → dim panel with arrow."""
+    return Panel(
+        Text(f"\u2192 {content}", style="dim italic"),
+        border_style="dim",
+        box=SIMPLE,
+        padding=(0, 1),
+    )
+
+
+def render_tool_call(name: str, status: str = "running"):
+    """Tool call indicator → compact panel with tool name."""
+    icon = "\u2699" if status == "running" else "\u2713"  # ⚙ or ✓
+    style = "yellow" if status == "running" else "green"
+    return Panel(
+        Text(f"{icon} {name}", style=style),
+        border_style="dim",
+        box=SIMPLE,
+        padding=(0, 0),
+    )
+
+
+def render_thinking():
+    """Live 'thinking' panel."""
+    return Panel(
+        Text("\u2026 thinking", style="bold green"),
+        border_style="green",
+        box=ROUNDED,
+        padding=(0, 1),
+        title="[dim]\u0414\u0410[/dim]",
+    )
+
+
+def render_loading(label: str = "Loading..."):
+    """Loading indicator panel with spinner character."""
+    return Panel(
+        Text(f"\u25e2 {label}", style="bold yellow"),
+        border_style="yellow",
+        box=ROUNDED,
+        padding=(0, 1),
+    )
 
 
 def render_message(role: str, content: str):
@@ -133,6 +178,120 @@ def render_message_preview(messages: list[dict], limit: int = 5):
     return Group(*items)
 
 
+def render_session(
+    messages: list[dict],
+    stats: dict | None = None,
+    title: str = "Session",
+) -> list:
+    """Render a full session conversation as a list of Rich renderables.
+
+    Returns a list so callers can write each item to RichLog individually.
+
+    Layout:
+      ╭─ Session ──────────────────────╮
+      │ Name   │  12 msgs  │  date     │
+      ╰────────────────────────────────╯
+      ╭─ you #1 ───────────────────────╮
+      │ What's the status?             │
+      ╰────────────────────────────────╯
+      ╭─────────────────────────────────╮
+      │ ⚙ shell  ⚙ read_file           │
+      ╰─────────────────────────────────╯
+      ╭─ ДА ───────────────────────────╮
+      │ The project has 3 open issues  │
+      ╰────────────────────────────────╯
+    """
+    items = []
+
+    # Stats header panel
+    if stats:
+        import datetime
+        created = ""
+        if stats.get("created_at"):
+            created = datetime.datetime.fromtimestamp(stats["created_at"]).strftime("%Y-%m-%d %H:%M")
+
+        t = Table(show_header=False, box=None, pad_edge=False, show_edge=False, expand=True)
+        t.add_column("key", style="bold cyan", width=12, no_wrap=True)
+        t.add_column("val")
+        t.add_row("Name", stats.get("name", "") or title)
+        t.add_row("Messages", str(stats.get("total_messages", len(messages))))
+        if created:
+            t.add_row("Created", created)
+        if stats.get("project"):
+            t.add_row("Project", stats["project"].split("/")[-1])
+        for role, count in sorted(stats.get("message_counts", {}).items()):
+            t.add_row(f"  {role}", str(count))
+
+        items.append(Panel(t, title="[bold blue]Session[/bold blue]", border_style="blue",
+                           box=HEAVY, padding=(0, 1)))
+
+    if not messages:
+        items.append(Panel(
+            Text("(empty session)", style="dim italic"),
+            border_style="dim", box=SIMPLE, padding=(0, 1),
+        ))
+        return items
+
+    # Message timeline — group consecutive tool calls
+    msg_num = 0
+    pending_tools: list[str] = []
+
+    def flush_tools():
+        nonlocal pending_tools
+        if pending_tools:
+            tool_text = Text()
+            for i, name in enumerate(pending_tools):
+                if i > 0:
+                    tool_text.append("  ")
+                tool_text.append("\u2699 ", style="yellow")
+                tool_text.append(name, style="yellow italic")
+            items.append(Panel(
+                tool_text,
+                border_style="yellow dim",
+                box=ROUNDED,
+                padding=(0, 1),
+                title="[dim yellow]tools[/dim yellow]",
+            ))
+            pending_tools = []
+
+    for m in messages:
+        content = m.get("content", "")
+        if not isinstance(content, str):
+            content = str(content)
+        role = m.get("role", "")
+
+        if role == "tool":
+            pending_tools.append(content)
+            continue
+
+        flush_tools()
+
+        if role == "user":
+            msg_num += 1
+            items.append(Panel(
+                Text(content, style="green"),
+                title=f"[bold green]you[/bold green] [dim]#{msg_num}[/dim]",
+                border_style="green",
+                box=ROUNDED,
+                padding=(0, 1),
+            ))
+        elif role == "assistant":
+            try:
+                body = Markdown(content, code_theme="monokai")
+            except Exception:
+                body = Text(content)
+            items.append(Panel(
+                body,
+                title="[bold cyan]\u0414\u0410[/bold cyan]",
+                border_style="cyan",
+                box=ROUNDED,
+                padding=(0, 1),
+            ))
+
+    flush_tools()
+    return items
+
+
 # ── CLI panels ───────────────────────────────────────────────────────
 
 def query_panel(query: str) -> Panel:
@@ -167,10 +326,10 @@ def sessions_table(
     rows: list[list[str]],
     title: str = "Sessions",
 ) -> Table:
-    """Build a sortable sessions table. columns = [(label, key), ...]."""
+    """Build a sessions table. columns = [(label, key), ...]."""
     t = Table(title=title)
-    for label, key in columns:
-        t.add_column(label, key=key)
+    for label, _key in columns:
+        t.add_column(label)
     for row in rows:
         t.add_row(*row)
     return t

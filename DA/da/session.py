@@ -1,7 +1,7 @@
 """Session persistence — based on session continuity pattern (70 instances).
 
 Stores conversation history so agents can resume across sessions.
-Uses SQLite for local storage (matching your preference for simple local state).
+Uses SQLite for DA sessions, gppu.Cache for Claude session cache.
 """
 
 import json
@@ -10,6 +10,8 @@ import time
 from pathlib import Path
 from typing import Any
 
+from gppu.data import Cache as GppuCache
+
 
 class SessionStore:
     """SQLite-backed session storage."""
@@ -17,7 +19,8 @@ class SessionStore:
     def __init__(self, db_path: str = "~/.da/sessions.db"):
         self.db_path = Path(db_path).expanduser()
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
-        self.conn = sqlite3.connect(str(self.db_path))
+        self.conn = sqlite3.connect(str(self.db_path), check_same_thread=False)
+        self.conn.execute("PRAGMA journal_mode=WAL")
         self._init_db()
 
     def _init_db(self):
@@ -38,24 +41,11 @@ class SessionStore:
                 timestamp REAL
             );
             CREATE INDEX IF NOT EXISTS idx_messages_session ON messages(session_id);
-
-            CREATE TABLE IF NOT EXISTS claude_sessions (
-                id TEXT PRIMARY KEY,
-                machine TEXT,
-                project_dir TEXT,
-                project_path TEXT,
-                name TEXT,
-                date TEXT,
-                file TEXT,
-                msg_count INTEGER DEFAULT 0,
-                file_size INTEGER DEFAULT 0,
-                subagent_count INTEGER DEFAULT 0,
-                cached_at REAL
-            );
-            CREATE INDEX IF NOT EXISTS idx_claude_machine ON claude_sessions(machine);
-            CREATE INDEX IF NOT EXISTS idx_claude_project ON claude_sessions(project_dir);
         """)
         self.conn.commit()
+        # gppu Cache for Claude sessions (thread-safe, TTL-based)
+        cache_dir = str(self.db_path.parent / "claude_cache")
+        self._claude_cache = GppuCache(cache_dir, ttl=3600, backend="sqlite")
 
     def create_session(self, session_id: str, name: str = "", project: str = "") -> None:
         now = time.time()
@@ -181,71 +171,23 @@ class SessionStore:
             "newest": newest,
         }
 
-    # --- Claude session cache ---
-
-    def cache_claude_session(self, session: dict) -> None:
-        """Upsert a Claude session into the cache."""
-        self.conn.execute("""
-            INSERT OR REPLACE INTO claude_sessions
-            (id, machine, project_dir, project_path, name, date, file, msg_count, file_size, subagent_count, cached_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """, (
-            session["id"], session.get("machine_dir", ""),
-            session.get("project_dir", ""), session.get("project_path", ""),
-            session.get("name", ""), session.get("date", ""),
-            session.get("file", ""), session.get("msg_count", 0),
-            session.get("file_size", 0), session.get("subagent_count", 0),
-            time.time(),
-        ))
+    # --- Claude session cache (via gppu.Cache — thread-safe) ---
 
     def cache_claude_sessions_bulk(self, sessions: list[dict]) -> None:
-        """Bulk upsert Claude sessions."""
-        self.conn.executemany("""
-            INSERT OR REPLACE INTO claude_sessions
-            (id, machine, project_dir, project_path, name, date, file, msg_count, file_size, subagent_count, cached_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """, [
-            (s["id"], s.get("machine_dir", ""), s.get("project_dir", ""),
-             s.get("project_path", ""), s.get("name", ""), s.get("date", ""),
-             s.get("file", ""), s.get("msg_count", 0), s.get("file_size", 0),
-             s.get("subagent_count", 0), time.time())
-            for s in sessions
-        ])
-        self.conn.commit()
+        """Store all Claude sessions in gppu cache as a single key."""
+        self._claude_cache.set("all_sessions", sessions)
 
     def get_cached_claude_sessions(self, max_age: float = 3600) -> list[dict]:
-        """Get cached sessions. Returns empty if cache is stale."""
-        cutoff = time.time() - max_age
-        rows = self.conn.execute("""
-            SELECT id, machine, project_dir, project_path, name, date, file,
-                   msg_count, file_size, subagent_count, cached_at
-            FROM claude_sessions WHERE cached_at > ?
-            ORDER BY date DESC
-        """, (cutoff,)).fetchall()
-        if not rows:
-            return []
-        return [
-            {"id": r[0], "machine_dir": r[1], "project_dir": r[2],
-             "project_path": r[3], "name": r[4], "date": r[5], "file": r[6],
-             "msg_count": r[7], "file_size": r[8], "subagent_count": r[9],
-             "cached_at": r[10]}
-            for r in rows
-        ]
-
-    def get_claude_cache_age(self) -> float | None:
-        """Return age in seconds of the oldest cache entry, or None if empty."""
-        row = self.conn.execute("SELECT MIN(cached_at) FROM claude_sessions").fetchone()
-        if row and row[0]:
-            return time.time() - row[0]
-        return None
+        """Get cached sessions. Returns empty if cache expired (TTL-based)."""
+        return self._claude_cache.get("all_sessions", default=[])
 
     def clear_claude_cache(self) -> None:
-        self.conn.execute("DELETE FROM claude_sessions")
-        self.conn.commit()
+        self._claude_cache.delete("all_sessions")
 
     def delete_cached_claude_session(self, session_id: str) -> None:
-        self.conn.execute("DELETE FROM claude_sessions WHERE id = ?", (session_id,))
-        self.conn.commit()
+        sessions = self._claude_cache.get("all_sessions", default=[])
+        sessions = [s for s in sessions if s.get("id") != session_id]
+        self._claude_cache.set("all_sessions", sessions)
 
     def close(self):
         self.conn.close()
