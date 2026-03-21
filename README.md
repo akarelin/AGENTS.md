@@ -31,7 +31,7 @@ An unfinished, evolving collection of everything agentic — prompt engineering 
 
 ---
 
-# DA (ДА) - Агент котогрый только говорит ДА
+# DA (ДА) - Агент который только говорит ДА
 
 Superagent to manage cli coding agents, projects, tools. Makes Claude Code compliant (not asking too many questions).
 

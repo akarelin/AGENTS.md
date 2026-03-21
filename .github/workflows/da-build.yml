@@ -1,115 +1,118 @@
 name: DA Build
 
 on:
+  pull_request:
+    branches: [master]
+    paths: ['DA/**', 'DA/pyproject.toml']
   workflow_dispatch:
     inputs:
-      version_bump:
-        description: 'Version bump type'
+      bump:
+        description: 'Version bump'
         required: true
         type: choice
         options:
+          - none
           - patch
           - minor
-          - major
+      run_tests:
+        description: 'Run tests before release'
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
 
 defaults:
   run:
     working-directory: DA
 
 jobs:
-  build:
-    runs-on: [self-hosted, Linux, X64]
-    permissions:
-      contents: write
-
+  test:
+    runs-on: [self-hosted, linux]
+    if: github.event_name == 'pull_request' || inputs.run_tests
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
+          fetch-tags: true
           fetch-depth: 0
 
-      - name: Create venv
+      - name: Setup and test
         run: |
           python3 -m venv .venv
-          echo "$PWD/.venv/bin" >> "$GITHUB_PATH"
+          .venv/bin/pip install pytest setuptools-scm
+          .venv/bin/pip install -e .
+          .venv/bin/ruff check da/
 
-      - name: Cache pip
-        uses: actions/cache@v4
+  release:
+    needs: test
+    if: >-
+      always()
+      && github.event_name == 'workflow_dispatch'
+      && github.ref == 'refs/heads/master'
+      && (needs.test.result == 'success' || needs.test.result == 'skipped')
+    runs-on: [self-hosted, linux]
+
+    steps:
+      - uses: actions/checkout@v6
         with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-da-${{ hashFiles('DA/pyproject.toml') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-da-
+          fetch-tags: true
+          fetch-depth: 0
 
-      - name: Install package
-        run: pip install -e .
-
-      - name: Lint
+      - name: Compute version
         run: |
-          pip install ruff
-          ruff check da/
+          BUMP="${{ inputs.bump }}"
+          LATEST_TAG=$(git tag -l 'da-v*' --sort=-v:refname | grep -E '^da-v[0-9]+\.[0-9]+\.[0-9]+$' | head -1 | sed 's|^da-v||')
+          if [ -z "$LATEST_TAG" ]; then LATEST_TAG="0.0.0"; fi
+          if [ "$BUMP" = "none" ]; then
+            echo "TAG=da-v${LATEST_TAG}" >> $GITHUB_ENV
+          else
+            IFS='.' read -r MAJOR MINOR PATCH <<< "$LATEST_TAG"
+            if [ "$BUMP" = "minor" ]; then
+              MINOR=$((MINOR + 1))
+              PATCH=0
+            else
+              PATCH=$((PATCH + 1))
+            fi
+            echo "TAG=da-v${MAJOR}.${MINOR}.${PATCH}" >> $GITHUB_ENV
+          fi
 
-      - name: Compute next version
-        id: version
+      - name: Create tag
+        if: inputs.bump != 'none'
         run: |
-          CURRENT=$(grep -Po '(?<=^version = ")[^"]+' pyproject.toml)
-          IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT"
-          case "${{ inputs.version_bump }}" in
-            major) MAJOR=$((MAJOR + 1)); MINOR=0; PATCH=0 ;;
-            minor) MINOR=$((MINOR + 1)); PATCH=0 ;;
-            patch) PATCH=$((PATCH + 1)) ;;
-          esac
-          NEW="${MAJOR}.${MINOR}.${PATCH}"
-          echo "current=$CURRENT" >> "$GITHUB_OUTPUT"
-          echo "new=$NEW" >> "$GITHUB_OUTPUT"
-          echo "tag=da-v${NEW}" >> "$GITHUB_OUTPUT"
+          git config user.name "${{ github.actor }}"
+          git config user.email "${{ github.actor_id }}+${{ github.actor }}@users.noreply.github.com"
+          git tag "${TAG}"
+          git push origin "${TAG}"
 
-      - name: Bump version in pyproject.toml
-        run: sed -i "s/^version = \"${{ steps.version.outputs.current }}\"/version = \"${{ steps.version.outputs.new }}\"/" pyproject.toml
+      - name: Checkout tag for rebuild
+        if: inputs.bump == 'none'
+        run: git checkout "${TAG}"
 
-      - name: Bump version in __init__.py
-        run: sed -i "s/__version__ = \"${{ steps.version.outputs.current }}\"/__version__ = \"${{ steps.version.outputs.new }}\"/" da/__init__.py
-
-      - name: Build distribution
-        run: pip install build && python -m build
-
-      - name: Commit version bump via GitHub API
-        working-directory: ${{ github.workspace }}
-        env:
-          GH_TOKEN: ${{ github.token }}
+      - name: Build and release
         run: |
-          BRANCH="${{ github.ref_name }}"
-          COMMIT_MSG="chore(da): bump version to ${{ steps.version.outputs.new }}"
+          python3 -m venv .venv
+          .venv/bin/pip install build setuptools-scm
+          .venv/bin/python -m build
 
-          # Bump pyproject.toml
-          FILE_PATH="DA/pyproject.toml"
-          FILE_SHA=$(gh api "repos/${{ github.repository }}/contents/${FILE_PATH}?ref=${BRANCH}" --jq '.sha')
-          RESPONSE=$(gh api --method PUT "repos/${{ github.repository }}/contents/${FILE_PATH}" \
-            -f message="${COMMIT_MSG}" \
-            -f content="$(base64 -w 0 "${FILE_PATH}")" \
-            -f sha="${FILE_SHA}" \
-            -f branch="${BRANCH}")
+      - name: Compute release name
+        run: echo "VERSION=${TAG#da-v}" >> $GITHUB_ENV
 
-          NEW_COMMIT_SHA=$(echo "$RESPONSE" | jq -r '.commit.sha')
-
-          # Bump __init__.py
-          FILE_PATH="DA/da/__init__.py"
-          FILE_SHA=$(gh api "repos/${{ github.repository }}/contents/${FILE_PATH}?ref=${BRANCH}" --jq '.sha')
-          gh api --method PUT "repos/${{ github.repository }}/contents/${FILE_PATH}" \
-            -f message="${COMMIT_MSG} (__init__)" \
-            -f content="$(base64 -w 0 "${FILE_PATH}")" \
-            -f sha="${FILE_SHA}" \
-            -f branch="${BRANCH}")
-
-          # Create the tag pointing at the new commit
-          gh api --method POST "repos/${{ github.repository }}/git/refs" \
-            -f ref="refs/tags/${{ steps.version.outputs.tag }}" \
-            -f sha="${NEW_COMMIT_SHA}"
-
-      - name: Create GitHub Release
+      - name: Create Release
+        if: inputs.bump != 'none'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ steps.version.outputs.tag }}
-          name: DA ${{ steps.version.outputs.tag }}
-          generate_release_notes: true
+          tag_name: ${{ env.TAG }}
+          name: DA v${{ env.VERSION }}
           files: DA/dist/*
+          generate_release_notes: true
+
+      - name: Upload assets to existing release
+        if: inputs.bump == 'none'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "${TAG}" dist/* --clobber
+
+      - name: Update da/latest tag
+        run: |
+          git tag -f da/latest
+          git push -f origin da/latest
