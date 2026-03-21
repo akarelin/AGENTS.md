@@ -55,7 +55,8 @@
       "Bash(2)",
       "Bash(find /home/alex/AGENTS.md -name \"*.md\" -type f ! -path \"*/.venv/*\" ! -path \"*/archive/*\" -exec wc -l {} +)",
       "Bash(ls /home/alex/AGENTS.md/DA/da/*.py)",
-      "Bash(gh workflow:*)"
+      "Bash(gh workflow:*)",
+      "Bash(gh secret:*)"
     ],
     "additionalDirectories": [
       "/mnt/d/SD/.claude"

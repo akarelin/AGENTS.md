@@ -7,4 +7,4 @@ paramiko>=3.0.0
 python-dotenv>=1.0.0
 prompt_toolkit>=3.0.0
 textual>=3.0.0
-gppu @ git+ssh://git@github.com/akarelin/gppu.git
+gppu @ git+https://github.com/akarelin/gppu.git
