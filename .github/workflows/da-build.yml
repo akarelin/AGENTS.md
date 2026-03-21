@@ -24,6 +24,7 @@ jobs:
     runs-on: [self-hosted, linux]
     outputs:
       tag: ${{ steps.version.outputs.tag }}
+      clean: ${{ steps.version.outputs.clean }}
 
     steps:
       - uses: actions/checkout@v6
@@ -38,7 +39,7 @@ jobs:
           LATEST_TAG=$(git tag -l 'da-v*' --sort=-v:refname | grep -E '^da-v[0-9]+\.[0-9]+\.[0-9]+$' | head -1 | sed 's|^da-v||')
           if [ -z "$LATEST_TAG" ]; then LATEST_TAG="0.0.0"; fi
           if [ "$BUMP" = "none" ]; then
-            echo "tag=da-v${LATEST_TAG}" >> $GITHUB_OUTPUT
+            VER="${LATEST_TAG}"
           else
             IFS='.' read -r MAJOR MINOR PATCH <<< "$LATEST_TAG"
             if [ "$BUMP" = "minor" ]; then
@@ -47,8 +48,10 @@ jobs:
             else
               PATCH=$((PATCH + 1))
             fi
-            echo "tag=da-v${MAJOR}.${MINOR}.${PATCH}" >> $GITHUB_OUTPUT
+            VER="${MAJOR}.${MINOR}.${PATCH}"
           fi
+          echo "tag=da-v${VER}" >> $GITHUB_OUTPUT
+          echo "clean=${VER}" >> $GITHUB_OUTPUT
 
       - name: Create tag
         if: inputs.bump != 'none'
@@ -95,27 +98,24 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Detect version
-        id: scm
-        shell: bash
-        run: echo "version=${{ needs.bump.outputs.tag }}" | sed 's/da-v//' >> $GITHUB_OUTPUT
-
       - name: Build binary (Linux)
         if: matrix.os == 'linux'
         env:
-          SETUPTOOLS_SCM_PRETEND_VERSION: ${{ steps.scm.outputs.version }}
+          SETUPTOOLS_SCM_PRETEND_VERSION: ${{ needs.bump.outputs.clean }}
         run: |
           python3 -m venv .venv
           .venv/bin/pip install pyinstaller setuptools-scm
+          .venv/bin/pip install git+ssh://git@github.com/akarelin/gppu.git
           .venv/bin/pip install -e .
           .venv/bin/pyinstaller --onefile --name da --hidden-import=da --hidden-import=da.cli --hidden-import=da.client --hidden-import=da.config --hidden-import=da.session --hidden-import=da.tui --hidden-import=da.rich_tui --hidden-import=da.rich_render --hidden-import=da.obsidian --hidden-import=da.claude_sessions --hidden-import=da.session_manager --hidden-import=da.history_analyzer --hidden-import=yaml --hidden-import=gppu --hidden-import=anthropic --hidden-import=paramiko --collect-all textual --collect-all rich --collect-all prompt_toolkit --copy-metadata DA da/cli.py
 
       - name: Build binary
         if: matrix.os != 'linux'
         env:
-          SETUPTOOLS_SCM_PRETEND_VERSION: ${{ steps.scm.outputs.version }}
+          SETUPTOOLS_SCM_PRETEND_VERSION: ${{ needs.bump.outputs.clean }}
         run: |
           pip install pyinstaller setuptools-scm
+          pip install git+ssh://git@github.com/akarelin/gppu.git
           pip install -e .
           pyinstaller --onefile --name da --hidden-import=da --hidden-import=da.cli --hidden-import=da.client --hidden-import=da.config --hidden-import=da.session --hidden-import=da.tui --hidden-import=da.rich_tui --hidden-import=da.rich_render --hidden-import=da.obsidian --hidden-import=da.claude_sessions --hidden-import=da.session_manager --hidden-import=da.history_analyzer --hidden-import=yaml --hidden-import=gppu --hidden-import=anthropic --hidden-import=paramiko --collect-all textual --collect-all rich --collect-all prompt_toolkit --copy-metadata DA da/cli.py
 

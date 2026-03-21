@@ -54,7 +54,8 @@
       "Bash(find /home/alex/AGENTS.md -type f -name *.md ! -path */.venv/* ! -path */.git/* -exec grep -l \"sk-\\\\|BEGIN.*KEY\\\\|password\\\\|secret\" {})",
       "Bash(2)",
       "Bash(find /home/alex/AGENTS.md -name \"*.md\" -type f ! -path \"*/.venv/*\" ! -path \"*/archive/*\" -exec wc -l {} +)",
-      "Bash(ls /home/alex/AGENTS.md/DA/da/*.py)"
+      "Bash(ls /home/alex/AGENTS.md/DA/da/*.py)",
+      "Bash(gh workflow:*)"
     ],
     "additionalDirectories": [
       "/mnt/d/SD/.claude"
