@@ -1,5 +1,3 @@
-# AGENTS.md
-
 ```
       ░████             ░██        ░██░██       ░███                                        ░██
     ░██  ░██            ░██           ░██      ░██░██                                       ░██
@@ -21,40 +19,28 @@ An unfinished, evolving collection of everything agentic — prompt engineering 
 ## Table of Contents
 - [In development](#in-development)
   - [DA (ДА)](#da-да)
-  - [DAPY CLI](#dapy-cli)
   - [Gadya (Гадя)](#gadya-гадя)
 - [No longer developed](#no-longer-developed)
+  - [DAPY CLI](#dapy-cli)
 - [What's where](#whats-where)
 
 ## In development
 - **DA (ДА)**: Personal multi-agent CLI and TUI built directly on the Anthropic SDK. Multi-session support, tool execution, Claude session browsing, and remote host management.
-- **DAPY CLI**: A more ambitious attempt to wrap the whole workflow into a LangChain-based CLI tool
 - **Gadya (Гадя)**: A voice-first iOS/Android mobile assistant built with React Native / Expo and TypeScript. Designed for hands-free, one-handed interaction with LLMs — speak a question, get an AI answer read aloud, and optionally save or search personal notes via voice.
-
+- ~~**DAPY CLI**: A more ambitious attempt to wrap the whole workflow into a LangChain-based CLI tool~~
 
 ---
 
-# DA (ДА)
+# DA (ДА) - Агент котогрый только говорит ДА
 
-A personal multi-agent system built directly on the Anthropic SDK (no LangChain). Two full-screen TUIs, an interactive REPL, a session manager, Obsidian vault integration, and remote host tooling via SSH — all driven by Claude.
+Superagent to manage cli coding agents, projects, tools. Makes Claude Code compliant (not asking too many questions).
 
-**Status:** Active development. Core agent loop, TUI, session management, and tool execution are working.
-
-### Screenshots
-
-#### Agent Chat
-
-The main view on launch — ASCII banner, model info, tool count, and an input prompt. Tabs across the top switch between DA chat, Sessions, and Obsidian. The footer shows keybindings for navigation, session management, and merge operations.
-
-<p align="center"><img src="docs/da-chat.png" width="800" alt="DA Chat — agent conversation view with ASCII banner and tab bar"></p>
-
-#### Sessions — Claude Session Browser
-
-Browse Claude Code sessions from `.claude/` directories across multiple machines. The left panel shows a tree organized by machine and project, with session timestamps and first messages. The right panel shows session detail — ID, machine, project, date, size, message counts by role, subagent count, tool results, and whether a local copy exists.
-
+## Features
+### Session Management
+Browse sessions across multiple machines. 
 <p align="center"><img src="docs/sessions-claude.png" width="800" alt="Sessions — Claude session tree with detail panel"></p>
 
-Session actions include delete with confirmation dialog, resume, rename, move, and merge.
+Delete, rename, move and merge.
 
 <p align="center"><img src="docs/sessions-delete.png" width="800" alt="Sessions — delete confirmation dialog"></p>
 
@@ -62,17 +48,21 @@ The tree expands to show full session history with timestamps. Selected sessions
 
 <p align="center"><img src="docs/sessions-detail.png" width="800" alt="Sessions — expanded tree with session detail and recent messages"></p>
 
-#### Obsidian Vault Browser
+### Obsidian Integration
 
-Navigate the Obsidian vault interactively: folder tree on the left with expandable sections, full markdown note preview on the right with rendered content. Search across the vault, browse by folder, or jump to recent notes. The status bar shows the current note path and metadata.
+Obsidian vault integrated. Used to manage Projects - an abstraction above sessions.
 
 <p align="center"><img src="docs/obsidian.png" width="800" alt="Obsidian — vault browser with folder tree and note preview"></p>
 
-#### Config Editor
+### Editor
 
-A tree-based browser for tools, agents, and YAML config files. The left panel organizes tools by category (shell, git, docker, ssh, files, search, sessions) and lists all agent types with their status (implemented vs stub). The right panel shows a live YAML preview of the selected config file with syntax highlighting. Slash commands `/validate` and `/refresh` for config management.
+A tree-based browser for tools, agents, and YAML config files. Da can be fully configured from its own ui or using its own chat interface.
 
 <p align="center"><img src="docs/config.png" width="800" alt="Config Editor — tool and agent tree with YAML config preview"></p>
+
+### REPL
+<p align="center"><img src="docs/da-chat.png" width="800" alt="DA Chat — agent conversation view with ASCII banner and tab bar"></p>
+
 
 ### CLI Commands
 
@@ -136,128 +126,11 @@ Tab completion for commands, model names, hosts, git/docker subcommands, and fil
 | `Ctrl+Q` | Quit |
 | `Esc` | Back / close editor |
 
-### Architecture
-
-```
-DA/
-├── da/
-│   ├── cli.py              → Click CLI + REPL (repl, tui, manage, ask, etc.)
-│   ├── rich_tui.py         → Rich TUI — 5-view tabbed layout
-│   ├── tui.py              → Sidebar TUI — session list + conversation
-│   ├── session_manager.py  → Session manager TUI
-│   ├── session.py          → SQLite session persistence
-│   ├── client.py           → Anthropic SDK wrapper
-│   ├── config.py           → YAML config loader
-│   ├── obsidian.py         → Obsidian vault operations (scan, search, tags, projects)
-│   ├── claude_sessions.py  → Claude Code session discovery and management
-│   ├── rich_render.py      → Rich renderables (banner, menus, panels)
-│   ├── agents/             → Orchestrator + specialist agents (infra, debug, etc.)
-│   ├── tools/              → Shell, git, docker, SSH, files, search, sessions
-│   ├── views/              → Pluggable view modules (projects, chat, sessions, obsidian, config)
-│   └── prompts/            → System prompts (markdown)
-├── pyproject.toml          → Hatchling build, Python >=3.11
-├── config.yaml             → Model, hosts, tools, session settings
-└── scripts/install.sh      → System-wide install via venv + ~/bin symlink
-```
-
-### Technology Stack
-
-Python 3.11, Anthropic SDK >= 0.40.0, Click, Rich, Textual, Paramiko (SSH), prompt_toolkit, Pydantic, PyYAML. SQLite for session persistence.
-
----
-
-## No longer developed
-- **AGENTS.md as a pattern**: A single markdown file that tells any LLM agent how to behave in a repository — session management, git workflow, mistake tracking, changelog conventions
-- **Multi-agent orchestration**: Experiments with specialized subagents (changelog, docs, archive, validation, push) coordinated by a parent knowledge-management agent
-- **Mistake-driven improvement**: Agents log their own mistakes; those patterns feed back into better instructions
-
-
-# DAPY CLI
-
-A production-ready personal knowledge management system and agentic workflow tool built with LangChain 1.0 and LangGraph 1.0 (Python). It reimplements the original cascading markdown-based subagents and tools as native LangChain tools and LangGraph workflows — preserving the markdown-driven philosophy while adding enterprise-grade observability, persistence, and deployment options.
-
-**Status:** Code exists but has not been tested or deployed. Everything awaits user approval and iterative validation.
-
-### CLI Commands
-
-| Command | Description |
-|---------|-------------|
-| `dapy ask "..."` | Execute any query via the main agent |
-| `dapy next` | Analyze 2Do.md, ROADMAP.md, git status — recommend what to do next |
-| `dapy close` | Close session: update 2Do.md, document mistakes, archive work |
-| `dapy document` | Auto-generate CHANGELOG.md from git diff |
-| `dapy push "msg"` | Commit + push with changelog verification |
-| `dapy daemon` | Run as background HTTP daemon |
-| `dapy inspect` | Show recent executions and snapshots |
-| `dapy feedback submit` | Submit feedback (bug/feature/etc.) |
-| `dapy export-debug` | Package debug info for remote inspection |
-| `dapy diag` | Diagnostic info: config, env vars, git status |
-
-Advanced flags: `--breakpoint <tool>` (pause at any tool), `--no-snapshot`, `--approve-all`, `--debug`.
-
-### 10 LangChain Tools
-
-All tools migrated from the original markdown-based subagents:
-
-| Tool | Source Agent | Purpose |
-|------|-------------|---------|
-| `changelog_tool` | changelog-agent.md | Manages CHANGELOG.md (Keep a Changelog format) |
-| `archive_tool` | archive-agent.md | Archives outdated code with inventory |
-| `mistake_processor_tool` | mistake-review-agent.md | Documents mistakes for learning |
-| `validation_tool` | validation-agent.md | Checks code/docs against standards |
-| `git_push_tool` | git-operations.md | Commits and pushes with verification |
-| `git_status_tool` | git-operations.md | Gets current git status |
-| `git_diff_tool` | git-operations.md | Shows git diffs |
-| `read_markdown_tool` | knowledge-base.md | Reads markdown with frontmatter |
-| `search_markdown_tool` | knowledge-base.md | Searches across markdown files |
-| `update_markdown_tool` | knowledge-base.md | Updates markdown content |
-
-### 3 LangGraph Workflows
-
-1. **Close Session** — Sequential state machine: analyze session → update todo → check mistakes → archive work → generate summary
-2. **Document Changes** — Detects git diff, classifies changes (Added/Changed/Fixed/Removed), updates CHANGELOG.md
-3. **What's Next** — Reads 2Do.md, ROADMAP.md, and git status to determine recommended next steps
-
-### Middleware Stack
-
-Each tool call passes through an ordered middleware pipeline:
-
-```
-Request → EnhancedLogging → Breakpoint → Snapshot → HumanInTheLoop → Tool Execution
-```
-
-- **EnhancedLogging** — captures timing for every tool call
-- **Breakpoint** — pauses execution at configured tools with an interactive menu (continue / skip / abort / inspect / PDB)
-- **Snapshot** — saves JSON state before/after each tool call to `./snapshots/`
-- **HumanInTheLoop** — approval gates for destructive operations
-
-### Observability
-
-- **LangSmith tracing** — every execution traced (tool calls, model invocations, workflow transitions)
-- **State snapshots** — JSON files saved before/after each tool call
-- **Remote inspection API** — external agents can access snapshots and traces
-- **Debug export** — `dapy export-debug` packages everything for remote troubleshooting
-
-### Technology Stack
-
-Python 3.11, LangChain >= 0.3.0, LangGraph >= 0.2.0, LangSmith >= 0.2.0, Click (CLI), Rich (terminal UI), GitPython, PyYAML. SQLite (local) or PostgreSQL (production) for state persistence.
-
-### Deployment Options
-
-1. **Local Docker Compose** — Hot reload, SQLite, volume-mounted repos
-2. **GCP VM** — PostgreSQL, Nginx reverse proxy with SSL, automated deploy.sh
-3. **LangChain Cloud** — Serverless, auto-scaling 1–5 instances (chosen option, not yet started)
-
-### LLM Log Ingestion
-
-Included tools (`DAPY/tools/`) import ChatGPT and Claude conversation exports into LangSmith datasets, then query them to detect patterns, generate test cases, and export golden examples for prompt optimization.
-
 ---
 
 # Gadya (Гадя)
 
 A voice-first iOS/Android mobile assistant built with React Native / Expo and TypeScript. Designed for hands-free, one-handed interaction with LLMs — speak a question, get an AI answer read aloud, and optionally save or search personal notes via voice.
-
 **Status:** All major features are implemented and checked complete.
 
 ### Core Capabilities
@@ -362,4 +235,92 @@ GitHub Actions workflow (`.github/workflows/build-android.yml`) for automated An
     ├── plans/                 → Subagent project plans
     └── guides/                → Best practices (archiving, etc.)
 ```
+
+## No longer developed
+- **AGENTS.md as a pattern**: A single markdown file that tells any LLM agent how to behave in a repository — session management, git workflow, mistake tracking, changelog conventions
+- **Multi-agent orchestration**: Experiments with specialized subagents (changelog, docs, archive, validation, push) coordinated by a parent knowledge-management agent
+- **Mistake-driven improvement**: Agents log their own mistakes; those patterns feed back into better instructions
+
+
+## DAPY CLI
+
+A production-ready personal knowledge management system and agentic workflow tool built with LangChain 1.0 and LangGraph 1.0 (Python). It reimplements the original cascading markdown-based subagents and tools as native LangChain tools and LangGraph workflows — preserving the markdown-driven philosophy while adding enterprise-grade observability, persistence, and deployment options.
+
+**Status:** Code exists but has not been tested or deployed. Everything awaits user approval and iterative validation.
+
+### CLI Commands
+
+| Command | Description |
+|---------|-------------|
+| `dapy ask "..."` | Execute any query via the main agent |
+| `dapy next` | Analyze 2Do.md, ROADMAP.md, git status — recommend what to do next |
+| `dapy close` | Close session: update 2Do.md, document mistakes, archive work |
+| `dapy document` | Auto-generate CHANGELOG.md from git diff |
+| `dapy push "msg"` | Commit + push with changelog verification |
+| `dapy daemon` | Run as background HTTP daemon |
+| `dapy inspect` | Show recent executions and snapshots |
+| `dapy feedback submit` | Submit feedback (bug/feature/etc.) |
+| `dapy export-debug` | Package debug info for remote inspection |
+| `dapy diag` | Diagnostic info: config, env vars, git status |
+
+Advanced flags: `--breakpoint <tool>` (pause at any tool), `--no-snapshot`, `--approve-all`, `--debug`.
+
+### 10 LangChain Tools
+
+All tools migrated from the original markdown-based subagents:
+
+| Tool | Source Agent | Purpose |
+|------|-------------|---------|
+| `changelog_tool` | changelog-agent.md | Manages CHANGELOG.md (Keep a Changelog format) |
+| `archive_tool` | archive-agent.md | Archives outdated code with inventory |
+| `mistake_processor_tool` | mistake-review-agent.md | Documents mistakes for learning |
+| `validation_tool` | validation-agent.md | Checks code/docs against standards |
+| `git_push_tool` | git-operations.md | Commits and pushes with verification |
+| `git_status_tool` | git-operations.md | Gets current git status |
+| `git_diff_tool` | git-operations.md | Shows git diffs |
+| `read_markdown_tool` | knowledge-base.md | Reads markdown with frontmatter |
+| `search_markdown_tool` | knowledge-base.md | Searches across markdown files |
+| `update_markdown_tool` | knowledge-base.md | Updates markdown content |
+
+### 3 LangGraph Workflows
+
+1. **Close Session** — Sequential state machine: analyze session → update todo → check mistakes → archive work → generate summary
+2. **Document Changes** — Detects git diff, classifies changes (Added/Changed/Fixed/Removed), updates CHANGELOG.md
+3. **What's Next** — Reads 2Do.md, ROADMAP.md, and git status to determine recommended next steps
+
+### Middleware Stack
+
+Each tool call passes through an ordered middleware pipeline:
+
+```
+Request → EnhancedLogging → Breakpoint → Snapshot → HumanInTheLoop → Tool Execution
+```
+
+- **EnhancedLogging** — captures timing for every tool call
+- **Breakpoint** — pauses execution at configured tools with an interactive menu (continue / skip / abort / inspect / PDB)
+- **Snapshot** — saves JSON state before/after each tool call to `./snapshots/`
+- **HumanInTheLoop** — approval gates for destructive operations
+
+### Observability
+
+- **LangSmith tracing** — every execution traced (tool calls, model invocations, workflow transitions)
+- **State snapshots** — JSON files saved before/after each tool call
+- **Remote inspection API** — external agents can access snapshots and traces
+- **Debug export** — `dapy export-debug` packages everything for remote troubleshooting
+
+### Technology Stack
+
+Python 3.11, LangChain >= 0.3.0, LangGraph >= 0.2.0, LangSmith >= 0.2.0, Click (CLI), Rich (terminal UI), GitPython, PyYAML. SQLite (local) or PostgreSQL (production) for state persistence.
+
+### Deployment Options
+
+1. **Local Docker Compose** — Hot reload, SQLite, volume-mounted repos
+2. **GCP VM** — PostgreSQL, Nginx reverse proxy with SSL, automated deploy.sh
+3. **LangChain Cloud** — Serverless, auto-scaling 1–5 instances (chosen option, not yet started)
+
+### LLM Log Ingestion
+
+Included tools (`DAPY/tools/`) import ChatGPT and Claude conversation exports into LangSmith datasets, then query them to detect patterns, generate test cases, and export golden examples for prompt optimization.
+
+---
 
