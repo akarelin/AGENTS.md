@@ -452,6 +452,8 @@ class DAApp(App):
         self.session_messages: dict[str, list[dict]] = {}
         self.claude_session_info: dict[str, dict] = {}
         self.busy = False
+        self._pending_delete: str | None = None
+        self._pending_delete_type: str | None = None
 
     def compose(self) -> ComposeResult:
         # Top menu bar
@@ -574,7 +576,7 @@ class DAApp(App):
             name = s["name"] or "—"
             project = (s["project"] or "").split("/")[-1] or "—"
             date = datetime.datetime.fromtimestamp(s["updated_at"]).strftime("%Y-%m-%d") if s["updated_at"] else "—"
-            row = ("ДА", "local", project, date, str(s["msg_count"]), name)
+            row = ("ДА", "local", project, date, s["msg_count"], name)
             row_key = f"da:{s['id']}"
             if ft and ft not in " ".join(row).lower():
                 continue
@@ -588,7 +590,7 @@ class DAApp(App):
             date = info.get("date", "—")
             name = info.get("name", "—")
             msgs = _fast_msg_count(info.get("file", ""))
-            row = ("Claude", _machine_label(machine), project, date, str(msgs), name)
+            row = ("Claude", _machine_label(machine), project, date, msgs, name)
             row_key = f"claude:{sid}"
             if ft and ft not in " ".join(row).lower():
                 continue
@@ -821,6 +823,16 @@ class DAApp(App):
         inp.value = ""
 
         if not text:
+            return
+
+        # Handle delete confirmation
+        if self._pending_delete:
+            if text.lower() == "yes":
+                self._confirm_delete()
+            else:
+                self._pending_delete = None
+                self._pending_delete_type = None
+                self._log_msg("tool", "Delete cancelled.")
             return
 
         if text.startswith("/"):
@@ -1095,44 +1107,74 @@ class DAApp(App):
         self._log_msg("tool", result)
 
     def _do_delete_session(self) -> None:
-        """Delete current session — DA or Claude."""
+        """Prompt for confirmation before deleting."""
         sid = self.current_session_id
         if not sid:
             self._log_msg("tool", "No session selected.")
             return
 
+        # Get session name for the prompt
         if self.viewing_claude:
-            # Delete Claude session files
             info = self.claude_session_info.get(sid)
-            if not info:
-                self._log_msg("tool", "No session info found.")
-                return
-            fpath = Path(info["file"])
-            session_dir = fpath.parent / fpath.stem
-            name = info.get("name", sid[:12])
-            try:
+            name = info.get("name", sid[:12]) if info else sid[:12]
+            stype = "Claude"
+        else:
+            name = ""
+            for m in self.session_messages.get(sid, []):
+                if m["role"] == "user":
+                    name = m["content"][:40]
+                    break
+            name = name or sid[:12]
+            stype = "ДА"
+
+        self._log_msg("tool", f"Delete {stype} session: {name}?")
+        self._log_msg("tool", "Type 'yes' to confirm, anything else to cancel.")
+        self._pending_delete = sid
+        self._pending_delete_type = stype
+
+    def _confirm_delete(self) -> None:
+        """Execute the pending delete with loading indicator."""
+        sid = self._pending_delete
+        stype = self._pending_delete_type
+        self._pending_delete = None
+        self._pending_delete_type = None
+
+        self._log_msg("tool", "Deleting...")
+        self._execute_delete(sid, stype)
+
+    @work(thread=True)
+    def _execute_delete(self, sid: str, stype: str) -> None:
+        """Run delete in background thread."""
+        try:
+            if stype == "Claude":
+                info = self.claude_session_info.get(sid)
+                if not info:
+                    self.call_from_thread(self._log_msg, "tool", "Session not found.")
+                    return
+                fpath = Path(info["file"])
+                session_dir = fpath.parent / fpath.stem
+                name = info.get("name", sid[:12])
                 fpath.unlink(missing_ok=True)
                 if session_dir.is_dir():
                     import shutil
                     shutil.rmtree(session_dir)
                 self.session_messages.pop(sid, None)
                 self.claude_session_info.pop(sid, None)
-                self._log_msg("tool", f"Deleted Claude session: {name}")
-                self._load_claude_tree()
-            except Exception as e:
-                self._log_msg("tool", f"Delete failed: {e}")
-        else:
-            # Delete DA session
-            name = ""
-            for m in self.session_messages.get(sid, []):
-                if m["role"] == "user":
-                    name = m["content"][:40]
-                    break
-            self.store.delete_session(sid)
-            self.session_messages.pop(sid, None)
-            self._populate_all_sessions_table()
-            self._log_msg("tool", f"Deleted DA session: {name or sid[:12]}")
-            self._create_new_session()
+                self.call_from_thread(self._log_msg, "tool", f"Deleted Claude session: {name}")
+                self.call_from_thread(self._load_claude_tree)
+            else:
+                name = ""
+                for m in self.session_messages.get(sid, []):
+                    if m["role"] == "user":
+                        name = m["content"][:40]
+                        break
+                self.store.delete_session(sid)
+                self.session_messages.pop(sid, None)
+                self.call_from_thread(self._populate_all_sessions_table)
+                self.call_from_thread(self._log_msg, "tool", f"Deleted ДА session: {name or sid[:12]}")
+                self.call_from_thread(self._create_new_session)
+        except Exception as e:
+            self.call_from_thread(self._log_msg, "tool", f"Delete failed: {e}")
 
     def _show_sessions_detail(self) -> None:
         """Show detailed session list with stats."""

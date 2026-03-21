@@ -19,6 +19,45 @@ from rich.text import Text
 console = Console()
 
 
+# ── Menu bar ─────────────────────────────────────────────────────────
+
+def render_menu_bar(active: str, model: str = "", tool_count: int = 0) -> Text:
+    """Render a menu bar with highlighted shortcut letters.
+
+    active: "da" or "sessions"
+    Renders:  [Д]А   [S]essions   model | tools | /help
+    """
+    bar = Text()
+    # ДА tab
+    if active == "da":
+        bar.append(" [", style="bold white on blue")
+        bar.append("Д", style="bold yellow on blue underline")
+        bar.append("]А ", style="bold white on blue")
+    else:
+        bar.append(" [", style="dim")
+        bar.append("Д", style="yellow underline")
+        bar.append("]А ", style="dim")
+
+    bar.append("  ")
+
+    # Sessions tab
+    if active == "sessions":
+        bar.append(" [", style="bold white on blue")
+        bar.append("S", style="bold yellow on blue underline")
+        bar.append("]essions ", style="bold white on blue")
+    else:
+        bar.append(" [", style="dim")
+        bar.append("S", style="yellow underline")
+        bar.append("]essions ", style="dim")
+
+    # Right-aligned status
+    if model or tool_count:
+        bar.append("  ")
+        bar.append(f"{model} | {tool_count} tools | /help", style="dim")
+
+    return bar
+
+
 # ── Message rendering ────────────────────────────────────────────────
 
 def render_user(content: str):
