@@ -17,6 +17,7 @@ from da.tools.docker import docker_tool_defs, execute_docker_tool
 from da.tools.ssh import ssh_tool_defs, execute_ssh_tool
 from da.tools.files import file_tool_defs, execute_file_tool
 from da.tools.search import search_tool_defs, execute_search_tool
+from da.tools.sessions import session_tool_defs, execute_session_tool
 
 ALL_TOOL_DEFS = (
     shell_tool_defs
@@ -25,6 +26,7 @@ ALL_TOOL_DEFS = (
     + ssh_tool_defs
     + file_tool_defs
     + search_tool_defs
+    + session_tool_defs
 )
 
 EXECUTORS = {
@@ -34,6 +36,7 @@ EXECUTORS = {
     **{t["name"]: execute_ssh_tool for t in ssh_tool_defs},
     **{t["name"]: execute_file_tool for t in file_tool_defs},
     **{t["name"]: execute_search_tool for t in search_tool_defs},
+    **{t["name"]: execute_session_tool for t in session_tool_defs},
 }
 
 

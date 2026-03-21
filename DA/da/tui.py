@@ -45,6 +45,26 @@ from da.tools import ALL_TOOL_DEFS, execute_tool
 from da.session import SessionStore
 
 
+# --- Machine icon helper ---
+
+# Windows hostnames (no .WSL suffix, paths start with D:\)
+_WIN_MACHINES = {"ALEX-LAPTOP", "Alex-PC"}
+
+def _machine_icon(name: str) -> str:
+    """Return icon for machine type: Windows, WSL, or Linux."""
+    if name.endswith(".WSL"):
+        return "\U0001f427"  # penguin (WSL/Linux on Windows)
+    if name in _WIN_MACHINES:
+        return "\U0001faaa"  # W11 window icon (or fallback)
+    return "\U0001f5a5"      # desktop (Linux server)
+
+def _machine_label(name: str) -> str:
+    """Pretty machine name with icon, strip .WSL suffix."""
+    icon = _machine_icon(name)
+    display = name.replace(".WSL", "")
+    return f"{icon} {display}"
+
+
 # --- Claude session helpers ---
 
 def _decode_project_dir(dirname: str) -> str:
@@ -272,7 +292,6 @@ class DragHandle(Static):
     }
     DragHandle:hover {
         background: $accent;
-        cursor: col-resize;
     }
     DragHandle.-dragging {
         background: $success;
@@ -497,7 +516,7 @@ class DAApp(App):
         tree.clear()
         tree.root.expand()
         for machine, projects in sorted(data.items()):
-            mnode = tree.root.add(f"[bold]{machine}[/bold]", expand=False)
+            mnode = tree.root.add(f"[bold]{_machine_label(machine)}[/bold]", expand=False)
             for proj, sessions in sorted(projects.items()):
                 short = proj.split("/")[-1] or proj.split("\\")[-1] or proj
                 pnode = mnode.add(f"[cyan]{short}[/cyan] ({len(sessions)})", expand=False)
@@ -891,26 +910,48 @@ class DAApp(App):
         self._log_msg("tool", result)
 
     def _do_delete_session(self) -> None:
-        """Delete current DA session."""
+        """Delete current session — DA or Claude."""
         sid = self.current_session_id
-        if not sid or self.viewing_claude:
-            self._log_msg("tool", "Can only delete DA sessions.")
+        if not sid:
+            self._log_msg("tool", "No session selected.")
             return
-        name = ""
-        for m in self.session_messages.get(sid, []):
-            if m["role"] == "user":
-                name = m["content"][:40]
-                break
-        self.store.delete_session(sid)
-        self.session_messages.pop(sid, None)
-        self._refresh_da_sessions()
-        self._log_msg("tool", f"Deleted session: {name or sid[:12]}")
-        # Select next session or create new
-        da_list = self.query_one("#da-session-list", ListView)
-        if da_list.children:
-            da_list.index = 0
+
+        if self.viewing_claude:
+            # Delete Claude session files
+            info = self.claude_session_info.get(sid)
+            if not info:
+                self._log_msg("tool", "No session info found.")
+                return
+            fpath = Path(info["file"])
+            session_dir = fpath.parent / fpath.stem
+            name = info.get("name", sid[:12])
+            try:
+                fpath.unlink(missing_ok=True)
+                if session_dir.is_dir():
+                    import shutil
+                    shutil.rmtree(session_dir)
+                self.session_messages.pop(sid, None)
+                self.claude_session_info.pop(sid, None)
+                self._log_msg("tool", f"Deleted Claude session: {name}")
+                self._load_claude_tree()
+            except Exception as e:
+                self._log_msg("tool", f"Delete failed: {e}")
         else:
-            self._create_new_session()
+            # Delete DA session
+            name = ""
+            for m in self.session_messages.get(sid, []):
+                if m["role"] == "user":
+                    name = m["content"][:40]
+                    break
+            self.store.delete_session(sid)
+            self.session_messages.pop(sid, None)
+            self._refresh_da_sessions()
+            self._log_msg("tool", f"Deleted DA session: {name or sid[:12]}")
+            da_list = self.query_one("#da-session-list", ListView)
+            if da_list.children:
+                da_list.index = 0
+            else:
+                self._create_new_session()
 
     def _show_sessions_detail(self) -> None:
         """Show detailed session list with stats."""
