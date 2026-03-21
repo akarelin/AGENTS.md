@@ -9,7 +9,10 @@ Architecture:
 
 import json
 import os
+import platform
+import shlex
 import shutil
+import subprocess
 import uuid
 from pathlib import Path
 
@@ -178,6 +181,68 @@ def copy_session_to_local(session_info: dict, claude_dir: str) -> None:
             shutil.copytree(subagents_src, subagents_dest)
 
 
+# Machine name -> SSH host mapping
+# Local machines don't need SSH, remote ones do
+LOCAL_MACHINES = {"ALEX-LAPTOP", "ALEX-LAPTOP.WSL", "Alex-PC", "Alex-PC.WSL"}
+
+
+def _machine_to_ssh(machine_dir: str, hosts: dict) -> str | None:
+    """Map .claude machine directory name to SSH host. Returns None for local."""
+    if machine_dir in LOCAL_MACHINES:
+        return None
+    # Check config hosts
+    for name, hcfg in hosts.items():
+        if machine_dir.lower() == name.lower():
+            return hcfg.ssh
+    # Fallback: try alex@machine_dir
+    return f"alex@{machine_dir}"
+
+
+def _get_wsl_distro() -> str:
+    """Get current WSL distro name."""
+    return os.environ.get("WSL_DISTRO_NAME", "Debian")
+
+
+def launch_claude_session(session_info: dict, hosts: dict) -> str:
+    """Launch claude --resume in a new Windows Terminal window.
+
+    - Local WSL: wt.exe new-window -- wsl.exe -d DISTRO -- bash -lc 'cd DIR && claude --resume ID'
+    - Remote:    wt.exe new-window -- wsl.exe -d DISTRO -- ssh -t HOST 'bash -lc "cd DIR && claude --resume ID"'
+
+    Returns status message.
+    """
+    sid = session_info["id"]
+    machine = session_info.get("machine_dir", "")
+    project_path = _decode_project_dir(session_info.get("project_dir", ""))
+    ssh_host = _machine_to_ssh(machine, hosts)
+    distro = _get_wsl_distro()
+
+    resume_cmd = f"cd {shlex.quote(project_path)} && exec claude --resume {shlex.quote(sid)}"
+
+    try:
+        if ssh_host:
+            # Remote: wt -> wsl -> ssh -> bash -> claude
+            subprocess.Popen([
+                "wt.exe", "new-window", "--",
+                "wsl.exe", "-d", distro, "--",
+                "ssh", "-t", ssh_host,
+                f"bash -lc {shlex.quote(resume_cmd)}",
+            ])
+            return f"Launched on {ssh_host} in new terminal"
+        else:
+            # Local WSL: wt -> wsl -> bash -> claude
+            subprocess.Popen([
+                "wt.exe", "new-window", "--",
+                "wsl.exe", "-d", distro, "--",
+                "bash", "-lc", resume_cmd,
+            ])
+            return f"Launched locally in new terminal"
+    except FileNotFoundError:
+        return "wt.exe not found — not running in WSL with Windows Terminal?"
+    except Exception as e:
+        return f"Launch failed: {e}"
+
+
 # --- Sidebar items ---
 
 class DASessionItem(ListItem):
@@ -193,7 +258,7 @@ class DASessionItem(ListItem):
 # --- Main TUI ---
 
 class DAApp(App):
-    TITLE = "DA"
+    TITLE = "ДА"
     SUB_TITLE = f"v{__version__}"
 
     CSS = """
@@ -226,6 +291,7 @@ class DAApp(App):
         Binding("ctrl+down", "next_session", "Next"),
         Binding("ctrl+t", "toggle_tab", "Tab"),
         Binding("ctrl+d", "delete_session", "Del"),
+        Binding("ctrl+l", "launch_claude", "Launch"),
     ]
 
     current_session_id: reactive[str] = reactive("")
@@ -250,7 +316,7 @@ class DAApp(App):
         with Horizontal():
             with Vertical(id="sidebar"):
                 with TabbedContent(id="sidebar-tabs"):
-                    with TabPane("DA", id="tab-da"):
+                    with TabPane("ДА", id="tab-da"):
                         yield ListView(id="da-session-list")
                         yield Static(" [Ctrl+N] New", id="new-session-btn")
                     with TabPane("Claude", id="tab-claude"):
@@ -450,8 +516,9 @@ class DAApp(App):
                 "/sessions — detailed session list with stats\n"
                 "/stats — current session stats\n"
                 "/delete — delete current session\n"
+                "/launch — open Claude session in new terminal\n"
                 "/clear — clear log\n"
-                "Ctrl+N — new | Ctrl+D — delete | Ctrl+T — tab | Ctrl+Q — quit"
+                "Ctrl+N — new | Ctrl+D — delete | Ctrl+L — launch | Ctrl+T — tab | Ctrl+Q — quit"
             )
         elif cmd == "/tools":
             lines = [f"{t['name']:18s} {t['description'][:45]}" for t in ALL_TOOL_DEFS]
@@ -465,6 +532,8 @@ class DAApp(App):
             self._show_current_stats()
         elif cmd == "/delete":
             self._do_delete_session()
+        elif cmd == "/launch":
+            self._do_launch_claude()
         elif cmd == "/clear":
             self.session_messages[self.current_session_id] = []
             self._render_log()
@@ -553,6 +622,27 @@ class DAApp(App):
 
     def action_delete_session(self) -> None:
         self._do_delete_session()
+
+    def action_launch_claude(self) -> None:
+        self._do_launch_claude()
+
+    def _do_launch_claude(self) -> None:
+        """Launch current Claude session in a new Windows Terminal window."""
+        sid = self.current_session_id
+        if not sid or not self.viewing_claude:
+            self._log_msg("tool", "Select a Claude session first (Claude tab).")
+            return
+        info = self.claude_session_info.get(sid)
+        if not info:
+            self._log_msg("tool", f"No session info for {sid[:12]}")
+            return
+        # Copy session locally first
+        try:
+            copy_session_to_local(info, self.cfg.claude_history or "/mnt/d/SD/.claude")
+        except Exception:
+            pass
+        result = launch_claude_session(info, {n: h for n, h in self.cfg.hosts.items()})
+        self._log_msg("tool", result)
 
     def _do_delete_session(self) -> None:
         """Delete current DA session."""
