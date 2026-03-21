@@ -33,8 +33,6 @@ from textual.widgets import (
     Header,
     Input,
     Label,
-    ListItem,
-    ListView,
     RichLog,
     Static,
     TabbedContent,
@@ -347,17 +345,6 @@ class MenuItem(Static):
     def on_click(self) -> None:
         self.app.run_action(self.action_name)
 
-
-# --- Sidebar items ---
-
-class DASessionItem(ListItem):
-    def __init__(self, session_id: str, name: str, **kwargs):
-        super().__init__(**kwargs)
-        self.session_id = session_id
-        self.session_name = name
-
-    def compose(self) -> ComposeResult:
-        yield Label(f" {self.session_name[:30] or 'new session'}")
 
 
 # --- Main TUI ---
@@ -906,27 +893,28 @@ class DAApp(App):
         self._create_new_session()
 
     def action_prev_session(self) -> None:
-        sl = self.query_one("#da-session-list", ListView)
-        if sl.index is not None and sl.index > 0:
-            sl.index -= 1
+        try:
+            table = self.query_one("#all-sessions-table", DataTable)
+            table.action_scroll_up()
+        except Exception:
+            pass
 
     def action_next_session(self) -> None:
-        sl = self.query_one("#da-session-list", ListView)
-        if sl.index is not None and sl.index < len(sl.children) - 1:
-            sl.index += 1
+        try:
+            table = self.query_one("#all-sessions-table", DataTable)
+            table.action_scroll_down()
+        except Exception:
+            pass
 
     def action_toggle_tab(self) -> None:
         if self.active_view == "da":
             self.active_view = "sessions"
         else:
-            # Cycle session tabs
             tabs = self.query_one("#sidebar-tabs", TabbedContent)
-            if tabs.active == "tab-da":
-                tabs.active = "tab-claude"
-            elif tabs.active == "tab-claude":
-                tabs.active = "tab-claude-table"
+            if tabs.active == "tab-all":
+                tabs.active = "tab-tree"
             else:
-                tabs.active = "tab-da"
+                tabs.active = "tab-all"
 
     def action_shrink_sidebar(self) -> None:
         try:
@@ -1057,13 +1045,9 @@ class DAApp(App):
                     break
             self.store.delete_session(sid)
             self.session_messages.pop(sid, None)
-            self._refresh_da_sessions()
+            self._populate_all_sessions_table()
             self._log_msg("tool", f"Deleted DA session: {name or sid[:12]}")
-            da_list = self.query_one("#da-session-list", ListView)
-            if da_list.children:
-                da_list.index = 0
-            else:
-                self._create_new_session()
+            self._create_new_session()
 
     def _show_sessions_detail(self) -> None:
         """Show detailed session list with stats."""
