@@ -38,7 +38,11 @@
       "Bash(find /home/alex/AGENTS.md/DA/da/tools /home/alex/AGENTS.md/DA/da/agents -type f -name *.py)",
       "Bash(.venv/bin/python -c \"from da.views.config_editor import ConfigEditorView, _group_tools, _get_agent_prompt; groups = _group_tools\\(\\); print\\('Tool categories:', list\\(groups.keys\\(\\)\\)\\); print\\('Tools per category:', {k: len\\(v\\) for k, v in groups.items\\(\\)}\\); print\\(\\); from da.agents import AGENT_TYPES; print\\('Agents:', AGENT_TYPES\\); print\\(\\); for a in AGENT_TYPES: p = _get_agent_prompt\\(a\\); print\\(f'  {a}: {\\\\\"implemented\\\\\" if p else \\\\\"stub\\\\\"}'\\)\")",
       "Bash(.venv/bin/python -c \"\nfrom da.views.config_editor import ConfigEditorView, _group_tools, _get_agent_prompt\ngroups = _group_tools\\(\\)\nprint\\('Tool categories:', list\\(groups.keys\\(\\)\\)\\)\nprint\\('Tools per category:', {k: len\\(v\\) for k, v in groups.items\\(\\)}\\)\nprint\\(\\)\nfrom da.agents import AGENT_TYPES\nprint\\('Agents:', AGENT_TYPES\\)\nfor a in AGENT_TYPES:\n    p = _get_agent_prompt\\(a\\)\n    status = 'implemented' if p else 'stub'\n    print\\(f'  {a}: {status}'\\)\n\")",
-      "Bash(gh run:*)"
+      "Bash(gh run:*)",
+      "Bash(.venv/bin/python -c \"import da\")",
+      "Bash(cd:*)",
+      "Bash(.venv/bin/python -m build)",
+      "Bash(gh release:*)"
     ],
     "additionalDirectories": [
       "/mnt/d/SD/.claude"
