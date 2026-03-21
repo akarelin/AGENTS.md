@@ -9,7 +9,6 @@ Architecture:
 
 import json
 import os
-import platform
 import shlex
 import shutil
 import subprocess
@@ -48,9 +47,15 @@ from da.session import SessionStore
 # --- Claude session helpers ---
 
 def _decode_project_dir(dirname: str) -> str:
+    """Convert encoded project dir back to path. e.g. '-home-alex-CRAP' -> '/home/alex/CRAP'"""
     if dirname.startswith("D--"):
-        return dirname.replace("-", "\\", 1).replace("-", "\\")
-    return "/" + dirname.replace("-", "/")
+        # Windows: D--Dev-CRAP -> D:\Dev\CRAP
+        # First 'D--' is 'D:\', rest use '-' as separator
+        rest = dirname[3:]  # after 'D--'
+        parts = rest.split("-") if rest else []
+        return "D:\\" + "\\".join(parts) if parts else "D:\\"
+    # Unix: -home-alex-CRAP -> /home/alex/CRAP
+    return dirname.replace("-", "/")
 
 
 def _first_user_message(path: Path) -> str:
@@ -162,7 +167,7 @@ def load_claude_session_messages(session_file: str) -> list[dict]:
     return messages
 
 
-def copy_session_to_local(session_info: dict, claude_dir: str) -> None:
+def copy_session_to_local(session_info: dict) -> None:
     """Copy a remote session JSONL + subagents to the local .claude so 'claude --resume' works."""
     src = Path(session_info["file"])
     local_claude = Path.home() / ".claude"
@@ -223,20 +228,28 @@ def launch_claude_session(session_info: dict, hosts: dict) -> str:
         if ssh_host:
             # Remote: wt -> wsl -> ssh -> bash -> claude
             subprocess.Popen([
-                "wt.exe", "new-window", "--",
+                "wt.exe", "-w", "new",
                 "wsl.exe", "-d", distro, "--",
                 "ssh", "-t", ssh_host,
                 f"bash -lc {shlex.quote(resume_cmd)}",
             ])
             return f"Launched on {ssh_host} in new terminal"
-        else:
+        elif project_path.startswith("/"):
             # Local WSL: wt -> wsl -> bash -> claude
             subprocess.Popen([
-                "wt.exe", "new-window", "--",
+                "wt.exe", "-w", "new",
                 "wsl.exe", "-d", distro, "--",
                 "bash", "-lc", resume_cmd,
             ])
-            return f"Launched locally in new terminal"
+            return "Launched locally (WSL) in new terminal"
+        else:
+            # Windows local: wt -> cmd -> claude
+            win_cmd = f'cd /d {project_path} && claude --resume {sid}'
+            subprocess.Popen([
+                "wt.exe", "-w", "new",
+                "cmd.exe", "/k", win_cmd,
+            ])
+            return "Launched locally (Windows) in new terminal"
     except FileNotFoundError:
         return "wt.exe not found — not running in WSL with Windows Terminal?"
     except Exception as e:
@@ -400,7 +413,7 @@ class DAApp(App):
 
             # Copy session to local .claude so 'claude --resume' would work
             try:
-                copy_session_to_local(node.data, self.cfg.claude_history or "/mnt/d/SD/.claude")
+                copy_session_to_local(node.data)
             except Exception:
                 pass
 
@@ -513,12 +526,14 @@ class DAApp(App):
                 "/model [name] — switch model\n"
                 "/tools — list tools\n"
                 "/hosts — list hosts\n"
-                "/sessions — detailed session list with stats\n"
+                "/sessions — DA session list with stats\n"
                 "/stats — current session stats\n"
-                "/delete — delete current session\n"
+                "/detail — detailed view of current Claude session\n"
+                "/delete — delete current DA session\n"
                 "/launch — open Claude session in new terminal\n"
+                "/move [path] — move Claude sessions folder\n"
                 "/clear — clear log\n"
-                "Ctrl+N — new | Ctrl+D — delete | Ctrl+L — launch | Ctrl+T — tab | Ctrl+Q — quit"
+                "Ctrl+N — new | Ctrl+D — del | Ctrl+L — launch | Ctrl+T — tab | Ctrl+Q — quit"
             )
         elif cmd == "/tools":
             lines = [f"{t['name']:18s} {t['description'][:45]}" for t in ALL_TOOL_DEFS]
@@ -534,6 +549,11 @@ class DAApp(App):
             self._do_delete_session()
         elif cmd == "/launch":
             self._do_launch_claude()
+        elif cmd == "/detail":
+            self._show_session_detail()
+        elif cmd == "/move":
+            dest = parts[1].strip() if len(parts) > 1 else ""
+            self._move_claude_sessions(dest)
         elif cmd == "/clear":
             self.session_messages[self.current_session_id] = []
             self._render_log()
@@ -638,7 +658,7 @@ class DAApp(App):
             return
         # Copy session locally first
         try:
-            copy_session_to_local(info, self.cfg.claude_history or "/mnt/d/SD/.claude")
+            copy_session_to_local(info)
         except Exception:
             pass
         result = launch_claude_session(info, {n: h for n, h in self.cfg.hosts.items()})
@@ -723,6 +743,119 @@ class DAApp(App):
         for role, count in sorted(stats["message_counts"].items()):
             lines.append(f"  {role}: {count}")
         self._log_msg("tool", "\n".join(lines))
+
+    def _show_session_detail(self) -> None:
+        """Show detailed view of current Claude session — file info, size, messages breakdown."""
+        sid = self.current_session_id
+        info = self.claude_session_info.get(sid)
+        msgs = self.session_messages.get(sid, [])
+
+        if info:
+            # Claude session
+            fpath = Path(info["file"])
+            fsize = fpath.stat().st_size if fpath.exists() else 0
+            machine = info.get("machine_dir", "?")
+            project = _decode_project_dir(info.get("project_dir", "?"))
+
+            # Count subagents
+            subagent_dir = fpath.parent / fpath.stem / "subagents"
+            subagent_count = len(list(subagent_dir.glob("*.jsonl"))) if subagent_dir.is_dir() else 0
+
+            # Count tool results
+            tool_results_dir = fpath.parent / fpath.stem / "tool-results"
+            tool_result_count = len(list(tool_results_dir.iterdir())) if tool_results_dir.is_dir() else 0
+
+            # Message breakdown
+            roles: dict[str, int] = {}
+            for m in msgs:
+                roles[m["role"]] = roles.get(m["role"], 0) + 1
+
+            lines = [
+                f"Claude Session Detail",
+                f"{'─' * 50}",
+                f"ID:           {sid}",
+                f"Machine:      {machine}",
+                f"Project:      {project}",
+                f"File:         {info['file']}",
+                f"Size:         {fsize:,} bytes",
+                f"Date:         {info.get('date', '?')}",
+                f"First msg:    {info.get('name', '?')}",
+                f"{'─' * 50}",
+                f"Messages:     {len(msgs)}",
+            ]
+            for r, c in sorted(roles.items()):
+                lines.append(f"  {r:12s} {c}")
+            lines.append(f"Subagents:    {subagent_count}")
+            lines.append(f"Tool results: {tool_result_count}")
+
+            # Show if session is copied locally
+            local_path = Path.home() / ".claude" / "projects" / info.get("project_dir", "") / fpath.name
+            lines.append(f"{'─' * 50}")
+            lines.append(f"Local copy:   {'yes' if local_path.exists() else 'no'}")
+            if local_path.exists():
+                lines.append(f"  {local_path}")
+
+            self._log_msg("tool", "\n".join(lines))
+        else:
+            # DA session — use stats
+            self._show_current_stats()
+
+    def _move_claude_sessions(self, dest: str) -> None:
+        """Move the Claude sessions folder to a new location and update config."""
+        claude_dir = self.cfg.claude_history or "/mnt/d/SD/.claude"
+
+        if not dest:
+            lines = [
+                f"Current Claude sessions folder: {claude_dir}",
+                "",
+                "Usage: /move /new/path/to/.claude",
+                "",
+                "This will:",
+                "  1. Copy all sessions to the new location",
+                "  2. Update config to point to new location",
+                "  3. Reload the session tree",
+            ]
+            self._log_msg("tool", "\n".join(lines))
+            return
+
+        dest_path = Path(dest).expanduser()
+        src_path = Path(claude_dir)
+
+        if not src_path.exists():
+            self._log_msg("tool", f"Source not found: {claude_dir}")
+            return
+
+        if dest_path.exists() and list(dest_path.iterdir()):
+            self._log_msg("tool", f"Destination not empty: {dest}. Merging...")
+
+        self._log_msg("tool", f"Moving {claude_dir} -> {dest}...")
+        self._do_move_sessions(str(src_path), str(dest_path))
+
+    @work(thread=True)
+    def _do_move_sessions(self, src: str, dest: str) -> None:
+        """Move sessions in background thread."""
+        try:
+            src_path = Path(src)
+            dest_path = Path(dest)
+            dest_path.mkdir(parents=True, exist_ok=True)
+
+            copied = 0
+            for item in src_path.iterdir():
+                target = dest_path / item.name
+                if item.is_dir() and not target.exists():
+                    shutil.copytree(item, target)
+                    copied += 1
+                elif item.is_file() and not target.exists():
+                    shutil.copy2(item, target)
+                    copied += 1
+
+            self.cfg.claude_history = dest
+            self.call_from_thread(self._log_msg, "tool",
+                f"Moved {copied} items to {dest}\nConfig updated. Reloading tree...")
+            self.call_from_thread(self._load_claude_tree)
+
+        except Exception as e:
+            self.call_from_thread(self._log_msg, "tool", f"Move failed: {e}")
 
 
 def run_tui(config: Config | None = None):
