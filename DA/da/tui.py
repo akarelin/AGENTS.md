@@ -53,10 +53,10 @@ _WIN_MACHINES = {"ALEX-LAPTOP", "Alex-PC"}
 def _machine_icon(name: str) -> str:
     """Return icon for machine type: Windows, WSL, or Linux."""
     if name.endswith(".WSL"):
-        return "\U0001f427"  # penguin (WSL/Linux on Windows)
+        return "\U0001f427"  # 🐧 penguin (WSL)
     if name in _WIN_MACHINES:
-        return "\U0001faaa"  # W11 window icon (or fallback)
-    return "\U0001f5a5"      # desktop (Linux server)
+        return "\u229e"      # ⊞ Windows logo approximation
+    return "\U0001f5a5"      # 🖥 desktop (Linux server)
 
 def _machine_label(name: str) -> str:
     """Pretty machine name with icon, strip .WSL suffix."""
@@ -527,10 +527,16 @@ class DAApp(App):
                     self.claude_session_info[s["id"]] = s
 
     def _populate_claude_table(self, data: dict) -> None:
-        """Fill the Claude table with session stats."""
+        """Fill the Claude table with session stats. Sortable columns."""
         table = self.query_one("#claude-table", DataTable)
         table.clear(columns=True)
-        table.add_columns("Machine", "Project", "Sessions", "First", "Last", "Name")
+        table.sort_key = None
+        table.add_column("Machine", key="machine")
+        table.add_column("Project", key="project")
+        table.add_column("#", key="count")
+        table.add_column("First", key="first")
+        table.add_column("Last", key="last")
+        table.add_column("Latest session", key="name")
 
         for machine, projects in sorted(data.items()):
             for proj, sessions in sorted(projects.items()):
@@ -540,13 +546,17 @@ class DAApp(App):
                 last = max(dates) if dates else "—"
                 latest_name = sessions[0]["name"] if sessions else "—"
                 table.add_row(
-                    machine, short, str(len(sessions)),
+                    _machine_label(machine), short, str(len(sessions)),
                     first, last, latest_name,
                     key=f"{machine}:{proj}",
                 )
-                # Also store individual sessions for drill-down
                 for s in sessions:
                     self.claude_session_info[s["id"]] = s
+
+    def on_data_table_header_selected(self, event: DataTable.HeaderSelected) -> None:
+        """Sort table by clicked column."""
+        table = self.query_one("#claude-table", DataTable)
+        table.sort(event.column_key)
 
     # --- Event handlers ---
 

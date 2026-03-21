@@ -33,6 +33,7 @@ from da.session import SessionStore
 from da.tui import (
     _decode_project_dir,
     _first_user_message,
+    _machine_label,
     _session_timestamp,
     load_claude_sessions,
     copy_session_to_local,
@@ -195,7 +196,7 @@ class SessionManagerApp(App):
         for machine, projects in sorted(data.items()):
             mcount = sum(len(s) for s in projects.values())
             total_sessions += mcount
-            mnode = tree.root.add(f"[bold]{machine}[/bold] ({mcount})", expand=False)
+            mnode = tree.root.add(f"[bold]{_machine_label(machine)}[/bold] ({mcount})", expand=False)
             for proj, sessions in sorted(projects.items()):
                 short = proj.split("/")[-1] or proj.split("\\")[-1] or proj
                 pnode = mnode.add(f"[cyan]{short}[/cyan] ({len(sessions)})", expand=False)
