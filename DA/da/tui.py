@@ -32,7 +32,6 @@ from textual.widgets import (
     Footer,
     Header,
     Input,
-    Label,
     RichLog,
     Static,
     TabbedContent,
@@ -524,7 +523,7 @@ class DAApp(App):
         claude_dir = self.cfg.claude_history or "/mnt/d/SD/.claude"
         data = load_claude_sessions(claude_dir)
         self.call_from_thread(self._populate_tree, data)
-        self.call_from_thread(self._populate_claude_table, data)
+        self.call_from_thread(self._populate_all_sessions_table)
 
     def _populate_tree(self, data: dict) -> None:
         tree = self.query_one("#claude-tree", Tree)
