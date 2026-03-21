@@ -17,7 +17,7 @@ from textual import work
 from textual.app import App, ComposeResult
 from textual.binding import Binding
 from textual.containers import Horizontal, Vertical
-from textual.widgets import DataTable, Footer, Input, RichLog, Static
+from textual.widgets import DataTable, Footer, Input, RichLog, Static, TextArea, Tree
 
 from da import __version__
 from da.config import load_config, Config
@@ -33,6 +33,7 @@ from da.rich_render import (
 from da.views.da_chat import DAChatView
 from da.views.sessions import SessionsView
 from da.views.obsidian import ObsidianView
+from da.views.config_editor import ConfigEditorView
 from da.tui import (
     load_claude_sessions,
     load_claude_session_messages,
@@ -62,6 +63,7 @@ MENU_TABS = [
     ("Д", "А", "da"),
     ("S", "essions", "sessions"),
     ("O", "bsidian", "obsidian"),
+    ("C", "onfig", "config"),
 ]
 
 
@@ -89,6 +91,18 @@ class RichTUIApp(App):
     #obsidian-view { height: 1fr; }
     #obsidian-view.hidden { display: none; }
     #obsidian-log { height: 1fr; padding: 0 1; }
+    /* Config editor view */
+    #config-view { height: 1fr; }
+    #config-view.hidden { display: none; }
+    #config-tree { width: 40; border-right: solid $primary; height: 1fr; }
+    #config-right { height: 1fr; }
+    #config-label {
+        dock: top; height: 1; padding: 0 1;
+        text-align: center; background: $boost;
+    }
+    #config-preview { height: 1fr; padding: 0 1; }
+    #config-editor { height: 1fr; display: none; }
+    #config-editor.visible { display: block; }
     /* Shared */
     #status-bar {
         dock: bottom;
@@ -106,6 +120,7 @@ class RichTUIApp(App):
         Binding("f1", "switch_da", "[Д]А", show=True),
         Binding("f2", "switch_sessions", "[S]essions", show=True),
         Binding("f3", "switch_obsidian", "[O]bsidian", show=True),
+        Binding("f4", "switch_config", "[C]onfig", show=True),
         Binding("ctrl+n", "new_session", "New", show=True),
         Binding("ctrl+q", "quit", "Quit", show=True),
     ]
@@ -125,6 +140,7 @@ class RichTUIApp(App):
         self.da_view = DAChatView(self.cfg, self.store)
         self.sessions_view = SessionsView(self.cfg, self.store)
         self.obsidian_view = ObsidianView(self.cfg)
+        self.config_view = ConfigEditorView(self.cfg)
 
         # Claude session info for table selection
         self._table_keys: list[str] = []  # row_key -> "da:sid" or "claude:idx"
@@ -147,6 +163,14 @@ class RichTUIApp(App):
         with Vertical(id="obsidian-view", classes="hidden"):
             yield RichLog(id="obsidian-log", wrap=True, markup=True)
 
+        # View 4: Config Editor
+        with Horizontal(id="config-view", classes="hidden"):
+            yield Tree("Files", id="config-tree")
+            with Vertical(id="config-right"):
+                yield Static("Preview", id="config-label", classes="panel-label")
+                yield RichLog(id="config-preview", highlight=True, markup=True, wrap=False)
+                yield TextArea(id="config-editor", language="yaml", show_line_numbers=True, tab_behavior="indent")
+
         yield Static("", id="status-bar")
         yield Input(placeholder="Ask anything... (/ for commands)", id="prompt-input")
         yield Footer()
@@ -160,6 +184,12 @@ class RichTUIApp(App):
         self.sessions_view.output = self.query_one("#sessions-detail", RichLog).write
         self.obsidian_view.output = obs_log.write
         self.obsidian_view.clear = obs_log.clear
+
+        # Wire config editor widgets
+        self.config_view.tree = self.query_one("#config-tree", Tree)
+        self.config_view.preview = self.query_one("#config-preview", RichLog)
+        self.config_view.editor = self.query_one("#config-editor", TextArea)
+        self.config_view.status_label = self.query_one("#config-label", Static)
 
         # Banner + new session
         da_log.write(render_banner(BANNER, __version__, self.cfg.model, self.tool_count))
