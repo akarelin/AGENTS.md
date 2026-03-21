@@ -1,6 +1,7 @@
 """Configuration management for DeepAgents."""
 
 import os
+import platform
 from pathlib import Path
 from typing import Any
 
@@ -19,16 +20,43 @@ class SessionConfig(BaseModel):
     history_dir: str = "~/.da/history"
 
 
+class DevRootConfig(BaseModel):
+    wsl: str = "~"
+    linux: str = "~"
+    windows: str = "D:\\Dev"
+
+
+def _detect_platform() -> str:
+    """Detect current platform: 'wsl', 'linux', or 'windows'."""
+    if "microsoft" in platform.release().lower() or "WSL_DISTRO_NAME" in os.environ:
+        return "wsl"
+    if os.name == "nt":
+        return "windows"
+    return "linux"
+
+
 class Config(BaseModel):
     model: str = "claude-sonnet-4-6"
     max_tokens: int = 8192
     temperature: float = 0
     hosts: dict[str, HostConfig] = {}
+    dev_root: DevRootConfig = DevRootConfig()
     projects: dict[str, str] = {}
     session: SessionConfig = SessionConfig()
     approval_required: list[str] = Field(default_factory=list)
     claude_history: str = ""
     debug: bool = False
+
+    @property
+    def current_dev_root(self) -> str:
+        """Get dev root for current platform, expanded."""
+        plat = _detect_platform()
+        raw = getattr(self.dev_root, plat, self.dev_root.linux)
+        return str(Path(raw).expanduser())
+
+    @property
+    def current_platform(self) -> str:
+        return _detect_platform()
 
 
 def load_config(config_path: str | None = None) -> Config:

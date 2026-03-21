@@ -22,7 +22,8 @@
       "Bash(.venv/bin/python -c \"from da.tui import DAApp; print\\(''''TUI import OK''''\\)\")",
       "Bash(.venv/bin/python -c \"from da.tui import DAApp; print\\(''''TUI OK''''\\)\")",
       "Bash(.venv/bin/python -c \"from da.tui import DAApp; print\\(''''OK''''\\)\")",
-      "Bash(da --help)"
+      "Bash(da --help)",
+      "Bash(wc -l /home/alex/AGENTS.md/DA/da/*.py)"
     ],
     "additionalDirectories": [
       "/mnt/d/SD/.claude"

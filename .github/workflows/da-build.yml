@@ -1,0 +1,115 @@
+name: DA Build
+
+on:
+  workflow_dispatch:
+    inputs:
+      version_bump:
+        description: 'Version bump type'
+        required: true
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+
+defaults:
+  run:
+    working-directory: DA
+
+jobs:
+  build:
+    runs-on: [self-hosted, Linux, X64]
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Create venv
+        run: |
+          python3 -m venv .venv
+          echo "$PWD/.venv/bin" >> "$GITHUB_PATH"
+
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-da-${{ hashFiles('DA/pyproject.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-da-
+
+      - name: Install package
+        run: pip install -e .
+
+      - name: Lint
+        run: |
+          pip install ruff
+          ruff check da/
+
+      - name: Compute next version
+        id: version
+        run: |
+          CURRENT=$(grep -Po '(?<=^version = ")[^"]+' pyproject.toml)
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT"
+          case "${{ inputs.version_bump }}" in
+            major) MAJOR=$((MAJOR + 1)); MINOR=0; PATCH=0 ;;
+            minor) MINOR=$((MINOR + 1)); PATCH=0 ;;
+            patch) PATCH=$((PATCH + 1)) ;;
+          esac
+          NEW="${MAJOR}.${MINOR}.${PATCH}"
+          echo "current=$CURRENT" >> "$GITHUB_OUTPUT"
+          echo "new=$NEW" >> "$GITHUB_OUTPUT"
+          echo "tag=da-v${NEW}" >> "$GITHUB_OUTPUT"
+
+      - name: Bump version in pyproject.toml
+        run: sed -i "s/^version = \"${{ steps.version.outputs.current }}\"/version = \"${{ steps.version.outputs.new }}\"/" pyproject.toml
+
+      - name: Bump version in __init__.py
+        run: sed -i "s/__version__ = \"${{ steps.version.outputs.current }}\"/__version__ = \"${{ steps.version.outputs.new }}\"/" da/__init__.py
+
+      - name: Build distribution
+        run: pip install build && python -m build
+
+      - name: Commit version bump via GitHub API
+        working-directory: ${{ github.workspace }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          BRANCH="${{ github.ref_name }}"
+          COMMIT_MSG="chore(da): bump version to ${{ steps.version.outputs.new }}"
+
+          # Bump pyproject.toml
+          FILE_PATH="DA/pyproject.toml"
+          FILE_SHA=$(gh api "repos/${{ github.repository }}/contents/${FILE_PATH}?ref=${BRANCH}" --jq '.sha')
+          RESPONSE=$(gh api --method PUT "repos/${{ github.repository }}/contents/${FILE_PATH}" \
+            -f message="${COMMIT_MSG}" \
+            -f content="$(base64 -w 0 "${FILE_PATH}")" \
+            -f sha="${FILE_SHA}" \
+            -f branch="${BRANCH}")
+
+          NEW_COMMIT_SHA=$(echo "$RESPONSE" | jq -r '.commit.sha')
+
+          # Bump __init__.py
+          FILE_PATH="DA/da/__init__.py"
+          FILE_SHA=$(gh api "repos/${{ github.repository }}/contents/${FILE_PATH}?ref=${BRANCH}" --jq '.sha')
+          gh api --method PUT "repos/${{ github.repository }}/contents/${FILE_PATH}" \
+            -f message="${COMMIT_MSG} (__init__)" \
+            -f content="$(base64 -w 0 "${FILE_PATH}")" \
+            -f sha="${FILE_SHA}" \
+            -f branch="${BRANCH}")
+
+          # Create the tag pointing at the new commit
+          gh api --method POST "repos/${{ github.repository }}/git/refs" \
+            -f ref="refs/tags/${{ steps.version.outputs.tag }}" \
+            -f sha="${NEW_COMMIT_SHA}"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: DA ${{ steps.version.outputs.tag }}
+          generate_release_notes: true
+          files: DA/dist/*

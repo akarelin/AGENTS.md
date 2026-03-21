@@ -1,5 +1,18 @@
 # AGENTS.md
 
+```
+      ░████             ░██        ░██░██       ░███                                        ░██
+    ░██  ░██            ░██           ░██      ░██░██                                       ░██
+   ░██   ░██  ░███████  ░████████  ░██░██     ░██  ░██   ░████████  ░███████  ░████████  ░████████
+  ░██    ░██ ░██    ░██ ░██    ░██ ░██░██    ░█████████ ░██    ░██ ░██    ░██ ░██    ░██    ░██
+  ░██    ░██ ░█████████ ░██    ░██ ░██░██    ░██    ░██ ░██    ░██ ░█████████ ░██    ░██    ░██
+  ░██    ░██ ░██        ░███   ░██ ░██░██    ░██    ░██ ░██   ░███ ░██        ░██    ░██    ░██
+  ░█████████  ░███████  ░██░█████  ░██░██    ░██    ░██  ░█████░██  ░███████  ░██    ░██     ░████
+░██        ░██                                                 ░██
+Агент который только говорит ДА                          ░███████
+```
+
+[![DA Build](https://github.com/akarelin/AGENTS.md/actions/workflows/da-build.yml/badge.svg)](https://github.com/akarelin/AGENTS.md/actions/workflows/da-build.yml)
 [![DAPY Build](https://github.com/akarelin/AGENTS.md/actions/workflows/dapy-build.yml/badge.svg)](https://github.com/akarelin/AGENTS.md/actions/workflows/dapy-build.yml)
 [![Gadya Build](https://github.com/akarelin/AGENTS.md/actions/workflows/gadya-android.yml/badge.svg)](https://github.com/akarelin/AGENTS.md/actions/workflows/gadya-android.yml)
 
@@ -7,15 +20,82 @@ An unfinished, evolving collection of everything agentic — prompt engineering 
 
 ## Table of Contents
 - [In development](#in-development)
+  - [DA (ДА)](#da-да)
   - [DAPY CLI](#dapy-cli)
   - [Gadya (Гадя)](#gadya-гадя)
 - [No longer developed](#no-longer-developed)
 - [What's where](#whats-where)
 
 ## In development
+- **DA (ДА)**: Personal multi-agent CLI and TUI built directly on the Anthropic SDK. Multi-session support, tool execution, Claude session browsing, and remote host management.
 - **DAPY CLI**: A more ambitious attempt to wrap the whole workflow into a LangChain-based CLI tool
 - **Gadya (Гадя)**: A voice-first iOS/Android mobile assistant built with React Native / Expo and TypeScript. Designed for hands-free, one-handed interaction with LLMs — speak a question, get an AI answer read aloud, and optionally save or search personal notes via voice.
 
+
+---
+
+# DA (ДА)
+
+A personal multi-agent system built directly on the Anthropic SDK (no LangChain). Includes a CLI REPL, a full Textual TUI with session sidebar, and remote host tooling via SSH.
+
+**Status:** Active development. Core agent loop, TUI, session management, and tool execution are working.
+
+### CLI Commands
+
+| Command | Description |
+|---------|-------------|
+| `da repl` | Interactive REPL with slash commands |
+| `da repl --session <id>` | Resume an existing session |
+| `da tui` | Full TUI with session sidebar and Claude session browser |
+| `da manage` | Session manager — browse, rename, copy, move, delete |
+| `da analyze` | Analyze Claude conversation history |
+
+Flags: `--model / -m` (model override).
+
+### Tools
+
+| Tool | Purpose |
+|------|---------|
+| `shell` | Execute shell commands |
+| `git_*` | Git operations (status, diff, commit, push) |
+| `docker_*` | Docker container and image management |
+| `ssh_*` | Remote command execution via SSH |
+| `file_*` | File read, write, search, delete |
+| `search_*` | Grep, glob, code search |
+| `session_*` | List, delete, move Claude sessions |
+
+### TUI Features
+
+- Multi-session sidebar with DA and Claude session tabs
+- Claude session browser — reads `.claude/` history from any configured path
+- Open DA sessions in REPL (`Ctrl+O`) or Claude sessions in terminal (`Ctrl+L`)
+- Slash commands: `/model`, `/tools`, `/hosts`, `/sessions`, `/stats`, `/detail`, `/launch`, `/repl`
+- Session auto-naming from first user message
+
+### Architecture
+
+```
+DA/
+├── da/
+│   ├── cli.py              → Click CLI (repl, tui, manage, analyze)
+│   ├── tui.py              → Textual TUI app
+│   ├── session_manager.py  → Session browser TUI
+│   ├── session.py          → SQLite session persistence
+│   ├── client.py           → Anthropic SDK wrapper
+│   ├── config.py           → YAML config loader
+│   ├── agents/             → Orchestrator, infra, debug agents
+│   ├── tools/              → Shell, git, docker, SSH, files, search, sessions
+│   └── prompts/            → System prompts (markdown)
+├── pyproject.toml          → Hatchling build, Python >=3.11
+├── config.yaml             → Model, hosts, tools, session settings
+└── scripts/install.sh      → System-wide install via venv + ~/bin symlink
+```
+
+### Technology Stack
+
+Python 3.11, Anthropic SDK >= 0.40.0, Click, Rich, Textual, Paramiko (SSH), prompt_toolkit, Pydantic, PyYAML. SQLite for session persistence.
+
+---
 
 ## No longer developed
 - **AGENTS.md as a pattern**: A single markdown file that tells any LLM agent how to behave in a repository — session management, git workflow, mistake tracking, changelog conventions
@@ -175,6 +255,11 @@ GitHub Actions workflow (`.github/workflows/build-android.yml`) for automated An
 ├── AGENTS.md                  → Master instructions for autonomous agents (Claude, Gemini, etc.)
 ├── AGENTS_mistakes.md         → Log of agent mistakes and lessons learned
 ├── CLAUDE.md / GEMINI.md      → Per-LLM instruction pointers
+│
+├── DA/                       → Personal multi-agent CLI/TUI (Anthropic SDK)
+│   ├── da/                   → Python package (cli, tui, agents, tools)
+│   ├── scripts/              → Install script
+│   └── config.yaml           → Model, hosts, session settings
 │
 ├── DAPY/                → LangChain/LangGraph CLI for agentic workflows
 │   ├── dapy/            → Python package (orchestrator, tools, middleware)

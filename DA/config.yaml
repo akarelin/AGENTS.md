@@ -21,7 +21,13 @@ hosts:
     ssh: alex@alex-xsolla
     roles: [gcp, docker, airflow, services]
 
-# Project paths
+# Dev folder by platform
+dev_root:
+  wsl: "~"
+  linux: "~"
+  windows: "D:\\Dev"
+
+# Project paths (relative to dev_root)
 projects:
   crap: ~/CRAP
   ran: ~/RAN
