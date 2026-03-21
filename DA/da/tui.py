@@ -23,6 +23,7 @@ from textual.binding import Binding
 from textual.containers import Horizontal, Vertical
 from textual.reactive import reactive
 from textual.widgets import (
+    DataTable,
     Footer,
     Header,
     Input,
@@ -35,7 +36,6 @@ from textual.widgets import (
     TabPane,
     Tree,
 )
-from textual.command import Hit, Hits, Provider
 
 from da import __version__
 from da.config import load_config, Config
@@ -257,6 +257,19 @@ def launch_claude_session(session_info: dict, hosts: dict) -> str:
         return f"Launch failed: {e}"
 
 
+# --- Menu item ---
+
+class MenuItem(Static):
+    """Clickable menu bar item."""
+
+    def __init__(self, label: str, action: str, **kwargs):
+        super().__init__(label, **kwargs)
+        self.action_name = action
+
+    def on_click(self) -> None:
+        self.app.run_action(self.action_name)
+
+
 # --- Sidebar items ---
 
 class DASessionItem(ListItem):
@@ -359,15 +372,20 @@ class DAApp(App):
         self.busy = False
 
     def compose(self) -> ComposeResult:
-        yield Header()
+        with Horizontal(id="menu-bar"):
+            yield Static(" ДА ", classes="menu-item")
+            yield MenuItem(" REPLs ", "open_session", classes="menu-item")
+            yield MenuItem(" Manage Sessions ", "open_manager", classes="menu-item")
         with Horizontal():
             with Vertical(id="sidebar"):
                 with TabbedContent(id="sidebar-tabs"):
                     with TabPane("ДА", id="tab-da"):
                         yield ListView(id="da-session-list")
                         yield Static(" [Ctrl+N] New", id="new-session-btn")
-                    with TabPane("Claude", id="tab-claude"):
+                    with TabPane("Tree", id="tab-claude"):
                         yield Tree("Sessions", id="claude-tree")
+                    with TabPane("Table", id="tab-claude-table"):
+                        yield DataTable(id="claude-table", cursor_type="row")
             with Vertical():
                 yield RichLog(id="chat-log", wrap=True, markup=True)
                 yield Static("", id="status-bar")
@@ -687,11 +705,15 @@ class DAApp(App):
     def action_delete_session(self) -> None:
         self._do_delete_session()
 
-    def action_launch_claude(self) -> None:
-        self._do_launch_claude()
+    def action_open_session(self) -> None:
+        """Open current session — REPL for DA, new terminal for Claude."""
+        if self.viewing_claude:
+            self._do_launch_claude()
+        else:
+            self._do_open_repl()
 
-    def action_open_repl(self) -> None:
-        self._do_open_repl()
+    def action_open_manager(self) -> None:
+        self._do_open_manager()
 
     def _do_open_repl(self) -> None:
         """Suspend TUI, open current DA session in REPL, then resume."""
