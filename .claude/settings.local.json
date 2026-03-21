@@ -17,7 +17,8 @@
       "Bash(da repl:*)",
       "Bash(da)",
       "Bash(rm:*)",
-      "Bash(python3 -m venv .venv)"
+      "Bash(python3 -m venv .venv)",
+      "Bash(da version:*)"
     ],
     "additionalDirectories": [
       "/mnt/d/SD/.claude"
