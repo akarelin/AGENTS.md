@@ -307,7 +307,7 @@ def submit_feedback_interactive() -> Optional[str]:
     )
     
     console.print(f"\n[bold green]✓[/bold green] Feedback submitted: {feedback_key}")
-    console.print("\n[dim]Manus will review and create a ticket to address this.[/dim]")
+    console.print("\n[dim]The agent will review and create a ticket to address this.[/dim]")
     console.print(f"[dim]Track status with: dapy feedback status {feedback_key}[/dim]")
     
     return feedback_key

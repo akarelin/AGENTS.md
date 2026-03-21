@@ -210,7 +210,7 @@ This package contains all information needed for remote troubleshooting:
 3. **Environment info** shows system configuration
 4. **Execution summary** provides overview of recent activity
 
-## For Manus/Troubleshooter
+## For Troubleshooter
 
 To inspect this package:
 

@@ -397,7 +397,7 @@ def export_debug(ctx: click.Context, description: Optional[str], output: Optiona
         
         console.print(f"\n[bold green]✓[/bold green] Debug package created: {package_path}")
         console.print("\n[bold]Next Steps:[/bold]")
-        console.print("  1. Share this package with Manus for inspection")
+        console.print("  1. Share this package for remote inspection")
         console.print("  2. Or extract and review locally:")
         console.print(f"     tar -xzf {Path(package_path).name}")
         console.print("\n[dim]Package contains: snapshots, logs, environment info, execution summary[/dim]")

@@ -14,7 +14,7 @@ from typing import List, Dict, Any
 import json
 from datetime import datetime
 
-from dapy.manus_feedback_agent import FeedbackMonitoringAgent, Ticket
+from dapy.feedback_agent import FeedbackMonitoringAgent, Ticket
 
 app = FastAPI(
     title="DAPY Feedback Dashboard",
@@ -291,7 +291,7 @@ def generate_dashboard_html() -> str:
     <div class="container">
         <header>
             <h1>DAPY Feedback Dashboard</h1>
-            <p class="subtitle">Track feedback submissions and Manus resolutions</p>
+            <p class="subtitle">Track feedback submissions and agent resolutions</p>
         </header>
         
         <div class="stats-grid" id="stats">

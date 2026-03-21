@@ -328,7 +328,7 @@ class FeedbackMonitoringAgent:
         
         Checks for new feedback every `check_interval` seconds.
         """
-        console.print(f"[bold green]Manus Feedback Agent Started[/bold green]")
+        console.print(f"[bold green]Feedback Agent Started[/bold green]")
         console.print(f"Project: {self.project_name}")
         console.print(f"Check interval: {self.check_interval}s")
         console.print(f"Tickets directory: {self.tickets_dir}")
@@ -347,7 +347,7 @@ def main():
     """Main entry point for feedback agent."""
     import argparse
     
-    parser = argparse.ArgumentParser(description='Manus Feedback Monitoring Agent')
+    parser = argparse.ArgumentParser(description='Feedback Monitoring Agent')
     parser.add_argument('--project', default='dapy-dev', help='LangSmith project name')
     parser.add_argument('--tickets-dir', default='./tickets', help='Tickets directory')
     parser.add_argument('--interval', type=int, default=60, help='Check interval in seconds')

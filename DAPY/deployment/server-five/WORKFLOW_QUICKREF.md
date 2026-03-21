@@ -215,10 +215,10 @@ User needs to allow remote agent access to port 8888:
 
 ```bash
 # Example using ufw
-sudo ufw allow from MANUS_IP to any port 8888
+sudo ufw allow from REMOTE_IP to any port 8888
 
 # Example using iptables
-sudo iptables -A INPUT -p tcp -s MANUS_IP --dport 8888 -j ACCEPT
+sudo iptables -A INPUT -p tcp -s REMOTE_IP --dport 8888 -j ACCEPT
 ```
 
-Replace `MANUS_IP` with the actual remote agent IP.
+Replace `REMOTE_IP` with the actual remote agent IP.

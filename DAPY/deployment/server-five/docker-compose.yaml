@@ -35,7 +35,7 @@ services:
     tty: true
     command: /bin/bash
 
-  manus-inspector:
+  inspector:
     build:
       context: ../../
       dockerfile: Dockerfile.inspector
@@ -66,7 +66,7 @@ services:
     
     command: python -m dapy.inspector_service
 
-  manus-feedback-agent:
+  feedback-agent:
     build:
       context: ../../
       dockerfile: Dockerfile.inspector
@@ -82,7 +82,7 @@ services:
       # Tickets storage
       - /data/dapy/tickets:/app/tickets
 
-    command: python -m dapy.manus_feedback_agent --project dapy-five --tickets-dir /app/tickets --interval 60
+    command: python -m dapy.feedback_agent --project dapy-five --tickets-dir /app/tickets --interval 60
 
   feedback-dashboard:
     build:
@@ -90,7 +90,7 @@ services:
       dockerfile: Dockerfile.inspector
     restart: unless-stopped
     depends_on:
-      - manus-feedback-agent
+      - feedback-agent
     environment:
       - LANGCHAIN_API_KEY=${LANGCHAIN_API_KEY}
       

@@ -117,7 +117,7 @@ All code and documentation has been pushed to this repository.
 
 **Files Created:**
 - `feedback.py` - Feedback submission module
-- `manus_feedback_agent.py` - Feedback monitoring agent
+- `feedback_agent.py` - Feedback monitoring agent
 - `feedback_dashboard.py` - Feedback dashboard (may be removed for LangSmith native)
 
 **Features:**
@@ -197,8 +197,8 @@ All code and documentation has been pushed to this repository.
 
 **Services:**
 - `dapy` - Main CLI service
-- `manus-inspector` - Remote inspection API service
-- `manus-feedback-agent` - Feedback monitoring service
+- `inspector` - Remote inspection API service
+- `feedback-agent` - Feedback monitoring service
 - `feedback-dashboard` - Dashboard (may be removed)
 
 **Status:** NOT DEPLOYED, NOT TESTED
@@ -355,7 +355,7 @@ dapy/
 │   ├── persistence.py
 │   ├── observability.py
 │   ├── feedback.py
-│   ├── manus_feedback_agent.py
+│   ├── feedback_agent.py
 │   ├── feedback_dashboard.py
 │   ├── debug_export.py
 │   ├── inspector_service.py

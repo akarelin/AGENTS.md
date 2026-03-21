@@ -18,7 +18,7 @@ from dapy.debug_export import DebugPackageExporter
 
 app = FastAPI(
     title="DAPY Inspector Service",
-    description="Remote inspection API for Manus to troubleshoot DAPY executions",
+    description="Remote inspection API to troubleshoot DAPY executions",
     version="0.1.0"
 )
 
@@ -38,7 +38,7 @@ exporter = DebugPackageExporter(
 @app.get("/health")
 async def health_check():
     """Health check endpoint."""
-    return {"status": "healthy", "service": "manus-inspector"}
+    return {"status": "healthy", "service": "inspector"}
 
 
 @app.get("/api/status")
@@ -295,7 +295,7 @@ async def root():
     return {
         "service": "DAPY Inspector Service",
         "version": "0.1.0",
-        "description": "Remote inspection API for Manus",
+        "description": "Remote inspection API",
         "endpoints": {
             "health": "/health",
             "status": "/api/status",

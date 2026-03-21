@@ -77,7 +77,7 @@ DAPY/
 │   ├── inspector_service.py       # FastAPI inspector service
 │   ├── feedback.py                # Feedback collection
 │   ├── feedback_dashboard.py      # Feedback dashboard
-│   ├── manus_feedback_agent.py    # Feedback monitoring agent
+│   ├── feedback_agent.py    # Feedback monitoring agent
 │   ├── debug_export.py            # Debug export utility
 │   ├── middleware/
 │   │   ├── snapshot.py            # State capture
@@ -116,18 +116,28 @@ Request → Logging → Breakpoint → Snapshot → Human-in-the-Loop → Tool E
 
 ## Tools
 
-| Tool | Description |
-|------|-------------|
-| `changelog_tool` | Manage CHANGELOG.md |
-| `archive_tool` | Archive outdated code |
-| `mistake_processor_tool` | Document mistakes |
-| `validation_tool` | Check standards |
-| `git_push_tool` | Commit and push |
-| `git_status_tool` | Get git status |
-| `git_diff_tool` | Show git diff |
-| `read_markdown_tool` | Read markdown files |
-| `search_markdown_tool` | Search markdown |
-| `update_markdown_tool` | Update markdown |
+All tools migrated from the original markdown-based subagents:
+
+| Tool | Source Agent | Purpose |
+|------|-------------|---------|
+| `changelog_tool` | changelog-agent.md | Manages CHANGELOG.md (Keep a Changelog format) |
+| `archive_tool` | archive-agent.md | Archives outdated code with inventory |
+| `mistake_processor_tool` | mistake-review-agent.md | Documents mistakes for learning |
+| `validation_tool` | validation-agent.md | Checks code/docs against standards |
+| `git_push_tool` | git-operations.md | Commits and pushes with verification |
+| `git_status_tool` | git-operations.md | Gets current git status |
+| `git_diff_tool` | git-operations.md | Shows git diffs |
+| `read_markdown_tool` | knowledge-base.md | Reads markdown with frontmatter |
+| `search_markdown_tool` | knowledge-base.md | Searches across markdown files |
+| `update_markdown_tool` | knowledge-base.md | Updates markdown content |
+
+## Workflows
+
+3 LangGraph workflows:
+
+1. **Close Session** — Sequential state machine: analyze session → update todo → check mistakes → archive work → generate summary
+2. **Document Changes** — Detects git diff, classifies changes (Added/Changed/Fixed/Removed), updates CHANGELOG.md
+3. **What's Next** — Reads 2Do.md, ROADMAP.md, and git status to determine recommended next steps
 
 ## Configuration
 
@@ -160,6 +170,14 @@ changelog_file: CHANGELOG.md
 | `DAPY_MODEL` | No | Model override (default: `openai:gpt-4o`) |
 | `PERSISTENCE_BACKEND` | No | `sqlite` or `postgres` |
 | `POSTGRES_CONN_STRING` | If postgres | PostgreSQL connection string |
+
+## Technology Stack
+
+Python 3.11, LangChain >= 0.3.0, LangGraph >= 0.2.0, LangSmith >= 0.2.0, Click (CLI), Rich (terminal UI), GitPython, PyYAML. SQLite (local) or PostgreSQL (production) for state persistence.
+
+## LLM Log Ingestion
+
+Included tools (`tools/`) import ChatGPT and Claude conversation exports into LangSmith datasets, then query them to detect patterns, generate test cases, and export golden examples for prompt optimization.
 
 ## Development
 

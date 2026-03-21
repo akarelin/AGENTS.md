@@ -12,7 +12,7 @@ Server Five
 │   ├── Logs → /data/dapy/logs
 │   └── Working directory → /repos
 │
-└── manus-inspector (container)     # Remote inspection service
+└── inspector (container)     # Remote inspection service
     ├── API on port 8888
     ├── Read-only access to snapshots/logs
     └── Debug package generation
@@ -170,7 +170,7 @@ All data is stored in `/data/dapy/`:
 docker-compose logs -f dapy
 
 # View inspector logs
-docker-compose logs -f manus-inspector
+docker-compose logs -f inspector
 ```
 
 ### Restart Services
@@ -221,7 +221,7 @@ ls -t snapshot_*.json | tail -n +101 | xargs rm -f
 ```bash
 # Check logs
 docker-compose logs dapy
-docker-compose logs manus-inspector
+docker-compose logs inspector
 
 # Verify environment
 docker-compose config
@@ -234,7 +234,7 @@ ls -la /data/dapy
 
 ```bash
 # Check if service is running
-docker-compose ps manus-inspector
+docker-compose ps inspector
 
 # Test locally
 curl http://localhost:8888/health
