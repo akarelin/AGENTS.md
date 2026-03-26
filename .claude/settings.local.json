@@ -65,7 +65,8 @@
       "Read(//mnt/d/SD/**)",
       "Read(//c/Users/Alex/.claude/projects/**)",
       "Bash(where da.exe)",
-      "Read(//c/Users/Alex/**)"
+      "Read(//c/Users/Alex/**)",
+      "Bash(ls:*)"
     ],
     "additionalDirectories": [
       "/mnt/d/SD/.claude"
