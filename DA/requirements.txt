@@ -7,4 +7,4 @@ paramiko>=3.0.0
 python-dotenv>=1.0.0
 prompt_toolkit>=3.0.0
 textual>=3.0.0
-gppu @ git+https://github.com/akarelin/gppu.git
+gppu @ https://github.com/akarelin/gppu/releases/download/gppu/v3.0.0/gppu-3.0.0-py3-none-any.whl
