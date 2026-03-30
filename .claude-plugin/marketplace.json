@@ -1,7 +1,7 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "akarelin-skills",
-  "description": "Personal productivity plugins for Claude Code — file organization, search, session management, Microsoft 365 integration, and plugin development.",
+  "description": "Personal productivity plugins for Claude Code — file organization, search, workplace tools, and administration.",
   "owner": {
     "name": "Alex Karelin",
     "email": "alex@karelin.ai"
@@ -10,44 +10,30 @@
     {
       "name": "organize",
       "description": "File organizer with sub-skills: arxiv paper organizer and medical scan-to-Obsidian processor.",
-      "source": "./skills/plugins/organize",
+      "source": "./plugins/organize",
       "category": "productivity",
-      "homepage": "https://github.com/akarelin/AGENTS.md/tree/master/skills/plugins/organize"
+      "homepage": "https://github.com/akarelin/AGENTS.md/tree/master/plugins/organize"
     },
     {
       "name": "work",
-      "description": "Workplace tools with sub-skills: M365 (Mail, Calendar, Teams, Files, Tasks), Slack, and Jira.",
-      "source": "./skills/plugins/work",
+      "description": "Workplace tools with sub-skills: M365 (Mail, Calendar, Teams, Files, Tasks), Slack (MCP), and Jira/Confluence (MCP).",
+      "source": "./plugins/work",
       "category": "productivity",
-      "homepage": "https://github.com/akarelin/AGENTS.md/tree/master/skills/plugins/work"
-    },
-    {
-      "name": "devops-m365",
-      "description": "Microsoft 365 tenant administration via Graph beta API — Users, Groups, Teams, Licenses, Directory Roles, Audit, Devices, Security.",
-      "source": "./skills/plugins/devops-m365",
-      "category": "productivity",
-      "homepage": "https://github.com/akarelin/AGENTS.md/tree/master/skills/plugins/devops-m365"
+      "homepage": "https://github.com/akarelin/AGENTS.md/tree/master/plugins/work"
     },
     {
       "name": "search",
-      "description": "Search plugin with sub-skills: Everything (local file search via MCP) and M365 (cross-entity Microsoft 365 search).",
-      "source": "./skills/plugins/search",
+      "description": "Search with sub-skills: Everything (local file search via MCP) and M365 (cross-entity Microsoft 365 search).",
+      "source": "./plugins/search",
       "category": "productivity",
-      "homepage": "https://github.com/akarelin/AGENTS.md/tree/master/skills/plugins/search"
+      "homepage": "https://github.com/akarelin/AGENTS.md/tree/master/plugins/search"
     },
     {
-      "name": "session-manager",
-      "description": "Manage Claude Code session folders across repos and hosts — sync, list, resume, rename, and clean up sessions.",
-      "source": "./skills/plugins/session-manager",
-      "category": "productivity",
-      "homepage": "https://github.com/akarelin/AGENTS.md/tree/master/skills/plugins/session-manager"
-    },
-    {
-      "name": "skill-manager",
-      "description": "Manage and improve Claude Code plugin skills end-to-end: review feedback, patch code, test changes, rebuild and deploy .plugin files.",
-      "source": "./skills/plugins/skill-manager",
+      "name": "manage",
+      "description": "Admin tools with sub-skills: Claude sessions, plugin skills, and M365 tenant administration.",
+      "source": "./plugins/manage",
       "category": "development",
-      "homepage": "https://github.com/akarelin/AGENTS.md/tree/master/skills/plugins/skill-manager"
+      "homepage": "https://github.com/akarelin/AGENTS.md/tree/master/plugins/manage"
     }
   ]
 }

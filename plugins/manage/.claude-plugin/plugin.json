@@ -1,0 +1,8 @@
+{
+  "name": "manage",
+  "description": "Admin and management tools with sub-skills: Claude sessions, plugin skills, and M365 tenant administration.",
+  "author": {
+    "name": "Alex Karelin"
+  },
+  "keywords": ["manage", "admin", "sessions", "skills", "plugins", "m365", "tenant", "users", "groups", "licenses"]
+}

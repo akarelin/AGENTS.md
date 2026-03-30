@@ -1,8 +1,0 @@
-{
-  "name": "devops-m365",
-  "description": "Microsoft 365 tenant administration via Graph beta API — Users, Groups, Teams, Licenses, Directory Roles, Audit Logs, Devices, Domains, Security.",
-  "author": {
-    "name": "Alex Karelin"
-  },
-  "keywords": ["m365", "admin", "tenant", "users", "groups", "teams", "licenses", "audit", "security", "graph", "directory"]
-}

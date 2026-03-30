@@ -94,6 +94,12 @@ Both skills use Microsoft Graph beta API with client credentials flow. Credentia
 ## Precedence
 This AGENTS.md file takes precedence over CLAUDE.md or GEMINI.md files in other repositories when working across multihomed workspaces.
 
+## Plugin Marketplace Rules (AGENTS.md repo)
+- **Version tracking**: Every plugin has a version in its `plugin.json` and SKILL.md frontmatter
+- **Patch on each change**: When modifying any plugin file, increment the patch version in both `plugin.json` (if it has a version field) and the relevant SKILL.md frontmatter
+- **marketplace.json**: Keep `/.claude-plugin/marketplace.json` in sync with the actual `plugins/` directory
+- **4 superskills**: organize, work, search, manage — each with sub-skills. Do not create new top-level plugins without explicit permission
+
 ## Repository-Specific Rules
 ### _ (Obsidian Vault)
 **CRITICAL: This repository should ONLY be pulled on Alex-Surface.**
