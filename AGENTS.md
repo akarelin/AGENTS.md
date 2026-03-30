@@ -370,9 +370,9 @@ When the user requests to "compress changelog", reorganize CHANGELOG.md by movin
 - For Fixes, include the specific issue or bug fixed
 - For Changes. Classify changes as Added, Changed, Fixed, or Removed.
 - For Refactoring, explain the structural changes and their purpose
-- **Version autoincrement**: 
-  - If not new features were introduced, increment the patch version (e.g., 1.0.0 -> 1.0.1)
-  - If new features were introduced, increment the minor version (e.g., 1.0.0 -> 1.1.0)
+- **Version autoincrement**:
+  - Default: increment the **patch** version (e.g., 1.0.0 → 1.0.1)
+  - Only increment **minor** version when the user explicitly requests it or a major new feature is introduced (e.g., 1.0.0 → 1.1.0)
 - **Version Headers**: Use actual version numbers instead of [Unreleased]
   - Version locations are documented in module-specific AGENTS.md files
 - **Changed Section**: Actually describe what was changed, not just "Modified X"
