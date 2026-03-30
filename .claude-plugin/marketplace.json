@@ -17,7 +17,7 @@
     {
       "name": "work-m365",
       "description": "User-level Microsoft 365 operations via Graph beta API — Mail, Calendar, Teams Chat, Channels, Files, Tasks, Contacts, OneNote, Meetings, Presence.",
-      "source": "./plugins/work-m365",
+      "source": "./skills/plugins/work-m365",
       "category": "productivity",
       "homepage": "https://github.com/akarelin/AGENTS.md/tree/master/skills/plugins/work-m365"
     },
