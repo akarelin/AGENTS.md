@@ -80,6 +80,17 @@ If prompt asks for research (Research, explain or why) - you can respond with te
 3. **For Modifications**: Edit for small changes → MultiEdit for multiple changes → Write only for new files
 4. **For Research**: WebSearch → WebFetch → Read documentation files
 
+## Skills (Claude Code Plugins)
+
+Custom skills are in the `skills/` directory, each as `skills/<name>/SKILL.md` with Python implementations.
+
+| Skill | Type | Description |
+|-------|------|-------------|
+| **m365** | user-invocable | User-level M365 operations: Mail, Calendar, Teams Chat, Channels, Files, Tasks, Contacts, OneNote, Meetings, Presence |
+| **m365-admin** | user-invocable | Tenant admin: Users, Groups, Teams, Licenses, Directory Roles, Audit, Devices, Domains, Security |
+
+Both skills use Microsoft Graph beta API with client credentials flow. Credentials are stored in Azure Key Vault (`karelin`).
+
 ## Precedence
 This AGENTS.md file takes precedence over CLAUDE.md or GEMINI.md files in other repositories when working across multihomed workspaces.
 
