@@ -6,54 +6,54 @@ Personal productivity plugins for Claude Code.
 
 ```bash
 # Add the marketplace
-/plugin marketplace add akarelin/AGENTS.md --path skills
+/plugin marketplace add akarelin/AGENTS.md
 
 # Browse available plugins
 /plugin marketplace list akarelin-skills
 
 # Install individual plugins
 /plugin install organize@akarelin-skills
-/plugin install work-m365@akarelin-skills
+/plugin install work@akarelin-skills
 /plugin install devops-m365@akarelin-skills
+/plugin install search@akarelin-skills
 /plugin install session-manager@akarelin-skills
-/plugin install search-everything@akarelin-skills
-/plugin install search-m365@akarelin-skills
 /plugin install skill-manager@akarelin-skills
 ```
 
-## Available Plugins
+## Available Plugins (6)
 
-| Namespace | Plugin | Description |
-|-----------|--------|-------------|
-| organize-* | **organize** | File organizer with sub-skills (arxiv papers, medical scans) |
-| work-* | **work-m365** | User-level M365: Mail, Calendar, Teams, Files, Tasks, Contacts, Presence |
-| devops-* | **devops-m365** | M365 tenant admin: Users, Groups, Teams, Licenses, Audit, Security |
-| — | **session-manager** | Sync/list/resume/clean Claude sessions across repos |
-| search-* | **search-everything** | Fast file search via voidtools Everything MCP server (Windows) |
-| search-* | **search-m365** | Cross-entity M365 search (emails, files, events, chat, SharePoint) |
-| — | **skill-manager** | Patch, test, rebuild, and deploy plugin skills |
+| Namespace | Plugin | Sub-skills | Description |
+|-----------|--------|-----------|-------------|
+| organize-* | **organize** | organize-arxiv, medical-scan-obsidian | File organizer (arxiv papers, medical scans) |
+| work-* | **work** | work-m365, work-slack, work-jira | Workplace tools: M365, Slack (MCP), Jira/Confluence (MCP) |
+| devops-* | **devops-m365** | — | M365 tenant admin: Users, Groups, Licenses, Audit, Security |
+| search-* | **search** | search-everything, search-m365 | File search (Everything MCP) + M365 unified search |
+| — | **session-manager** | — | Sync/list/resume/clean Claude sessions across repos |
+| — | **skill-manager** | — | Patch, test, rebuild, and deploy plugin skills |
 
 ## Plugin Details
 
 ### organize
-File organizer with a sub-skill architecture:
+File organizer with sub-skill architecture:
 - **organize-arxiv** — identifies arxiv PDFs, fetches metadata, renames to `{id} {#tags} {Title} {version}.pdf`, moves to library
 - **medical-scan-obsidian** — converts medical scan images into a structured bilingual EN/RU Obsidian vault
 
-### work-m365
-User-level Microsoft 365 operations via Graph beta API. Mail, Calendar, Teams Chat/Channels, OneDrive Files, To Do Tasks, Contacts, OneNote, Meetings, Presence. Uses client credentials with per-user routing.
+### work
+Workplace productivity with 3 sub-skills:
+- **work-m365** — User-level M365 via Graph beta API: Mail, Calendar, Teams, Files, Tasks, Contacts, OneNote, Presence. CLI-based.
+- **work-slack** — Slack via official MCP server (mcp.slack.com, OAuth). Messaging, search, channels, threads.
+- **work-jira** — Jira + Confluence via official Atlassian MCP server. 5 workflow skills: bug triage, meeting notes → tasks, status reports, spec → backlog, knowledge search.
 
 ### devops-m365
-Microsoft 365 tenant administration via Graph beta API. User CRUD, group management, Teams admin, license assignment, directory roles, audit logs, devices, security alerts/score. Admin-only.
+M365 tenant administration via Graph beta API. User CRUD, group management, Teams admin, license assignment, directory roles, audit logs, devices, security alerts/score. Admin-only.
+
+### search
+Search with 2 sub-skills:
+- **search-everything** — Fast local file search on Windows via voidtools Everything MCP server (16 tools). Also available as MCPB desktop extension.
+- **search-m365** — Cross-entity M365 search via Graph `/search/query` API (emails, files, events, chat, SharePoint).
 
 ### session-manager
 CLI tool for managing Claude Code session folders across multiple repos and hosts. Supports sync, list, resume, rename, and cleanup operations.
-
-### search-everything
-MCP server wrapping [voidtools Everything](https://www.voidtools.com/) for instant filename search. Windows only.
-
-### search-m365
-Cross-entity Microsoft 365 search via Graph `/search/query` API. Searches emails, files, events, chat messages, and SharePoint in one query. Depends on `work-m365`.
 
 ### skill-manager
 End-to-end workflow for improving plugin skills: gather feedback, patch code, test, rebuild `.plugin` files, and deploy.
