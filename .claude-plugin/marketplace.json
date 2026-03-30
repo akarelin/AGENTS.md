@@ -10,7 +10,7 @@
     {
       "name": "organize",
       "description": "File organizer with sub-skills: arxiv paper organizer and medical scan-to-Obsidian processor.",
-      "source": "./plugins/organize",
+      "source": "./skills/plugins/organize",
       "category": "productivity",
       "homepage": "https://github.com/akarelin/AGENTS.md/tree/master/skills/plugins/organize"
     },
