@@ -1,0 +1,8 @@
+{
+  "name": "search-m365",
+  "description": "Cross-entity Microsoft 365 search via Graph Search API — find emails, files, events, chat messages, SharePoint sites, and lists in one query.",
+  "author": {
+    "name": "Alex Karelin"
+  },
+  "keywords": ["search", "m365", "microsoft", "graph", "email", "files", "events", "chat", "sharepoint"]
+}

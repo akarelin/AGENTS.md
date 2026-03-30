@@ -1,5 +1,5 @@
 ---
-name: m365
+name: work-m365
 description: "User-level Microsoft 365 operations via Graph beta API. Use when the user mentions: outlook, email, calendar, onedrive, microsoft, office 365, ms365, my meetings, my emails, schedule meeting, send email, check calendar, to do, tasks, teams chat, onenote, presence, contacts."
 user-invocable: true
 argument-hint: "<command> [subcommand] [options]"

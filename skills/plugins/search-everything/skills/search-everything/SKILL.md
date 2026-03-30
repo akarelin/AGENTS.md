@@ -1,5 +1,5 @@
 ---
-name: everything-search
+name: search-everything
 description: >
   This skill should be used when the user asks to "search for files",
   "find files by name", "locate a file", or needs fast filename search

@@ -1,25 +1,32 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "akarelin-skills",
-  "description": "Personal productivity plugins for Claude Code — file organization, search, session management, medical document processing, and Microsoft 365 integration.",
+  "description": "Personal productivity plugins for Claude Code — file organization, search, session management, Microsoft 365 integration, and plugin development.",
   "owner": {
     "name": "Alex Karelin",
     "email": "alex@karelin.ai"
   },
   "plugins": [
     {
-      "name": "everything-search",
-      "description": "Fast file search using voidtools Everything (1.4/1.5a) via MCP server. Windows only.",
-      "source": "./plugins/everything-search",
-      "category": "productivity",
-      "homepage": "https://github.com/akarelin/AGENTS.md/tree/master/skills/plugins/everything-search"
-    },
-    {
       "name": "organize",
-      "description": "File organizer with sub-skills: arxiv paper organizer and medical scan-to-Obsidian processor. Scans folders, identifies files, renames/tags/moves them.",
+      "description": "File organizer with sub-skills: arxiv paper organizer and medical scan-to-Obsidian processor.",
       "source": "./plugins/organize",
       "category": "productivity",
       "homepage": "https://github.com/akarelin/AGENTS.md/tree/master/skills/plugins/organize"
+    },
+    {
+      "name": "work-m365",
+      "description": "User-level Microsoft 365 operations via Graph beta API — Mail, Calendar, Teams Chat, Channels, Files, Tasks, Contacts, OneNote, Meetings, Presence.",
+      "source": "./plugins/work-m365",
+      "category": "productivity",
+      "homepage": "https://github.com/akarelin/AGENTS.md/tree/master/skills/plugins/work-m365"
+    },
+    {
+      "name": "devops-m365",
+      "description": "Microsoft 365 tenant administration via Graph beta API — Users, Groups, Teams, Licenses, Directory Roles, Audit, Devices, Security.",
+      "source": "./plugins/devops-m365",
+      "category": "productivity",
+      "homepage": "https://github.com/akarelin/AGENTS.md/tree/master/skills/plugins/devops-m365"
     },
     {
       "name": "session-manager",
@@ -29,25 +36,25 @@
       "homepage": "https://github.com/akarelin/AGENTS.md/tree/master/skills/plugins/session-manager"
     },
     {
+      "name": "search-everything",
+      "description": "Fast file search using voidtools Everything (1.4/1.5a) via MCP server. Windows only.",
+      "source": "./plugins/search-everything",
+      "category": "productivity",
+      "homepage": "https://github.com/akarelin/AGENTS.md/tree/master/skills/plugins/search-everything"
+    },
+    {
+      "name": "search-m365",
+      "description": "Cross-entity Microsoft 365 search — emails, files, events, chat messages, SharePoint sites and lists in one query.",
+      "source": "./plugins/search-m365",
+      "category": "productivity",
+      "homepage": "https://github.com/akarelin/AGENTS.md/tree/master/skills/plugins/search-m365"
+    },
+    {
       "name": "skill-manager",
       "description": "Manage and improve Claude Code plugin skills end-to-end: review feedback, patch code, test changes, rebuild and deploy .plugin files.",
       "source": "./plugins/skill-manager",
       "category": "development",
       "homepage": "https://github.com/akarelin/AGENTS.md/tree/master/skills/plugins/skill-manager"
-    },
-    {
-      "name": "m365",
-      "description": "User-level Microsoft 365 operations via Graph beta API — Mail, Calendar, Teams Chat, Channels, Files, Tasks, Contacts, OneNote, Meetings, Presence.",
-      "source": "./plugins/m365",
-      "category": "productivity",
-      "homepage": "https://github.com/akarelin/AGENTS.md/tree/master/skills/plugins/m365"
-    },
-    {
-      "name": "m365-admin",
-      "description": "Microsoft 365 tenant administration via Graph beta API — Users, Groups, Teams, Licenses, Directory Roles, Audit, Devices, Security.",
-      "source": "./plugins/m365-admin",
-      "category": "productivity",
-      "homepage": "https://github.com/akarelin/AGENTS.md/tree/master/skills/plugins/m365-admin"
     }
   ]
 }
