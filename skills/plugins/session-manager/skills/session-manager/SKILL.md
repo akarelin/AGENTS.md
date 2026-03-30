@@ -1,6 +1,16 @@
+---
+name: session-manager
+description: >
+  This skill should be used when the user asks to "manage sessions",
+  "sync sessions", "list sessions", "resume a session", "clean up sessions",
+  "delete empty sessions", or "rename sessions". Manages Claude Code session
+  folders across repos and hosts.
+version: 0.1.0
+---
+
 # Session Manager
 
-Local Claude Code skill for managing session folders across repos and hosts.
+Manage Claude Code session folders across repos and hosts.
 
 ## Commands
 
@@ -18,6 +28,9 @@ python3 claude_session_manager.py delete-empty --apply
 python3 claude_session_manager.py rename D--Dev-gppu-w11 D--Dev-gppu
 python3 claude_session_manager.py rename D--Dev-gppu-w11 D--Dev-gppu --apply
 ```
+
+## Script location
+`${CLAUDE_PLUGIN_ROOT}/claude_session_manager.py`
 
 ## Notes
 

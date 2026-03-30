@@ -1,0 +1,8 @@
+{
+  "name": "session-manager",
+  "description": "Manage Claude Code session folders across repos and hosts — sync, list, resume, rename, and clean up sessions.",
+  "author": {
+    "name": "Alex Karelin"
+  },
+  "keywords": ["session", "claude", "sync", "git", "resume", "manage"]
+}

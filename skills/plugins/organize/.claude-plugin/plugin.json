@@ -1,0 +1,8 @@
+{
+  "name": "organize",
+  "description": "File organizer with sub-skills: scans folders, identifies files by type, renames/tags/moves them. Includes arxiv paper organizer and medical scan-to-Obsidian processor.",
+  "author": {
+    "name": "Alex Karelin"
+  },
+  "keywords": ["organize", "files", "triage", "cleanup", "downloads", "sort", "arxiv", "papers", "pdf", "medical", "scan", "obsidian"]
+}

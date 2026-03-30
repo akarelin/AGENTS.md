@@ -1,0 +1,10 @@
+{
+  "everything-search": {
+    "type": "stdio",
+    "command": "node",
+    "args": ["${CLAUDE_PLUGIN_ROOT}/server/index.js"],
+    "env": {
+      "PATH": "C:\\Program Files\\Everything 1.5a;${env:PATH}"
+    }
+  }
+}

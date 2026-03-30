@@ -1,0 +1,9 @@
+{
+  "name": "skill-manager",
+  "version": "0.2.0",
+  "description": "Manage Cowork plugin skills: review feedback, patch code, test changes, rebuild and deploy .plugin files.",
+  "author": {
+    "name": "Alex Karelin"
+  },
+  "keywords": ["skill", "plugin", "patch", "deploy", "manage", "update", "fix"]
+}

@@ -1,0 +1,39 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "akarelin-skills",
+  "description": "Personal productivity plugins for Claude Code — file organization, search, session management, and medical document processing.",
+  "owner": {
+    "name": "Alex Karelin",
+    "email": "alex@karelin.ai"
+  },
+  "plugins": [
+    {
+      "name": "everything-search",
+      "description": "Fast file search using voidtools Everything (1.4/1.5a) via MCP server. Windows only.",
+      "source": "./plugins/everything-search",
+      "category": "productivity",
+      "homepage": "https://github.com/akarelin/AGENTS.md/tree/master/skills/plugins/everything-search"
+    },
+    {
+      "name": "organize",
+      "description": "File organizer with sub-skills: arxiv paper organizer and medical scan-to-Obsidian processor. Scans folders, identifies files, renames/tags/moves them.",
+      "source": "./plugins/organize",
+      "category": "productivity",
+      "homepage": "https://github.com/akarelin/AGENTS.md/tree/master/skills/plugins/organize"
+    },
+    {
+      "name": "session-manager",
+      "description": "Manage Claude Code session folders across repos and hosts — sync, list, resume, rename, and clean up sessions.",
+      "source": "./plugins/session-manager",
+      "category": "productivity",
+      "homepage": "https://github.com/akarelin/AGENTS.md/tree/master/skills/plugins/session-manager"
+    },
+    {
+      "name": "skill-manager",
+      "description": "Manage and improve Claude Code plugin skills end-to-end: review feedback, patch code, test changes, rebuild and deploy .plugin files.",
+      "source": "./plugins/skill-manager",
+      "category": "development",
+      "homepage": "https://github.com/akarelin/AGENTS.md/tree/master/skills/plugins/skill-manager"
+    }
+  ]
+}
