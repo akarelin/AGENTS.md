@@ -38,9 +38,9 @@ The `--user` flag selects which M365 mailbox to act on:
 
 ## CLI Reference
 
-The skill script is at the same directory as this file. Run via:
+The script is at `${CLAUDE_PLUGIN_ROOT}/m365.py`. Run via:
 ```bash
-python3 "$(dirname "$0")/m365.py" [--user USER] [--tenant TENANT] <command> [subcommand] [options]
+python3 "${CLAUDE_PLUGIN_ROOT}/m365.py" [--user USER] [--tenant TENANT] <command> [subcommand] [options]
 ```
 
 If $ARGUMENTS is provided, parse and execute the matching command below.
@@ -48,82 +48,91 @@ If no arguments, show available commands.
 
 ### Auth
 ```bash
-python3 m365.py --user alex login
-python3 m365.py --user alex status
-python3 m365.py --user alex whoami
+python3 "${CLAUDE_PLUGIN_ROOT}/m365.py" --user alex login
+python3 "${CLAUDE_PLUGIN_ROOT}/m365.py" --user alex status
+python3 "${CLAUDE_PLUGIN_ROOT}/m365.py" --user alex whoami
 ```
 
 ### Mail
 ```bash
-python3 m365.py --user alex mail list [--top N] [--folder FOLDER_ID]
-python3 m365.py --user alex mail read MESSAGE_ID
-python3 m365.py --user alex mail search "query" [--top N]
-python3 m365.py --user alex mail send --to "a@b.com" --subject "Subj" --body "Body" [--cc "c@d.com"] [--html]
-python3 m365.py --user alex mail draft --to "a@b.com" --subject "Subj" --body "Body"
-python3 m365.py --user alex mail reply MESSAGE_ID --body "Reply text"
-python3 m365.py --user alex mail folders
+python3 "${CLAUDE_PLUGIN_ROOT}/m365.py" --user alex mail list [--top N] [--folder FOLDER_ID]
+python3 "${CLAUDE_PLUGIN_ROOT}/m365.py" --user alex mail read MESSAGE_ID
+python3 "${CLAUDE_PLUGIN_ROOT}/m365.py" --user alex mail search "query" [--top N]
+python3 "${CLAUDE_PLUGIN_ROOT}/m365.py" --user alex mail send --to "a@b.com" --subject "Subj" --body "Body" [--cc "c@d.com"] [--html]
+python3 "${CLAUDE_PLUGIN_ROOT}/m365.py" --user alex mail draft --to "a@b.com" --subject "Subj" --body "Body"
+python3 "${CLAUDE_PLUGIN_ROOT}/m365.py" --user alex mail reply MESSAGE_ID --body "Reply text"
+python3 "${CLAUDE_PLUGIN_ROOT}/m365.py" --user alex mail folders
 ```
 
 ### Calendar
 ```bash
-python3 m365.py --user alex cal list [--top N]
-python3 m365.py --user alex cal today
-python3 m365.py --user alex cal create --subject "Meeting" --start "2026-04-01T10:00:00" --end "2026-04-01T11:00:00" [--attendees "a@b.com,c@d.com"] [--online] [--timezone "America/Los_Angeles"]
-python3 m365.py --user alex cal delete EVENT_ID
+python3 "${CLAUDE_PLUGIN_ROOT}/m365.py" --user alex cal list [--top N]
+python3 "${CLAUDE_PLUGIN_ROOT}/m365.py" --user alex cal today
+python3 "${CLAUDE_PLUGIN_ROOT}/m365.py" --user alex cal search "query" [--top N]
+python3 "${CLAUDE_PLUGIN_ROOT}/m365.py" --user alex cal create --subject "Meeting" --start "2026-04-01T10:00:00" --end "2026-04-01T11:00:00" [--attendees "a@b.com,c@d.com"] [--online] [--timezone "America/Los_Angeles"]
+python3 "${CLAUDE_PLUGIN_ROOT}/m365.py" --user alex cal delete EVENT_ID
 ```
 
 ### Teams Chat
 ```bash
-python3 m365.py --user alex chat list [--top N]
-python3 m365.py --user alex chat messages CHAT_ID [--top N]
-python3 m365.py --user alex chat send CHAT_ID "message"
+python3 "${CLAUDE_PLUGIN_ROOT}/m365.py" --user alex chat list [--top N]
+python3 "${CLAUDE_PLUGIN_ROOT}/m365.py" --user alex chat messages CHAT_ID [--top N]
+python3 "${CLAUDE_PLUGIN_ROOT}/m365.py" --user alex chat send CHAT_ID "message"
+python3 "${CLAUDE_PLUGIN_ROOT}/m365.py" --user alex chat search "query" [--top N]
 ```
 
 ### Teams Channels
 ```bash
-python3 m365.py --user alex channel list TEAM_ID
-python3 m365.py --user alex channel messages TEAM_ID CHANNEL_ID [--top N]
-python3 m365.py --user alex channel send TEAM_ID CHANNEL_ID "message"
+python3 "${CLAUDE_PLUGIN_ROOT}/m365.py" --user alex channel list TEAM_ID
+python3 "${CLAUDE_PLUGIN_ROOT}/m365.py" --user alex channel messages TEAM_ID CHANNEL_ID [--top N]
+python3 "${CLAUDE_PLUGIN_ROOT}/m365.py" --user alex channel send TEAM_ID CHANNEL_ID "message"
 ```
 
 ### Files (OneDrive)
 ```bash
-python3 m365.py --user alex files list [--path "Documents/subfolder"]
-python3 m365.py --user alex files search "query"
-python3 m365.py --user alex files sites "query"
+python3 "${CLAUDE_PLUGIN_ROOT}/m365.py" --user alex files list [--path "Documents/subfolder"]
+python3 "${CLAUDE_PLUGIN_ROOT}/m365.py" --user alex files search "query"
+python3 "${CLAUDE_PLUGIN_ROOT}/m365.py" --user alex files sites "query"
 ```
 
 ### Tasks (To Do)
 ```bash
-python3 m365.py --user alex tasks lists
-python3 m365.py --user alex tasks list LIST_ID
-python3 m365.py --user alex tasks create LIST_ID --title "Task" [--due "2026-04-01"] [--body "Details"]
-python3 m365.py --user alex tasks complete LIST_ID TASK_ID
+python3 "${CLAUDE_PLUGIN_ROOT}/m365.py" --user alex tasks lists
+python3 "${CLAUDE_PLUGIN_ROOT}/m365.py" --user alex tasks list LIST_ID
+python3 "${CLAUDE_PLUGIN_ROOT}/m365.py" --user alex tasks create LIST_ID --title "Task" [--due "2026-04-01"] [--body "Details"]
+python3 "${CLAUDE_PLUGIN_ROOT}/m365.py" --user alex tasks complete LIST_ID TASK_ID
 ```
 
 ### Contacts
 ```bash
-python3 m365.py --user alex contacts list [--top N]
-python3 m365.py --user alex contacts search "name"
+python3 "${CLAUDE_PLUGIN_ROOT}/m365.py" --user alex contacts list [--top N]
+python3 "${CLAUDE_PLUGIN_ROOT}/m365.py" --user alex contacts search "name"
 ```
 
 ### OneNote
 ```bash
-python3 m365.py --user alex notes notebooks
-python3 m365.py --user alex notes sections NOTEBOOK_ID
-python3 m365.py --user alex notes pages SECTION_ID
+python3 "${CLAUDE_PLUGIN_ROOT}/m365.py" --user alex notes notebooks
+python3 "${CLAUDE_PLUGIN_ROOT}/m365.py" --user alex notes sections NOTEBOOK_ID
+python3 "${CLAUDE_PLUGIN_ROOT}/m365.py" --user alex notes pages SECTION_ID
+python3 "${CLAUDE_PLUGIN_ROOT}/m365.py" --user alex notes search "query" [--top N]
 ```
 
 ### Meetings
 ```bash
-python3 m365.py --user alex meetings create --subject "Standup" --start "2026-04-01T10:00:00Z" --end "2026-04-01T10:30:00Z"
+python3 "${CLAUDE_PLUGIN_ROOT}/m365.py" --user alex meetings create --subject "Standup" --start "2026-04-01T10:00:00Z" --end "2026-04-01T10:30:00Z"
 ```
 
 ### Presence
 ```bash
-python3 m365.py --user alex presence get
-python3 m365.py --user alex presence set Available [--activity "Available"]
+python3 "${CLAUDE_PLUGIN_ROOT}/m365.py" --user alex presence get
+python3 "${CLAUDE_PLUGIN_ROOT}/m365.py" --user alex presence set Available [--activity "Available"]
 ```
+
+### Unified Search (cross-entity)
+```bash
+python3 "${CLAUDE_PLUGIN_ROOT}/m365.py" --user alex search "query" [--top N] [--types "message,driveItem,event,chatMessage,site,list,listItem"]
+```
+Searches across multiple entity types in a single call via `/search/query`. Default types: message, driveItem, event.
 
 ## Implementation Notes
 

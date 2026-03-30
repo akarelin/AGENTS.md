@@ -51,10 +51,12 @@ def get_token(tenant="karelin"):
         sys.exit(1)
 
 
-def graph_request(method, path, tenant="karelin", params=None, json_body=None):
+def graph_request(method, path, tenant="karelin", params=None, json_body=None, extra_headers=None):
     token = get_token(tenant)
     url = f"{GRAPH_BASE}{path}" if path.startswith("/") else f"{GRAPH_BASE}/{path}"
     headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
+    if extra_headers:
+        headers.update(extra_headers)
     resp = requests.request(method, url, headers=headers, params=params, json=json_body)
 
     if resp.status_code == 204:

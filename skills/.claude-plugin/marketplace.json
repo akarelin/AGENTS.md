@@ -34,6 +34,20 @@
       "source": "./plugins/skill-manager",
       "category": "development",
       "homepage": "https://github.com/akarelin/AGENTS.md/tree/master/skills/plugins/skill-manager"
+    },
+    {
+      "name": "m365",
+      "description": "User-level Microsoft 365 operations via Graph beta API — Mail, Calendar, Teams Chat, Channels, Files, Tasks, Contacts, OneNote, Meetings, Presence.",
+      "source": "./plugins/m365",
+      "category": "productivity",
+      "homepage": "https://github.com/akarelin/AGENTS.md/tree/master/skills/plugins/m365"
+    },
+    {
+      "name": "m365-admin",
+      "description": "Microsoft 365 tenant administration via Graph beta API — Users, Groups, Teams, Licenses, Directory Roles, Audit, Devices, Security.",
+      "source": "./plugins/m365-admin",
+      "category": "productivity",
+      "homepage": "https://github.com/akarelin/AGENTS.md/tree/master/skills/plugins/m365-admin"
     }
   ]
 }

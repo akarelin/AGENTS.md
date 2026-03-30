@@ -28,6 +28,11 @@ def cmd_users_list(args):
     set_context(args)
     pp(graph_get(f"/users?$top={args.top or 25}&$select=id,displayName,mail,userPrincipalName,accountEnabled,userType,createdDateTime", **kw()))
 
+def cmd_users_search(args):
+    set_context(args)
+    headers = {"ConsistencyLevel": "eventual"}
+    pp(graph_get(f'/users?$search="displayName:{args.query}" OR "mail:{args.query}" OR "userPrincipalName:{args.query}"&$top={args.top or 25}&$count=true&$select=id,displayName,mail,userPrincipalName,accountEnabled,userType,jobTitle,department', extra_headers=headers, **kw()))
+
 def cmd_users_get(args):
     set_context(args)
     pp(graph_get(f"/users/{args.id}?$select=id,displayName,mail,userPrincipalName,accountEnabled,userType,jobTitle,department,officeLocation,mobilePhone,assignedLicenses", **kw()))
@@ -85,6 +90,11 @@ def cmd_users_invite(args):
 def cmd_groups_list(args):
     set_context(args)
     pp(graph_get(f"/groups?$top={args.top or 25}&$select=id,displayName,mail,groupTypes,membershipRule,createdDateTime", **kw()))
+
+def cmd_groups_search(args):
+    set_context(args)
+    headers = {"ConsistencyLevel": "eventual"}
+    pp(graph_get(f'/groups?$search="displayName:{args.query}" OR "mail:{args.query}"&$top={args.top or 25}&$count=true&$select=id,displayName,mail,groupTypes,membershipRule,createdDateTime', extra_headers=headers, **kw()))
 
 def cmd_groups_get(args):
     set_context(args)
@@ -237,6 +247,7 @@ def main():
     # Users
     u = sub.add_parser("users").add_subparsers(dest="sub")
     s = u.add_parser("list"); s.add_argument("--top", type=int); s.set_defaults(func=cmd_users_list)
+    s = u.add_parser("search"); s.add_argument("query"); s.add_argument("--top", type=int); s.set_defaults(func=cmd_users_search)
     s = u.add_parser("get"); s.add_argument("id"); s.set_defaults(func=cmd_users_get)
     s = u.add_parser("create"); s.add_argument("--name", required=True); s.add_argument("--upn", required=True); s.add_argument("--password", required=True); s.add_argument("--nickname"); s.add_argument("--first"); s.add_argument("--last"); s.add_argument("--job"); s.add_argument("--department"); s.set_defaults(func=cmd_users_create)
     s = u.add_parser("update"); s.add_argument("id"); s.add_argument("--json", required=True); s.set_defaults(func=cmd_users_update)
@@ -249,6 +260,7 @@ def main():
     # Groups
     g = sub.add_parser("groups").add_subparsers(dest="sub")
     s = g.add_parser("list"); s.add_argument("--top", type=int); s.set_defaults(func=cmd_groups_list)
+    s = g.add_parser("search"); s.add_argument("query"); s.add_argument("--top", type=int); s.set_defaults(func=cmd_groups_search)
     s = g.add_parser("get"); s.add_argument("id"); s.set_defaults(func=cmd_groups_get)
     s = g.add_parser("members"); s.add_argument("id"); s.set_defaults(func=cmd_groups_members)
     s = g.add_parser("add-member"); s.add_argument("id"); s.add_argument("user_id"); s.set_defaults(func=cmd_groups_add_member)

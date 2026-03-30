@@ -70,11 +70,13 @@ def _resolve_path(path, user_hint):
 
 
 def graph_request(method, path, tenant="karelin", user_hint="default",
-                  params=None, json_body=None, raw=False):
+                  params=None, json_body=None, raw=False, extra_headers=None):
     token = get_token(tenant)
     path = _resolve_path(path, user_hint)
     url = f"{GRAPH_BASE}{path}" if path.startswith("/") else f"{GRAPH_BASE}/{path}"
     headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
+    if extra_headers:
+        headers.update(extra_headers)
     resp = requests.request(method, url, headers=headers, params=params, json=json_body)
 
     if raw:

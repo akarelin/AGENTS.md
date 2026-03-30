@@ -33,9 +33,9 @@ Or configure `tenants.json` alongside the script.
 
 ## CLI Reference
 
-The skill script is at the same directory as this file. Run via:
+The script is at `${CLAUDE_PLUGIN_ROOT}/m365_admin.py`. Run via:
 ```bash
-python3 "$(dirname "$0")/m365_admin.py" [--tenant TENANT] <command> [subcommand] [options]
+python3 "${CLAUDE_PLUGIN_ROOT}/m365_admin.py" [--tenant TENANT] <command> [subcommand] [options]
 ```
 
 If $ARGUMENTS is provided, parse and execute the matching command below.
@@ -43,78 +43,80 @@ If no arguments, show available commands.
 
 ### Users
 ```bash
-python3 m365_admin.py users list [--top N]
-python3 m365_admin.py users get USER_ID_OR_UPN
-python3 m365_admin.py users create --name "Jane Doe" --upn "jane@karelin.com" --password "TempPass123!" [--first Jane] [--last Doe] [--job "Engineer"] [--department "IT"]
-python3 m365_admin.py users update USER_ID --json '{"jobTitle":"Sr Engineer"}'
-python3 m365_admin.py users disable USER_ID
-python3 m365_admin.py users enable USER_ID
-python3 m365_admin.py users delete USER_ID
-python3 m365_admin.py users reset-pw USER_ID --password "NewPass456!"
-python3 m365_admin.py users invite --email "guest@external.com" [--name "Guest Name"] [--no-email]
+python3 "${CLAUDE_PLUGIN_ROOT}/m365_admin.py" users list [--top N]
+python3 "${CLAUDE_PLUGIN_ROOT}/m365_admin.py" users search "query" [--top N]
+python3 "${CLAUDE_PLUGIN_ROOT}/m365_admin.py" users get USER_ID_OR_UPN
+python3 "${CLAUDE_PLUGIN_ROOT}/m365_admin.py" users create --name "Jane Doe" --upn "jane@karelin.com" --password "TempPass123!" [--first Jane] [--last Doe] [--job "Engineer"] [--department "IT"]
+python3 "${CLAUDE_PLUGIN_ROOT}/m365_admin.py" users update USER_ID --json '{"jobTitle":"Sr Engineer"}'
+python3 "${CLAUDE_PLUGIN_ROOT}/m365_admin.py" users disable USER_ID
+python3 "${CLAUDE_PLUGIN_ROOT}/m365_admin.py" users enable USER_ID
+python3 "${CLAUDE_PLUGIN_ROOT}/m365_admin.py" users delete USER_ID
+python3 "${CLAUDE_PLUGIN_ROOT}/m365_admin.py" users reset-pw USER_ID --password "NewPass456!"
+python3 "${CLAUDE_PLUGIN_ROOT}/m365_admin.py" users invite --email "guest@external.com" [--name "Guest Name"] [--no-email]
 ```
 
 ### Groups
 ```bash
-python3 m365_admin.py groups list [--top N]
-python3 m365_admin.py groups get GROUP_ID
-python3 m365_admin.py groups members GROUP_ID
-python3 m365_admin.py groups add-member GROUP_ID USER_ID
-python3 m365_admin.py groups remove-member GROUP_ID USER_ID
-python3 m365_admin.py groups create --name "New Group" [--nickname "newgroup"] [--description "..."] [--mail-enabled]
+python3 "${CLAUDE_PLUGIN_ROOT}/m365_admin.py" groups list [--top N]
+python3 "${CLAUDE_PLUGIN_ROOT}/m365_admin.py" groups search "query" [--top N]
+python3 "${CLAUDE_PLUGIN_ROOT}/m365_admin.py" groups get GROUP_ID
+python3 "${CLAUDE_PLUGIN_ROOT}/m365_admin.py" groups members GROUP_ID
+python3 "${CLAUDE_PLUGIN_ROOT}/m365_admin.py" groups add-member GROUP_ID USER_ID
+python3 "${CLAUDE_PLUGIN_ROOT}/m365_admin.py" groups remove-member GROUP_ID USER_ID
+python3 "${CLAUDE_PLUGIN_ROOT}/m365_admin.py" groups create --name "New Group" [--nickname "newgroup"] [--description "..."] [--mail-enabled]
 ```
 
 ### Teams
 ```bash
-python3 m365_admin.py teams list [--top N]
-python3 m365_admin.py teams get TEAM_ID
-python3 m365_admin.py teams channels TEAM_ID
-python3 m365_admin.py teams members TEAM_ID
-python3 m365_admin.py teams add-member TEAM_ID USER_ID [--owner]
-python3 m365_admin.py teams create-channel TEAM_ID --name "Channel" [--type standard|private|shared] [--description "..."]
+python3 "${CLAUDE_PLUGIN_ROOT}/m365_admin.py" teams list [--top N]
+python3 "${CLAUDE_PLUGIN_ROOT}/m365_admin.py" teams get TEAM_ID
+python3 "${CLAUDE_PLUGIN_ROOT}/m365_admin.py" teams channels TEAM_ID
+python3 "${CLAUDE_PLUGIN_ROOT}/m365_admin.py" teams members TEAM_ID
+python3 "${CLAUDE_PLUGIN_ROOT}/m365_admin.py" teams add-member TEAM_ID USER_ID [--owner]
+python3 "${CLAUDE_PLUGIN_ROOT}/m365_admin.py" teams create-channel TEAM_ID --name "Channel" [--type standard|private|shared] [--description "..."]
 ```
 
 ### Licenses
 ```bash
-python3 m365_admin.py licenses list
-python3 m365_admin.py licenses user USER_ID
-python3 m365_admin.py licenses assign USER_ID SKU_ID
-python3 m365_admin.py licenses remove USER_ID SKU_ID
+python3 "${CLAUDE_PLUGIN_ROOT}/m365_admin.py" licenses list
+python3 "${CLAUDE_PLUGIN_ROOT}/m365_admin.py" licenses user USER_ID
+python3 "${CLAUDE_PLUGIN_ROOT}/m365_admin.py" licenses assign USER_ID SKU_ID
+python3 "${CLAUDE_PLUGIN_ROOT}/m365_admin.py" licenses remove USER_ID SKU_ID
 ```
 
 ### Directory Roles
 ```bash
-python3 m365_admin.py roles list
-python3 m365_admin.py roles members ROLE_ID
+python3 "${CLAUDE_PLUGIN_ROOT}/m365_admin.py" roles list
+python3 "${CLAUDE_PLUGIN_ROOT}/m365_admin.py" roles members ROLE_ID
 ```
 
 ### Audit Logs
 ```bash
-python3 m365_admin.py audit signins [--top N]
-python3 m365_admin.py audit directory [--top N]
+python3 "${CLAUDE_PLUGIN_ROOT}/m365_admin.py" audit signins [--top N]
+python3 "${CLAUDE_PLUGIN_ROOT}/m365_admin.py" audit directory [--top N]
 ```
 
 ### Devices
 ```bash
-python3 m365_admin.py devices list [--top N]
+python3 "${CLAUDE_PLUGIN_ROOT}/m365_admin.py" devices list [--top N]
 ```
 
 ### Domains / Org
 ```bash
-python3 m365_admin.py domains
-python3 m365_admin.py org
+python3 "${CLAUDE_PLUGIN_ROOT}/m365_admin.py" domains
+python3 "${CLAUDE_PLUGIN_ROOT}/m365_admin.py" org
 ```
 
 ### Security
 ```bash
-python3 m365_admin.py security alerts [--top N]
-python3 m365_admin.py security score
+python3 "${CLAUDE_PLUGIN_ROOT}/m365_admin.py" security alerts [--top N]
+python3 "${CLAUDE_PLUGIN_ROOT}/m365_admin.py" security score
 ```
 
 ### Raw Graph API
 ```bash
-python3 m365_admin.py raw GET "/users?$top=5"
-python3 m365_admin.py raw POST "/invitations" --body '{"invitedUserEmailAddress":"a@b.com","inviteRedirectUrl":"https://teams.microsoft.com","sendInvitationMessage":true}'
+python3 "${CLAUDE_PLUGIN_ROOT}/m365_admin.py" raw GET "/users?$top=5"
+python3 "${CLAUDE_PLUGIN_ROOT}/m365_admin.py" raw POST "/invitations" --body '{"invitedUserEmailAddress":"a@b.com","inviteRedirectUrl":"https://teams.microsoft.com","sendInvitationMessage":true}'
 ```
 
 ## Implementation Notes

@@ -97,6 +97,10 @@ def cmd_cal_today(args):
     now = datetime.now(timezone.utc)
     pp(graph_get(f"/me/calendarView?startDateTime={now:%Y-%m-%dT00:00:00Z}&endDateTime={now:%Y-%m-%dT23:59:59Z}&$orderby=start/dateTime&$select=id,subject,start,end,location,organizer", **kw()))
 
+def cmd_cal_search(args):
+    set_context(args)
+    pp(graph_get(f"/me/events?$search=\"{args.query}\"&$top={args.top or 10}&$select=id,subject,start,end,location,organizer,isOnlineMeeting", **kw()))
+
 def cmd_cal_create(args):
     set_context(args)
     body = {"subject": args.subject, "start": {"dateTime": args.start, "timeZone": args.timezone}, "end": {"dateTime": args.end, "timeZone": args.timezone}}
@@ -122,6 +126,18 @@ def cmd_chat_messages(args):
 def cmd_chat_send(args):
     set_context(args)
     pp(graph_post(f"/me/chats/{args.chat_id}/messages", json_body={"body": {"contentType": "text", "content": args.message}}, **kw()))
+
+def cmd_chat_search(args):
+    set_context(args)
+    body = {
+        "requests": [{
+            "entityTypes": ["chatMessage"],
+            "query": {"queryString": args.query},
+            "from": 0,
+            "size": args.top or 25,
+        }]
+    }
+    pp(graph_post("/search/query", json_body=body, **kw()))
 
 # --- Channel (Teams) ---
 
@@ -197,6 +213,10 @@ def cmd_notes_pages(args):
     set_context(args)
     pp(graph_get(f"/me/onenote/sections/{args.section_id}/pages?$top=20&$select=id,title,createdDateTime", **kw()))
 
+def cmd_notes_search(args):
+    set_context(args)
+    pp(graph_get(f"/me/onenote/pages?search={args.query}&$top={args.top or 20}&$select=id,title,createdDateTime,parentSection", **kw()))
+
 # --- Meetings ---
 
 def cmd_meetings_create(args):
@@ -212,6 +232,21 @@ def cmd_presence(args):
 def cmd_presence_set(args):
     set_context(args)
     pp(graph_post("/me/presence/setPresence", json_body={"sessionId": "chmo", "availability": args.availability, "activity": args.activity or args.availability, "expirationDuration": "PT1H"}, **kw()))
+
+# --- Unified Search ---
+
+def cmd_search(args):
+    set_context(args)
+    entity_types = args.types.split(",") if args.types else ["message", "driveItem", "event"]
+    body = {
+        "requests": [{
+            "entityTypes": entity_types,
+            "query": {"queryString": args.query},
+            "from": 0,
+            "size": args.top or 25,
+        }]
+    }
+    pp(graph_post("/search/query", json_body=body, **kw()))
 
 # --- Parser ---
 
@@ -239,6 +274,7 @@ def main():
     cl = sub.add_parser("cal").add_subparsers(dest="sub")
     s = cl.add_parser("list"); s.add_argument("--top", type=int); s.set_defaults(func=cmd_cal_list)
     cl.add_parser("today").set_defaults(func=cmd_cal_today)
+    s = cl.add_parser("search"); s.add_argument("query"); s.add_argument("--top", type=int); s.set_defaults(func=cmd_cal_search)
     s = cl.add_parser("create"); s.add_argument("--subject", required=True); s.add_argument("--start", required=True); s.add_argument("--end", required=True); s.add_argument("--body"); s.add_argument("--attendees"); s.add_argument("--timezone", default="America/Los_Angeles"); s.add_argument("--online", action="store_true"); s.set_defaults(func=cmd_cal_create)
     s = cl.add_parser("delete"); s.add_argument("id"); s.set_defaults(func=cmd_cal_delete)
 
@@ -247,6 +283,7 @@ def main():
     s = ch.add_parser("list"); s.add_argument("--top", type=int); s.set_defaults(func=cmd_chat_list)
     s = ch.add_parser("messages"); s.add_argument("chat_id"); s.add_argument("--top", type=int); s.set_defaults(func=cmd_chat_messages)
     s = ch.add_parser("send"); s.add_argument("chat_id"); s.add_argument("message"); s.set_defaults(func=cmd_chat_send)
+    s = ch.add_parser("search"); s.add_argument("query"); s.add_argument("--top", type=int); s.set_defaults(func=cmd_chat_search)
 
     # Channel
     cn = sub.add_parser("channel").add_subparsers(dest="sub")
@@ -277,6 +314,7 @@ def main():
     nt.add_parser("notebooks").set_defaults(func=cmd_notes_notebooks)
     s = nt.add_parser("sections"); s.add_argument("notebook_id"); s.set_defaults(func=cmd_notes_sections)
     s = nt.add_parser("pages"); s.add_argument("section_id"); s.set_defaults(func=cmd_notes_pages)
+    s = nt.add_parser("search"); s.add_argument("query"); s.add_argument("--top", type=int); s.set_defaults(func=cmd_notes_search)
 
     # Meetings
     mt = sub.add_parser("meetings").add_subparsers(dest="sub")
@@ -286,6 +324,9 @@ def main():
     pr = sub.add_parser("presence").add_subparsers(dest="sub")
     pr.add_parser("get").set_defaults(func=cmd_presence)
     s = pr.add_parser("set"); s.add_argument("availability", choices=["Available","Busy","DoNotDisturb","Away","Offline"]); s.add_argument("--activity"); s.set_defaults(func=cmd_presence_set)
+
+    # Unified search
+    s = sub.add_parser("search"); s.add_argument("query"); s.add_argument("--top", type=int); s.add_argument("--types", help="Comma-separated: message,driveItem,event,chatMessage,site,list,listItem"); s.set_defaults(func=cmd_search)
 
     args = p.parse_args()
     if not args.cmd:
