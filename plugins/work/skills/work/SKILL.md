@@ -6,7 +6,6 @@ description: >
   "check my calendar", "send a Teams message", "search OneDrive",
   "triage a bug", "search company docs", "capture tasks from meeting notes",
   or any workplace productivity task involving M365, Slack, or Jira.
-version: 0.1.0
 ---
 
 # Work

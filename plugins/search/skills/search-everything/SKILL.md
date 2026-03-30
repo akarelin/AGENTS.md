@@ -5,7 +5,6 @@ description: >
   "find files by name", "locate a file", or needs fast filename search
   on Windows using voidtools Everything. Provides instant file search
   via the Everything MCP server.
-version: 0.1.0
 ---
 
 # Everything Search

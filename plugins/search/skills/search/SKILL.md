@@ -5,7 +5,6 @@ description: >
   "find a file", "search emails", "search m365", "search OneDrive",
   "search SharePoint", "search Slack", "find in Slack", "find a message",
   or wants to search across local files, Microsoft 365, or Slack.
-version: 0.1.1
 ---
 
 # Search

@@ -23,7 +23,7 @@
     },
     {
       "name": "search",
-      "description": "Search with sub-skills: Everything (local file search via MCP) and M365 (cross-entity Microsoft 365 search).",
+      "description": "Search with sub-skills: Everything (local file search via MCP), M365 (cross-entity search), and Slack (messages, channels, files).",
       "source": "./plugins/search",
       "category": "productivity",
       "homepage": "https://github.com/akarelin/AGENTS.md/tree/master/plugins/search"

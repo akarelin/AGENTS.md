@@ -1,7 +1,6 @@
 ---
 name: capture-tasks-from-meeting-notes
 description: "Analyze meeting notes to find action items and create Jira tasks for assigned work. When an agent needs to: (1) Create Jira tasks or tickets from meeting notes, (2) Extract or find action items from notes or Confluence pages, (3) Parse meeting notes for assigned tasks, or (4) Analyze notes and generate tasks for team members. Identifies assignees, looks up account IDs, and creates tasks with proper context."
-version: 0.1.0
 ---
 
 # Capture Tasks from Meeting Notes
@@ -15,7 +14,6 @@ Automatically extract action items from meeting notes and create Jira tasks with
 
 **Use this skill when:** Users have meeting notes with action items that need to become Jira tasks.
 
-version: 0.1.0
 ---
 
 ## Workflow
@@ -53,7 +51,6 @@ If user pastes meeting notes directly:
 
 Ask: "Do you have a Confluence link to the meeting notes, or would you like to paste them directly?"
 
-version: 0.1.0
 ---
 
 ### Step 2: Parse Action Items
@@ -141,7 +138,6 @@ Action Items:
    Context: Product Planning meeting - Dec 3
 ```
 
-version: 0.1.0
 ---
 
 ### Step 3: Ask for Project Key
@@ -163,7 +159,6 @@ getVisibleJiraProjects(
 
 Present: "I found these projects you can create tasks in: PROJ (Project Alpha), PRODUCT (Product Team), ENG (Engineering)"
 
-version: 0.1.0
 ---
 
 ### Step 4: Lookup Account IDs
@@ -221,7 +216,6 @@ Which user should be assigned the task "Create user stories"?
 - If still no match, ask user
 - Cache results (don't lookup same person twice)
 
-version: 0.1.0
 ---
 
 ### Step 5: Present Action Items
@@ -257,7 +251,6 @@ Do NOT create tasks until user confirms. Options:
 - "Change assignee for task 2" → ask for new assignee
 - "Edit description" → ask for changes
 
-version: 0.1.0
 ---
 
 ### Step 6: Create Tasks
@@ -335,7 +328,6 @@ Discussed Q1 roadmap priorities and new feature requirements
 > @Sarah to create user stories for chat feature
 ```
 
-version: 0.1.0
 ---
 
 ### Step 7: Provide Summary
@@ -365,7 +357,6 @@ After all tasks are created, present a comprehensive summary.
 - Link related tickets if applicable
 ```
 
-version: 0.1.0
 ---
 
 ## Action Item Pattern Examples
@@ -382,7 +373,6 @@ version: 0.1.0
 - Assignee: john/sarah/mike
 - Task: update documentation / create the report / review PR #123
 
-version: 0.1.0
 ---
 
 ### Pattern 2: Name + Action Verb
@@ -398,7 +388,6 @@ Lisa needs to test the feature
 - Assignee: name before action verb
 - Task: text after "to/will/should/needs to"
 
-version: 0.1.0
 ---
 
 ### Pattern 3: Structured Action Format
@@ -413,7 +402,6 @@ AI: Mike - review PR #123
 - Assignee: name after "Action:" and before "-"
 - Task: text after "-"
 
-version: 0.1.0
 ---
 
 ### Pattern 4: TODO Format
@@ -428,7 +416,6 @@ TODO: Create report - Sarah
 - Assignee: name in parentheses or after ":"
 - Task: text between TODO and assignee
 
-version: 0.1.0
 ---
 
 ### Pattern 5: Bullet Lists
@@ -443,7 +430,6 @@ version: 0.1.0
 - Assignee: name before ":" or "-" or action verb
 - Task: remaining text
 
-version: 0.1.0
 ---
 
 ## Handling Edge Cases
@@ -469,7 +455,6 @@ Options:
 What would you like to do?
 ```
 
-version: 0.1.0
 ---
 
 ### Mixed Formats
@@ -489,7 +474,6 @@ Should I:
 Which option would you prefer?
 ```
 
-version: 0.1.0
 ---
 
 ### Assignee Name Variations
@@ -503,7 +487,6 @@ These likely refer to the same person. I'll look up "Sarah" once and use
 that account ID for all three mentions. Is that correct?
 ```
 
-version: 0.1.0
 ---
 
 ### Duplicate Action Items
@@ -523,7 +506,6 @@ Should I:
 What would you prefer?
 ```
 
-version: 0.1.0
 ---
 
 ### Long Task Descriptions
@@ -541,7 +523,6 @@ Should I:
 Which would you prefer?
 ```
 
-version: 0.1.0
 ---
 
 ## Tips for High-Quality Results
@@ -575,7 +556,6 @@ Attendees: [Names]
 - etc.
 ```
 
-version: 0.1.0
 ---
 
 ## When NOT to Use This Skill
@@ -591,7 +571,6 @@ This skill is for **converting meeting action items to Jira tasks only**.
 
 **Use only when:** Meeting notes exist and action items need to become Jira tasks.
 
-version: 0.1.0
 ---
 
 ## Examples
@@ -629,7 +608,6 @@ Action Items:
    Assigned to: Lisa Park
 ```
 
-version: 0.1.0
 ---
 
 ### Example 2: Mixed Formats
@@ -653,7 +631,6 @@ Follow-ups:
 3. User → "All, make the last one unassigned"
 4. Create → 4 tasks (3 assigned, 1 unassigned)
 
-version: 0.1.0
 ---
 
 ### Example 3: Name Lookup Issue
@@ -674,7 +651,6 @@ Action Items:
 4. User → "John Smith"
 5. Create → Both tasks assigned correctly
 
-version: 0.1.0
 ---
 
 ## Quick Reference

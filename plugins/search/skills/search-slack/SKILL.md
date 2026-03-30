@@ -4,7 +4,6 @@ description: >
   This skill should be used when the user asks to "search Slack",
   "find a Slack message", "search Slack channels", "find in Slack",
   or needs to search across Slack messages, channels, files, or people.
-version: 0.1.0
 ---
 
 # Slack Search

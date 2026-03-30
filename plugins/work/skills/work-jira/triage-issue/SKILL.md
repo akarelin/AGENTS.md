@@ -1,7 +1,6 @@
 ---
 name: triage-issue
 description: "Intelligently triage bug reports and error messages by searching for duplicates in Jira and offering to create new issues or add comments to existing ones. When an agent needs to: (1) Triage a bug report or error message, (2) Check if an issue is a duplicate, (3) Find similar past issues, (4) Create a new bug ticket with proper context, or (5) Add information to an existing ticket. Searches Jira for similar issues, identifies duplicates, checks fix history, and helps create well-structured bug reports."
-version: 0.1.0
 ---
 
 # Triage Issue
@@ -15,7 +14,6 @@ Automatically triage bug reports and error messages by searching Jira for duplic
 
 **Use this skill when:** Users need to triage error messages, bug reports, or issues to determine if they're duplicates and take appropriate action.
 
-version: 0.1.0
 ---
 
 ## Workflow
@@ -56,7 +54,6 @@ Analyze the bug report or error message to identify search terms.
 - Component: "PaymentProcessor", "refund"
 - Location: "processRefund line 245"
 
-version: 0.1.0
 ---
 
 ### Step 2: Search for Duplicates
@@ -112,7 +109,6 @@ searchJiraIssuesUsingJql(
 - Include resolved issues (might have been reopened or regression)
 - Search across all bug statuses to find fix history
 
-version: 0.1.0
 ---
 
 ### Step 3: Analyze Search Results
@@ -157,7 +153,6 @@ If similar resolved issues are found:
 
 **Present this context** to help with triage decision.
 
-version: 0.1.0
 ---
 
 ### Step 4: Present Findings to User
@@ -233,7 +228,6 @@ No similar open or recent issues found.
 Would you like me to create a new bug ticket for this issue?
 ```
 
-version: 0.1.0
 ---
 
 ### Step 5: Execute User Decision
@@ -279,7 +273,6 @@ addCommentToJiraIssue(
 **Additional Notes:**
 [Any unique aspects of this instance]
 
-version: 0.1.0
 ---
 *Added via triage automation*
 ```
@@ -363,12 +356,10 @@ Use the pattern: `[Component] [Error Type] - [Brief Symptom]`
 [If applicable, reference similar issues found during triage]
 - See also: PROJ-123 (similar but resolved)
 
-version: 0.1.0
 ---
 *Created via automated triage*
 ```
 
-version: 0.1.0
 ---
 
 ### Step 6: Provide Summary
@@ -416,7 +407,6 @@ Type: Bug | Priority: Medium | Status: Open
 - Assign to appropriate team member
 ```
 
-version: 0.1.0
 ---
 
 ## Edge Cases & Troubleshooting
@@ -541,7 +531,6 @@ createJiraIssue(
 )
 ```
 
-version: 0.1.0
 ---
 
 ## Tips for Effective Triage
@@ -593,7 +582,6 @@ version: 0.1.0
 - Lean toward creating new issue (can be closed as duplicate later)
 - Linking issues is better than hiding information
 
-version: 0.1.0
 ---
 
 ## Examples
@@ -673,7 +661,6 @@ This may be a regression of PROJ-234, which was resolved 2 months ago.
 Issue includes reference to original fix for investigation.
 ```
 
-version: 0.1.0
 ---
 
 ## When NOT to Use This Skill
@@ -691,7 +678,6 @@ This skill is for **triaging bugs and errors only**. Do NOT use for:
 ✅ "Has this been reported before?"
 ✅ "Create a bug ticket for this"
 
-version: 0.1.0
 ---
 
 ## Quick Reference

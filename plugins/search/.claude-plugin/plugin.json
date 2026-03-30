@@ -1,8 +1,10 @@
 {
   "name": "search",
-  "description": "Search plugin with sub-skills: Everything (local file search via MCP) and M365 (cross-entity Microsoft 365 search).",
+  "version": "0.1.0",
+  "description": "Search plugin with sub-skills: Everything (local file search via MCP), M365 (cross-entity Microsoft 365 search), and Slack (message/channel/file search).",
   "author": {
     "name": "Alex Karelin"
   },
-  "keywords": ["search", "files", "everything", "voidtools", "m365", "microsoft", "email", "sharepoint", "onedrive"]
+  "keywords": ["search", "files", "everything", "voidtools", "m365", "microsoft", "email", "sharepoint", "onedrive", "slack"],
+  "mcpServers": "./.mcp.json"
 }
