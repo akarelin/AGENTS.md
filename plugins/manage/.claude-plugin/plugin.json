@@ -1,5 +1,6 @@
 {
   "name": "manage",
+  "version": "0.1.2",
   "description": "Admin and management tools with sub-skills: Claude sessions, plugin skills, and M365 tenant administration.",
   "author": {
     "name": "Alex Karelin"

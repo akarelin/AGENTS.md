@@ -5,7 +5,6 @@ description: >
   "triage a folder", "clean up downloads", "sort files", "organize medical scans",
   "process discharge documents", "organize arxiv papers", or wants to
   scan a directory and route files to specialized organizer sub-skills.
-version: 0.1.0
 ---
 
 # Organize Files
@@ -24,6 +23,7 @@ User asks to organize, triage, or clean up a folder — or specifically asks to 
 5. **Wait for approval** before executing anything.
 6. **Execute** each approved organizer.
 7. **Report** what was done, what was skipped, any errors.
+8. **Update log** at `.claude/organize-log.md` in the current working directory. Append a dated entry with what was organized, where files moved, counts. Create the file if it doesn't exist.
 
 ## Sub-skills
 

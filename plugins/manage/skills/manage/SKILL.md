@@ -5,7 +5,6 @@ description: >
   "fix a skill", "patch a plugin", "create a user", "manage M365 tenant",
   "list sessions", "deploy a plugin", "assign license", "audit logs",
   or any administration/management task for sessions, skills, or M365.
-version: 0.1.0
 ---
 
 # Manage

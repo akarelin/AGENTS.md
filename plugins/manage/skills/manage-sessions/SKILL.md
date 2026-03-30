@@ -5,7 +5,6 @@ description: >
   "sync sessions", "list sessions", "resume a session", "clean up sessions",
   "delete empty sessions", or "rename sessions". Manages Claude Code session
   folders across repos and hosts.
-version: 0.1.0
 ---
 
 # Session Manager

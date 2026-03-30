@@ -7,7 +7,6 @@ allowed-tools:
   - Bash
   - Read
   - Skill(get-secret)
-version: 0.1.0
 ---
 
 # /m365 — User Microsoft 365 Operations
@@ -139,5 +138,5 @@ Searches across multiple entity types in a single call via `/search/query`. Defa
 
 - All API calls use Graph beta endpoint
 - The `--user` flag maps to AAD object IDs internally; `/me/` paths are rewritten to `/users/{aad_id}/`
-- Output is JSON (pretty-printed)
+- Output is JSON
 - Requires `msal` and `requests` Python packages

@@ -7,7 +7,6 @@ description: >
   "build a medical vault", or needs to convert medical imaging files
   (CT, ultrasound, echocardiogram, X-ray, discharge instructions)
   into structured Obsidian notes with EN/RU bilingual support.
-version: 0.1.0
 ---
 
 # Medical Scan -> Obsidian Vault Builder
@@ -16,7 +15,7 @@ Convert medical scan images (discharge instructions, diagnostic studies, lab rep
 
 ## Constants
 
-- **Vault dir**: `D:\Dev\_\Ongoing` (hardcoded)
+- **Vault dir**: `D:\_\Ongoing` (hardcoded)
 - **Project name**: Inferred from patient surname + context (e.g., "GGG-Medical"). If the source directory name already looks like a project name, prefer that.
 - **Project folder**: `<vault_dir>/<ProjectName>/`
 

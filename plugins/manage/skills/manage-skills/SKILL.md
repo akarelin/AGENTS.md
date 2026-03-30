@@ -5,7 +5,7 @@ description: >
   Use when the user asks to "fix a skill", "patch a plugin", "update a skill",
   "deploy a plugin", "rebuild plugin", "improve skill", "skill has a bug",
   or references feedback about a skill that needs to be acted on.
-version: 0.2.0
+disable-model-invocation: true
 ---
 
 # Skill Manager

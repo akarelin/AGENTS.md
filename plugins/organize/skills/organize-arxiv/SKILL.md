@@ -4,7 +4,6 @@ description: >
   This skill should be used when the user asks to "organize arxiv papers",
   "rename PDFs", "file research papers", "sort arxiv downloads", or needs
   to identify, rename, tag, and move arxiv PDFs into a structured library.
-version: 0.1.0
 ---
 
 # Arxiv Paper Organizer

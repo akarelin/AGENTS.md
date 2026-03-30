@@ -7,10 +7,9 @@ allowed-tools:
   - Bash
   - Read
   - Skill(get-secret)
-version: 0.1.0
 ---
 
-# /m365-admin — Tenant Administration
+# M365 Tenant Administration
 
 Microsoft 365 tenant administration via Graph beta API with application permissions.
 No user login required — uses client credentials. Full admin: Users, Groups, Teams, Licenses, Directory, Audit, Devices, Security.
@@ -47,7 +46,7 @@ If no arguments, show available commands.
 python3 "${CLAUDE_PLUGIN_ROOT}/scripts/m365_admin.py" users list [--top N]
 python3 "${CLAUDE_PLUGIN_ROOT}/scripts/m365_admin.py" users search "query" [--top N]
 python3 "${CLAUDE_PLUGIN_ROOT}/scripts/m365_admin.py" users get USER_ID_OR_UPN
-python3 "${CLAUDE_PLUGIN_ROOT}/scripts/m365_admin.py" users create --name "Jane Doe" --upn "jane@karelin.com" --password "TempPass123!" [--first Jane] [--last Doe] [--job "Engineer"] [--department "IT"]
+python3 "${CLAUDE_PLUGIN_ROOT}/scripts/m365_admin.py" users create --name "Jane Doe" --upn "jane@example.com" --password "TempPass123!" [--first Jane] [--last Doe] [--job "Engineer"] [--department "IT"]
 python3 "${CLAUDE_PLUGIN_ROOT}/scripts/m365_admin.py" users update USER_ID --json '{"jobTitle":"Sr Engineer"}'
 python3 "${CLAUDE_PLUGIN_ROOT}/scripts/m365_admin.py" users disable USER_ID
 python3 "${CLAUDE_PLUGIN_ROOT}/scripts/m365_admin.py" users enable USER_ID
@@ -124,6 +123,6 @@ python3 "${CLAUDE_PLUGIN_ROOT}/scripts/m365_admin.py" raw POST "/invitations" --
 
 - All API calls use Graph beta endpoint
 - Application permissions (no user context) — operates as the app identity
-- Output is JSON (pretty-printed)
+- Output is JSON
 - Requires `msal` and `requests` Python packages
 - Destructive operations (delete, disable) should be confirmed with the user before execution

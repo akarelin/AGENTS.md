@@ -4,7 +4,6 @@ description: >
   This skill should be used when the user mentions Slack, asks to
   "send a Slack message", "check Slack", "search Slack", "list channels",
   "find a Slack message", "read a thread", or any Slack communication task.
-version: 0.1.0
 ---
 
 # Slack Integration

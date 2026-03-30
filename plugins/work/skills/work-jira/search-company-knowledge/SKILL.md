@@ -1,7 +1,6 @@
 ---
 name: search-company-knowledge
 description: "Search across company knowledge bases (Confluence, Jira, internal docs) to find and explain internal concepts, processes, and technical details. When an agent needs to: (1) Find or search for information about systems, terminology, processes, deployment, authentication, infrastructure, architecture, or technical concepts, (2) Search internal documentation, knowledge base, company docs, or our docs, (3) Explain what something is, how it works, or look up information, or (4) Synthesize information from multiple sources. Searches in parallel and provides cited answers."
-version: 0.1.0
 ---
 
 # Search Company Knowledge
@@ -15,7 +14,6 @@ Search across siloed company knowledge systems (Confluence, Jira, internal docum
 
 **Use this skill when:** Users ask about internal company knowledge that might be documented in Confluence pages, Jira tickets, or internal documentation.
 
-version: 0.1.0
 ---
 
 ## Workflow
@@ -36,7 +34,6 @@ Extract the core search terms from the user's question.
 - Any specific system/component names
 - Technical terms or jargon
 
-version: 0.1.0
 ---
 
 ### Step 2: Execute Parallel Search
@@ -123,7 +120,6 @@ text ~ "deployment" AND created >= -90d
 2. If results are unclear, follow up with targeted searches
 3. If results mention specific pages/tickets, fetch them for details
 
-version: 0.1.0
 ---
 
 ### Step 3: Fetch Detailed Content
@@ -176,7 +172,6 @@ getJiraIssue(
 
 **Don't fetch everything** - be selective based on relevance to user's question.
 
-version: 0.1.0
 ---
 
 ### Step 4: Synthesize Results
@@ -258,7 +253,6 @@ However, I couldn't find information about:
 You may want to check with the DevOps team or search for additional documentation.
 ```
 
-version: 0.1.0
 ---
 
 ### Step 5: Provide Citations
@@ -295,7 +289,6 @@ Always include links to source materials so users can explore further.
 - [Internal architecture doc link if found]
 ```
 
-version: 0.1.0
 ---
 
 ## Search Best Practices
@@ -333,7 +326,6 @@ version: 0.1.0
 - Search for specific error messages or codes
 - Ask user for more context
 
-version: 0.1.0
 ---
 
 ## Handling Common Scenarios
@@ -404,7 +396,6 @@ access to view the full content:
 You may need to access these directly or check your permissions.
 ```
 
-version: 0.1.0
 ---
 
 ## Examples
@@ -518,7 +509,6 @@ These details may exist in tribal knowledge or need to be documented.
 Would you like me to search for more specific aspects of deployment?
 ```
 
-version: 0.1.0
 ---
 
 ## Tips for High-Quality Answers
@@ -540,7 +530,6 @@ version: 0.1.0
 ❌ Overwhelm with too many sources (curate top 5-10)
 ❌ Forget to fetch details when snippets are insufficient
 
-version: 0.1.0
 ---
 
 ## When NOT to Use This Skill
@@ -559,7 +548,6 @@ This skill is for **internal company knowledge only**. Do NOT use for:
 - "What's the weather?" (not knowledge search)
 - "Find a restaurant" (not work-related)
 
-version: 0.1.0
 ---
 
 ## Quick Reference

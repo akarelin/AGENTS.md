@@ -6,7 +6,6 @@ description: >
   "search Jira", "create a status report", "convert spec to backlog",
   "search company docs", "capture tasks from meeting notes", or any
   Jira/Confluence project management task.
-version: 0.1.0
 ---
 
 # Jira / Atlassian Integration

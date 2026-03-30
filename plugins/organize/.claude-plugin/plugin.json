@@ -1,5 +1,6 @@
 {
   "name": "organize",
+  "version": "0.1.2",
   "description": "File organizer with sub-skills: scans folders, identifies files by type, renames/tags/moves them. Includes arxiv paper organizer and medical scan-to-Obsidian processor.",
   "author": {
     "name": "Alex Karelin"

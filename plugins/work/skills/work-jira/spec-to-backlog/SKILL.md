@@ -1,7 +1,6 @@
 ---
 name: spec-to-backlog
 description: "Automatically convert Confluence specification documents into structured Jira backlogs with Epics and implementation tickets. When an agent needs to: (1) Create Jira tickets from a Confluence page, (2) Generate a backlog from a specification, (3) Break down a spec into implementation tasks, or (4) Convert requirements into Jira issues. Handles reading Confluence pages, analyzing specifications, creating Epics with proper structure, and generating detailed implementation tickets linked to the Epic."
-version: 0.1.0
 ---
 
 # Spec to Backlog
@@ -24,7 +23,6 @@ Transform Confluence specification documents into structured Jira backlogs autom
 
 **Why Epic must be created first:** Child tickets need the Epic key to link properly during creation. Creating tickets first will result in orphaned tickets.
 
-version: 0.1.0
 ---
 
 ## Step 1: Fetch Confluence Page
@@ -63,7 +61,6 @@ getConfluencePage(
 
 This returns the page content in Markdown format, which you'll analyze in Step 3.
 
-version: 0.1.0
 ---
 
 ## Step 2: Ask for Project Key
@@ -134,7 +131,6 @@ The skill should intelligently choose issue types based on the specification con
 - Default child issue type (e.g., "Story" or "Task")
 - Bug issue type name if available (e.g., "Bug")
 
-version: 0.1.0
 ---
 
 ## Step 3: Analyze Specification
@@ -177,7 +173,6 @@ Break the work into logical, independently implementable tasks.
 **Use action verbs:**
 - Implement, Create, Build, Add, Design, Integrate, Update, Fix, Optimize, Configure, Deploy, Test, Document
 
-version: 0.1.0
 ---
 
 ## Step 4: Present Breakdown to User
@@ -215,7 +210,6 @@ Shall I create these tickets in [PROJECT KEY]?
 
 If user requests changes, adjust the breakdown and re-present.
 
-version: 0.1.0
 ---
 
 ## Step 5: Create Epic FIRST
@@ -278,7 +272,6 @@ The response will include the Epic's key (e.g., "PROJ-123"). **Save this key**�
 **Confirm Epic creation to user:**
 "✅ Created Epic: PROJ-123 - User Authentication System"
 
-version: 0.1.0
 ---
 
 ## Step 6: Create Child Tickets
@@ -361,7 +354,6 @@ Make them **testable** and **specific**:
 
 Track each created ticket key for the summary.
 
-version: 0.1.0
 ---
 
 ## Step 7: Provide Summary
@@ -407,7 +399,6 @@ https://yoursite.atlassian.net/browse/PROJ-123
 - Schedule work for the upcoming sprint
 ```
 
-version: 0.1.0
 ---
 
 ## Edge Cases & Troubleshooting
@@ -475,7 +466,6 @@ version: 0.1.0
 2. Use `getJiraProjectIssueTypesMetadata` to verify issue type availability
 3. Inform user: "I encountered an error creating tickets: [error message]. This might be due to project permissions or required fields."
 
-version: 0.1.0
 ---
 
 ## Tips for High-Quality Breakdowns
@@ -511,7 +501,6 @@ version: 0.1.0
 - Use "Depends on" or "Blocks" relationships in Jira if available
 - Sequence tickets logically (infrastructure → implementation → testing)
 
-version: 0.1.0
 ---
 
 ## Examples of Good Breakdowns
