@@ -1,0 +1,20 @@
+{
+  "mcpServers": {
+    "Karelin Keys": {
+      "type": "http",
+      "url": "https://mcp.karelin.com/keys"
+    },
+    "Karelin M365": {
+      "type": "http",
+      "url": "https://mcp.karelin.com/m365"
+    },
+    "Karelin M365 Admin": {
+      "type": "http",
+      "url": "https://mcp.karelin.com/m365-admin"
+    },
+    "Karelin Obsidian": {
+      "type": "http",
+      "url": "https://mcp.karelin.com/obsidian"
+    }
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "Karelin M365 Admin": {
+      "type": "streamableHttp",
+      "url": "https://mcp.karelin.com/m365-admin"
+    }
+  }
+}

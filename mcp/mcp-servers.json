@@ -1,0 +1,32 @@
+{
+  "mcpServers": {
+    "Karelin Keys": {
+      "type": "http",
+      "url": "https://mcp.karelin.com/keys",
+      "headers": {
+        "x-api-key": "${MCP_KARELIN_PSK}"
+      }
+    },
+    "Karelin M365": {
+      "type": "http",
+      "url": "https://mcp.karelin.com/m365",
+      "headers": {
+        "x-api-key": "${MCP_KARELIN_PSK}"
+      }
+    },
+    "Karelin M365 Admin": {
+      "type": "http",
+      "url": "https://mcp.karelin.com/m365-admin",
+      "headers": {
+        "x-api-key": "${MCP_KARELIN_PSK}"
+      }
+    },
+    "Karelin Obsidian": {
+      "type": "http",
+      "url": "https://mcp.karelin.com/obsidian",
+      "headers": {
+        "x-api-key": "${MCP_KARELIN_PSK}"
+      }
+    }
+  }
+}

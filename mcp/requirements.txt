@@ -1,0 +1,6 @@
+azure-functions
+msal
+requests
+gppu @ https://github.com/akarelin/gppu/releases/download/gppu%2Fv3.0.1a3/gppu-3.0.1a3-py3-none-any.whl
+azure-identity
+azure-keyvault-secrets

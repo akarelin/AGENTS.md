@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "Karelin Keys": {
+      "type": "streamableHttp",
+      "url": "https://mcp.karelin.com/keys"
+    }
+  }
+}
