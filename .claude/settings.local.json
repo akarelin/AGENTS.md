@@ -73,7 +73,12 @@
       "Read(//tmp/slack-mcp-plugin/skills/slack-messaging/**)",
       "Read(//tmp/slack-mcp-plugin/skills/slack-search/**)",
       "Read(//tmp/slack-mcp-plugin/**)",
-      "WebSearch"
+      "WebSearch",
+      "Bash(for tag:*)",
+      "Bash(do)",
+      "Bash(echo \"Deleting tag $tag from remote...\")",
+      "Bash(echo \"  Failed to delete $tag\")",
+      "Bash(done)"
     ],
     "additionalDirectories": [
       "/mnt/d/SD/.claude",
