@@ -86,8 +86,8 @@ echo "» Rewriting history with git-filter-repo ..."
 git filter-repo \
   --message-callback '
 import re
-# Strip Co-Authored-By lines (case-insensitive) and any leading blank lines they leave behind
-msg = re.sub(rb"\n+[Cc]o-[Aa]uthored-[Bb]y:.*", b"", message)
+# Strip Co-Authored-By lines — handle \r\n, leading whitespace, case variations
+msg = re.sub(rb"[\r\n]+\s*Co-Authored-By:[^\n]*", b"", message, flags=re.IGNORECASE)
 # Clean up trailing whitespace
 return msg.rstrip() + b"\n"
 '
