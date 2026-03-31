@@ -46,8 +46,9 @@ def _load_token_from_kv():
     try:
         token_json = resolve_secret(KV_TOKEN)
         if token_json:
-            json.loads(token_json)  # validate
-            return token_json
+            data = json.loads(token_json)
+            if data.get("refresh_token"):
+                return token_json
     except Exception:
         pass
     return None
