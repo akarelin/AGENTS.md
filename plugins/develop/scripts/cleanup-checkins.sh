@@ -109,19 +109,40 @@ fi
 echo "» Pushing rewritten history ..."
 git remote add origin "$REPO_URL"
 git push --force --all
-git push --force --tags
+TAG_PUSH_LOG="$(mktemp)"
+git push --force --tags 2>&1 | tee "$TAG_PUSH_LOG" || true
+FAILED_TAGS=$(grep -oP '(?<=\[remote rejected\] )\S+(?= ->)' "$TAG_PUSH_LOG" 2>/dev/null || true)
+if [[ -n "$FAILED_TAGS" ]]; then
+  echo "» Warning: some tags failed to push (likely protected):"
+  echo "$FAILED_TAGS" | sed 's/^/    /'
+  echo "  You may need to disable tag protection rules in GitHub settings."
+fi
+rm -f "$TAG_PUSH_LOG"
 
 # ── Recreate GitHub releases ─────────────────────────────────────────────────
 if $DO_RELEASES && [[ ${#RELEASES[@]} -gt 0 ]]; then
   echo "» Recreating ${#RELEASES[@]} GitHub release(s) ..."
+  RELEASE_FAILURES=0
   for tag in "${!RELEASES[@]}"; do
+    # Skip releases whose tags failed to push
+    if echo "$FAILED_TAGS" | grep -qF "$tag" 2>/dev/null; then
+      echo "  Skipping release $tag (tag failed to push)"
+      ((RELEASE_FAILURES++)) || true
+      continue
+    fi
     IFS=$'\x1f' read -r title body <<< "${RELEASES[$tag]}"
     echo "  Deleting release $tag ..."
     gh release delete "$tag" --yes 2>/dev/null || true
     echo "  Creating release $tag ..."
-    gh release create "$tag" --title "$title" --notes "$body"
+    if ! gh release create "$tag" --title "$title" --notes "$body" 2>&1; then
+      echo "  Warning: failed to create release for $tag" >&2
+      ((RELEASE_FAILURES++)) || true
+    fi
   done
-  echo "» Releases recreated under current gh user."
+  if [[ "$RELEASE_FAILURES" -gt 0 ]]; then
+    echo "» Warning: $RELEASE_FAILURES release(s) could not be recreated."
+  fi
+  echo "» Releases done."
 fi
 
 # ── Cleanup ───────────────────────────────────────────────────────────────────
