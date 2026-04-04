@@ -792,5 +792,82 @@ def manage(ctx: click.Context) -> None:
     run_manager(ctx.obj["config"])
 
 
+# ── Session Manager commands (merged from SM) ───────────────────────────────
+
+@cli.command()
+@click.pass_context
+def discover(ctx: click.Context) -> None:
+    """Discover all LLM session logs across all sources."""
+    store = ctx.obj["session_store"]
+    found = store.discover_all(mode="quick")
+    if not found:
+        console.print("[dim]No sessions discovered.[/dim]")
+        return
+
+    from rich.table import Table
+    from collections import Counter
+
+    by_source = Counter(s["source"] for s in found)
+    total_size = sum(s.get("size", 0) for s in found)
+
+    table = Table(title=f"Discovered {len(found)} sessions ({total_size // 1024}K)")
+    table.add_column("Source", max_width=25)
+    table.add_column("Count", justify="right")
+    for src, count in by_source.most_common():
+        table.add_row(src, str(count))
+    console.print(table)
+
+
+@cli.command("deposit")
+@click.argument("path")
+@click.pass_context
+def deposit(ctx: click.Context, path: str) -> None:
+    """Deposit a session JSONL to Langfuse."""
+    store = ctx.obj["session_store"]
+    ok = store.deposit_to_langfuse(path)
+    if ok:
+        console.print(f"[green]✅ Deposited to Langfuse[/green]")
+    else:
+        console.print(f"[red]❌ Failed to deposit[/red]")
+
+
+@cli.command("deposit-all")
+@click.pass_context
+def deposit_all(ctx: click.Context) -> None:
+    """Deposit all discovered sessions to Langfuse."""
+    store = ctx.obj["session_store"]
+    found = store.discover_all(mode="quick")
+    ok = fail = 0
+    for s in found:
+        if store.deposit_to_langfuse(s["path"]):
+            ok += 1
+            console.print(f"  [green]✅[/green] {s['source']}: {s['session_id'][:12]}...")
+        else:
+            fail += 1
+    console.print(f"\n[bold]{ok} deposited, {fail} failed[/bold]")
+
+
+@cli.command("import-chatgpt")
+@click.argument("source")
+@click.option("--output", default="./imported-chatgpt")
+@click.pass_context
+def import_chatgpt_cmd(ctx: click.Context, source: str, output: str) -> None:
+    """Import ChatGPT data export (ZIP or conversations.json)."""
+    store = ctx.obj["session_store"]
+    results = store.import_chatgpt(source, output)
+    console.print(f"[green]Imported {len(results)} conversations → {output}[/green]")
+
+
+@cli.command("import-claude")
+@click.argument("source")
+@click.option("--output", default="./imported-claude")
+@click.pass_context
+def import_claude_cmd(ctx: click.Context, source: str, output: str) -> None:
+    """Import Claude.ai data export (ZIP or JSON)."""
+    store = ctx.obj["session_store"]
+    results = store.import_claude_export(source, output)
+    console.print(f"[green]Imported {len(results)} conversations → {output}[/green]")
+
+
 if __name__ == "__main__":
     cli()
