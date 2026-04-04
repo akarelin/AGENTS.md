@@ -1,0 +1,2 @@
+#!/bin/bash
+exec "/Users/alex/RAN/AI/SessionManager/.venv/bin/python3" "/Users/alex/RAN/AI/SessionManager/scripts/sm-local.py" "$@"

@@ -1,0 +1,4 @@
+langfuse>=4.0
+anthropic[vertex]>=0.89
+textual>=8.0
+gppu>=3.1.0

@@ -1,0 +1,19 @@
+manifest:
+  name: Session Map
+  description: Navigate sessions and projects from user-provided map, transform and sync
+  script: scripts/sm-map.py
+  icon: "\U0001F5FA"
+  modes:
+    default:
+      name: Interactive Navigator
+    scan:
+      name: Scan All Sources
+      args: [scan]
+      inline: true
+    sync:
+      name: Sync to Langfuse
+      args: [sync]
+    associate:
+      name: Auto-Associate Projects
+      args: [associate]
+      inline: true

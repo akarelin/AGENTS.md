@@ -1,0 +1,5 @@
+apps:
+  local: local.yaml
+  map: map.yaml
+  sessions: sessions.yaml
+  tui: tui.yaml

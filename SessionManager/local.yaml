@@ -1,0 +1,19 @@
+# ── SessionManager TUI manifest ──────────────────────────────────────────────
+manifest:
+  name: Local Manager
+  description: Interactive cleanup, merge, health scoring, LLM naming & correlation
+  script: scripts/sm-local.py
+  icon: "\U0001F4BE"
+  modes:
+    default:
+      name: Full Interactive Scan
+    stats:
+      name: Storage Stats
+      args: [stats]
+      inline: true
+    name:
+      name: LLM Auto-Name Sessions
+      args: [name]
+    correlate:
+      name: LLM Find Related Sessions
+      args: [correlate]
