@@ -2,14 +2,6 @@
 
 Stores conversation history so agents can resume across sessions.
 Uses SQLite for DA sessions, gppu.Cache for Claude session cache.
-
-Extended with SessionManager capabilities:
-- Langfuse sync (deposit/withdraw)
-- Thread abstraction (linked chat chains)
-- Folder store (shared folder as DB)
-- Discovery rules (preservator-style YAML)
-- ChatGPT/Claude.ai export import
-- LLM-powered naming and correlation
 """
 
 import json
@@ -196,124 +188,6 @@ class SessionStore:
         sessions = self._claude_cache.get("all_sessions", default=[])
         sessions = [s for s in sessions if s.get("id") != session_id]
         self._claude_cache.set("all_sessions", sessions)
-
-    # --- Langfuse sync ---
-
-    def deposit_to_langfuse(self, session_file: str, langfuse_config: dict | None = None) -> bool:
-        """Deposit a session JSONL to Langfuse."""
-        try:
-            from da.langfuse_sync import parse_session, ship_to_langfuse
-            session = parse_session(Path(session_file))
-            if session["generations"]:
-                ship_to_langfuse(session)
-                return True
-        except Exception:
-            pass
-        return False
-
-    # --- Thread conversion ---
-
-    def to_thread(self, session_id: str) -> "Thread | None":
-        """Convert a DA session to a Thread."""
-        from da.thread import Thread, Chat
-        messages = self.get_messages(session_id)
-        if not messages:
-            return None
-        meta = self.get_session_stats(session_id)
-        t = Thread(
-            id=session_id,
-            name=meta.get("name"),
-            kind="session",
-            source="da",
-        )
-        for msg in messages:
-            t.append(Chat(
-                role=msg["role"],
-                content=msg["content"] if isinstance(msg["content"], str) else json.dumps(msg["content"]),
-            ))
-        return t
-
-    # --- Discovery (preservator-style rules) ---
-
-    def discover_all(self, mode: str = "quick") -> list[dict]:
-        """Discover all LLM session logs using preservator-style rules."""
-        import os
-        import yaml
-        rules_file = Path(__file__).parent / "discovery_rules.yaml"
-        if not rules_file.exists():
-            return []
-        rules = yaml.safe_load(rules_file.read_text()) or {}
-        skip_folders = set(rules.get("skip_folders", []))
-
-        SOURCE_IDS = {
-            ".claude": ("cc", "Claude Code"),
-            ".claude-vertex": ("cc", "Claude Code (Vertex)"),
-            ".openclaw": ("oc", "OpenClaw"),
-            ".codex": ("cx", "Codex"),
-            ".continue": ("ct", "Continue"),
-            ".cursor": ("cu", "Cursor"),
-            ".gemini": ("gm", "Gemini"),
-            ".aider": ("ai", "Aider"),
-            "local-agent-mode-sessions": ("cd", "Claude Desktop"),
-            "imported-chatgpt": ("gpt", "ChatGPT Export"),
-            "imported-claude": ("cl", "Claude.ai Export"),
-        }
-
-        found = []
-        for rule in rules.get("discovery_rules", []):
-            search_mode = rule.get("search", {}).get(mode, "none")
-            if search_mode == "none":
-                continue
-            find = rule.get("find", {})
-            collect = rule.get("collect", {})
-            if find.get("type") != "folder_name":
-                continue
-
-            home = Path.home()
-            for folder_name in find.get("patterns", []):
-                candidates = []
-                direct = home / folder_name
-                if direct.exists():
-                    candidates.append(direct)
-                for app_dir in [home / "Library" / "Application Support", home / ".local" / "share"]:
-                    if app_dir.exists():
-                        for dirpath, dirnames, _ in os.walk(app_dir):
-                            depth = str(dirpath).count(os.sep) - str(app_dir).count(os.sep)
-                            if depth >= 3:
-                                dirnames.clear()
-                                continue
-                            dirnames[:] = [d for d in dirnames if d not in skip_folders]
-                            if folder_name in dirnames:
-                                candidates.append(Path(dirpath) / folder_name)
-
-                for folder in candidates:
-                    for pattern in collect.get("patterns", ["*.jsonl"]):
-                        for f in folder.rglob(pattern):
-                            if not f.is_file():
-                                continue
-                            if any(exc in f.name for exc in collect.get("exclude", [])):
-                                continue
-                            src_id, src_name = SOURCE_IDS.get(folder_name, ("??", "Unknown"))
-                            found.append({
-                                "source": src_name,
-                                "source_id": src_id,
-                                "path": str(f),
-                                "size": f.stat().st_size,
-                                "session_id": f.stem,
-                            })
-        return found
-
-    # --- Import exports ---
-
-    def import_chatgpt(self, source_path: str, output_dir: str = "./imported-chatgpt") -> list[dict]:
-        """Import ChatGPT data export."""
-        from da.importers import import_chatgpt
-        return import_chatgpt(source_path, output_dir)
-
-    def import_claude_export(self, source_path: str, output_dir: str = "./imported-claude") -> list[dict]:
-        """Import Claude.ai data export."""
-        from da.importers import import_claude
-        return import_claude(source_path, output_dir)
 
     def close(self):
         self.conn.close()

@@ -1,4 +1,4 @@
-anthropic[vertex]>=0.40.0
+anthropic>=0.40.0
 click>=8.0.0
 rich>=13.0.0
 pyyaml>=6.0
@@ -7,5 +7,4 @@ paramiko>=3.0.0
 python-dotenv>=1.0.0
 prompt_toolkit>=3.0.0
 textual>=3.0.0
-langfuse>=4.0
 gppu @ https://github.com/akarelin/gppu/releases/download/gppu/latest/gppu-latest-py3-none-any.whl
