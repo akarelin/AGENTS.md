@@ -78,7 +78,9 @@
       "Bash(do)",
       "Bash(echo \"Deleting tag $tag from remote...\")",
       "Bash(echo \"  Failed to delete $tag\")",
-      "Bash(done)"
+      "Bash(done)",
+      "Bash(gh org:*)",
+      "Bash(gh repo:*)"
     ],
     "additionalDirectories": [
       "/mnt/d/SD/.claude",
