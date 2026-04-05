@@ -1,36 +1,36 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "akarelin-skills",
-  "description": "Personal productivity plugins for Claude Code — file organization, search, workplace tools, and administration.",
+  "description": "Personal productivity plugins for Claude Code — agentic cognition, file organization, workplace tools, and administration.",
   "owner": {
     "name": "Alex Karelin",
     "email": "alex@karelin.ai"
   },
   "plugins": [
     {
+      "name": "ac",
+      "description": "Agentic Cognition — foundational tools: memory (get/set/save), search-knowledge (scoped), sessions, skills, agents, learning.",
+      "source": "./plugins/ac",
+      "category": "development",
+      "homepage": "https://github.com/akarelin/AGENTS.md/tree/master/plugins/ac"
+    },
+    {
       "name": "organize",
-      "description": "File organizer with sub-skills: arxiv paper organizer and medical scan-to-Obsidian processor.",
+      "description": "File organizer with sub-skills: arxiv paper organizer, scan processors (medical-to-Obsidian).",
       "source": "./plugins/organize",
       "category": "productivity",
       "homepage": "https://github.com/akarelin/AGENTS.md/tree/master/plugins/organize"
     },
     {
       "name": "work",
-      "description": "Workplace tools with sub-skills: M365 (Mail, Calendar, Teams, Files, Tasks), Slack (MCP), and Jira/Confluence (MCP).",
+      "description": "Workplace tools: M365 (Mail, Calendar, Teams, Files, Tasks), Google (Gmail, Drive), Slack (MCP), Atlassian (Jira/Confluence MCP).",
       "source": "./plugins/work",
       "category": "productivity",
       "homepage": "https://github.com/akarelin/AGENTS.md/tree/master/plugins/work"
     },
     {
-      "name": "search",
-      "description": "Search with sub-skills: Everything (local file search via MCP), M365 (cross-entity search), and Slack (messages, channels, files).",
-      "source": "./plugins/search",
-      "category": "productivity",
-      "homepage": "https://github.com/akarelin/AGENTS.md/tree/master/plugins/search"
-    },
-    {
       "name": "manage",
-      "description": "Admin tools with sub-skills: Claude sessions, plugin skills, and M365 tenant administration.",
+      "description": "M365 tenant administration: Users, Groups, Teams, Licenses, Audit, Security.",
       "source": "./plugins/manage",
       "category": "development",
       "homepage": "https://github.com/akarelin/AGENTS.md/tree/master/plugins/manage"
