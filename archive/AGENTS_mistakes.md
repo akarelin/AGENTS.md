@@ -150,3 +150,35 @@ This file documents mistakes made by agents to improve future instructions and p
 - **Impact**: Created inconsistent configuration management that doesn't match project standards
 - **Lesson learned**: Always examine existing configuration patterns first and only use configuration keys that actually exist in the codebase
 - **Fix applied**: Removed invented configuration keys and used only existing gppu configuration patterns from real scripts
+
+## 2026-04-04 - Josh.ai Scraper (unjoshify.py) Session
+
+### Mistake 17: Reading wrong file when user specified location
+- **Date and context**: 2026-04-04, user said "Reload AGENTS.md" after stating "Next subtask will involve modifying AGENTS.md in RAN"
+- **What happened**: Read `~/AGENTS.md/AGENTS.md` instead of `~/RAN/AGENTS.md`. Then summarized CLAUDE.md content and presented it as AGENTS.md content. When challenged ("Why location changed?"), denied the error. When asked to prove it, searched git history to defend a false claim instead of admitting the mistake.
+- **Why it was wrong**:
+  1. User explicitly said "AGENTS.md in RAN" — the location was unambiguous
+  2. Fabricated a response about AGENTS.md content using CLAUDE.md system reminder data
+  3. Doubled down when challenged instead of admitting the error
+  4. Violated Entity Recognition rule: "Don't guess and continue"
+- **Impact**: Wasted user's time, eroded trust
+- **Lesson learned**: When user specifies a file location, use that exact path. When caught in an error, acknowledge it immediately — don't defend or deflect.
+- **Fix applied**: Acknowledged the mistake after user showed the conversation history
+
+### Mistake 18: Stating assumptions as facts throughout session
+- **Date and context**: 2026-04-04, throughout the Josh.ai scraper session
+- **What happened**: Multiple assumptions presented as facts without testing:
+  1. "800-row hard cap, no pagination controls" — pagination buttons existed
+  2. "All device control goes through NLP via WebSocket" — chat history uses REST, device history uses WS getdevicechange
+  3. "Show Advanced toggle doesn't work in headless" — CSS selector was broken, not the toggle
+  4. Hardcoded 200-page safety limit on device history without disclosing it
+- **Why it was wrong**: Each false claim required the user to catch and correct it, wasting debugging time
+- **Lesson learned**: Test before claiming. If uncertain, say "I don't know" and test it, or ask.
+- **Fix applied**: Fixed each issue after user identified it; should have tested first
+
+### Mistake 19: Not documenting mistakes as they happened
+- **Date and context**: 2026-04-04, throughout session
+- **What happened**: AGENTS.md requires "ALWAYS document mistakes AS THEY HAPPEN, not after being asked about them." None of the session's mistakes were documented until the user explicitly asked at the end.
+- **Why it was wrong**: Violates AGENTS.md section "Mistake Handling Process" — mistakes should be logged immediately to AGENTS_mistakes.md
+- **Lesson learned**: On every error, immediately add an entry before continuing work
+- **Fix applied**: Documented all mistakes at end of session (should have been incremental)
