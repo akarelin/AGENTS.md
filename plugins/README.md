@@ -25,6 +25,7 @@ Personal productivity plugins for Claude Code.
 | **organize** | organize-arxiv, medical-scan-obsidian | File organizer (arxiv papers, medical scans) |
 | **work** | work-m365, work-slack, work-jira | Workplace: M365, Slack (MCP), Jira/Confluence (MCP) |
 | **search** | search-everything, search-m365 | File search (Everything MCP) + M365 unified search |
+| **dex** | dex-neo4j, dex-sql | Data exploration: Neo4j (Cypher) + relational DBs via DBHub (SQL) |
 | **manage** | manage-sessions, manage-skills, manage-m365 | Sessions, plugins, M365 tenant admin |
 
 ## Plugin Details
@@ -41,6 +42,10 @@ Personal productivity plugins for Claude Code.
 ### search
 - **search-everything** — voidtools Everything MCP (16 tools, Windows). Also available as MCPB desktop extension.
 - **search-m365** — Cross-entity M365 search (emails, files, events, chat, SharePoint)
+
+### dex
+- **dex-neo4j** — Neo4j graph exploration via Karelin Neo4j MCP: schema, Cypher queries, auto-discovers servers from Key Vault
+- **dex-sql** — Relational DB exploration via DBHub MCP: PostgreSQL, MySQL, SQLite, SQL Server
 
 ### manage
 - **manage-sessions** — Claude Code sessions: sync, list, resume, rename, cleanup

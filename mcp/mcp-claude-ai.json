@@ -15,6 +15,10 @@
     "Karelin Obsidian": {
       "type": "http",
       "url": "https://mcp.karelin.com/obsidian"
+    },
+    "Karelin Neo4j": {
+      "type": "http",
+      "url": "https://mcp.karelin.com/neo4j"
     }
   }
 }

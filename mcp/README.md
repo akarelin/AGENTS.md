@@ -1,6 +1,6 @@
 # MCP Server — mcp.karelin.com
 
-Four MCP endpoints: M365 Graph API, Azure Key Vault, and Obsidian vault access.
+Five MCP endpoints: M365 Graph API, Azure Key Vault, Obsidian vault access, and Neo4j graph database.
 
 **Auth:** OAuth 2.0 PKCE (claude.ai) or `x-api-key` header (Claude Code)
 
@@ -90,6 +90,18 @@ Tries hosts in order: alex-laptop, alex-mac, alex-pc (port 27123). Requires Obsi
 | `vault_daily` | Get today's daily note | |
 | `vault_daily_append` | Append to today's daily note | content |
 
+## /neo4j — Neo4j Graph Database (5 tools)
+
+Auto-discovers Neo4j servers from Key Vault (secrets matching `neo4j-*-uri` / `neo4j-*-password`).
+
+| Tool | Description | Parameters |
+|------|-------------|------------|
+| `neo4j_list_servers` | List available Neo4j servers (auto-discovered from Key Vault) | |
+| `neo4j_use_server` | Select which Neo4j server to use for subsequent queries | server |
+| `read_neo4j_cypher` | Execute a read-only Cypher query | query, params? |
+| `write_neo4j_cypher` | Execute a write Cypher query | query, params? |
+| `get_neo4j_schema` | Get graph schema (labels, relationship types, properties) | |
+
 ## Connect from Claude Code
 
 ```json
@@ -98,7 +110,8 @@ Tries hosts in order: alex-laptop, alex-mac, alex-pc (port 27123). Requires Obsi
     "Karelin Keys":       {"type": "http", "url": "https://mcp.karelin.com/keys",       "headers": {"x-api-key": "${MCP_KARELIN_PSK}"}},
     "Karelin M365":       {"type": "http", "url": "https://mcp.karelin.com/m365",       "headers": {"x-api-key": "${MCP_KARELIN_PSK}"}},
     "Karelin M365 Admin": {"type": "http", "url": "https://mcp.karelin.com/m365-admin", "headers": {"x-api-key": "${MCP_KARELIN_PSK}"}},
-    "Karelin Obsidian":   {"type": "http", "url": "https://mcp.karelin.com/obsidian",   "headers": {"x-api-key": "${MCP_KARELIN_PSK}"}}
+    "Karelin Obsidian":   {"type": "http", "url": "https://mcp.karelin.com/obsidian",   "headers": {"x-api-key": "${MCP_KARELIN_PSK}"}},
+    "Karelin Neo4j":      {"type": "http", "url": "https://mcp.karelin.com/neo4j",      "headers": {"x-api-key": "${MCP_KARELIN_PSK}"}}
   }
 }
 ```

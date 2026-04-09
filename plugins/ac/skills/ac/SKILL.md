@@ -15,7 +15,8 @@ Foundational tools for agent self-management. These are primitives consumed by o
 | Tool | Scope | Description |
 |------|-------|-------------|
 | memory | my/team/project/company | Get, set, save — persist and recall facts, secrets, state |
-| search-knowledge | my/team/project/company | Search across providers (Obsidian, m365, Everything, Atlassian) |
+| search-knowledge | my/team/project/company | Search across providers (Obsidian, m365, Everything, Atlassian, Neo4j) |
+| dex | — | Data exploration: Neo4j graph (Cypher) and relational DBs (SQL) |
 | session | — | Sync, list, resume, rename, delete Claude Code sessions |
 | skill | — | Patch, test, deploy skills |
 | agent | — | Agent coordination (stub) |
@@ -25,6 +26,7 @@ Foundational tools for agent self-management. These are primitives consumed by o
 
 - **"remember this", "save this", "where does X go", secrets** → memory
 - **"search for", "find", "look up"** → search-knowledge
+- **"query database", "explore data", "cypher", "SQL"** → dex
 - **"list sessions", "resume session", "sync"** → session
 - **"fix skill", "deploy plugin", "patch"** → skill
 - **agent coordination** → agent

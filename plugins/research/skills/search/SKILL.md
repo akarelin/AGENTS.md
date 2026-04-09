@@ -16,8 +16,8 @@ Single tool for searching across providers, parameterized by scope and provider.
 
 | Scope | Providers | What's searched |
 |-------|-----------|-----------------|
-| my | Obsidian, m365, Everything | Personal vault, personal email/OneDrive/calendar, local files |
-| team | m365, Atlassian | Teams channels, shared drives, team Jira/Confluence |
+| my | Obsidian, m365, Everything, Neo4j | Personal vault, personal email/OneDrive/calendar, local files, knowledge graph |
+| team | m365, Atlassian, Neo4j | Teams channels, shared drives, team Jira/Confluence, knowledge graph |
 | project | m365, Atlassian | Project SharePoint, project Jira board/Confluence space |
 | company | m365, Atlassian | Company-wide M365, all Confluence + Jira |
 
@@ -38,6 +38,7 @@ Detect scope from context:
 | m365 | Graph API search via work-m365 script |
 | Everything | MCP server `mcp-everything-search` (my scope only) |
 | Atlassian | Atlassian MCP — Rovo Search, CQL, JQL |
+| Neo4j | Karelin Neo4j MCP — Cypher queries on knowledge graph (my, team scopes) |
 
 ## Workflow
 

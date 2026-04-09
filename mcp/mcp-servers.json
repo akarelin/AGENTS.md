@@ -27,6 +27,13 @@
       "headers": {
         "x-api-key": "${MCP_KARELIN_PSK}"
       }
+    },
+    "Karelin Neo4j": {
+      "type": "http",
+      "url": "https://mcp.karelin.com/neo4j",
+      "headers": {
+        "x-api-key": "${MCP_KARELIN_PSK}"
+      }
     }
   }
 }
