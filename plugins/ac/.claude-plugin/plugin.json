@@ -1,9 +1,0 @@
-{
-  "name": "ac",
-  "version": "0.1.0",
-  "description": "Agentic Cognition — foundational tools for memory, search, sessions, skills, agents, and learning. Primitives consumed by other plugins.",
-  "author": {
-    "name": "Alex Karelin"
-  },
-  "keywords": ["ac", "memory", "search", "session", "skill", "agent", "learn", "cognition"]
-}

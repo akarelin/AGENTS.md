@@ -1,6 +1,0 @@
-{
-  "search-everything": {
-    "command": "uvx",
-    "args": ["mcp-everything-search"]
-  }
-}

@@ -14,10 +14,10 @@ Search and data exploration across all connected sources.
 
 | Tool | Description |
 |------|-------------|
-| search-knowledge | Search across providers (Obsidian, m365, Everything, Atlassian, Neo4j) |
-| dex | Interactive data exploration: Neo4j (Cypher) and relational DBs (SQL) |
+| search | Search across providers (Obsidian, m365, Everything, Atlassian, Neo4j) |
+| data | Interactive data exploration: Neo4j (Cypher) and relational DBs (SQL) |
 
 ## Routing
 
-- **"search for", "find", "look up", "where is"** → search-knowledge
-- **"query", "explore data", "schema", "cypher", "SQL", "database"** → dex
+- **"search for", "find", "look up", "where is"** → search
+- **"query", "explore data", "schema", "cypher", "SQL", "database"** → data

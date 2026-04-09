@@ -1,5 +1,5 @@
 ---
-name: manage-m365
+name: admin-m365
 description: "Microsoft 365 tenant administration via Graph beta API. Use when the user mentions: create user, delete user, reset password, add to group, remove from group, invite guest, manage team, assign license, audit log, sign-in logs, directory roles, security alerts, secure score, list users, list groups, manage devices, tenant admin."
 user-invocable: true
 argument-hint: "<command> [subcommand] [options]"

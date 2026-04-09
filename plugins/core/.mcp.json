@@ -1,0 +1,7 @@
+{
+  "Karelin Keys": {
+    "type": "http",
+    "url": "https://mcp.karelin.ai/keys",
+    "headers": {"x-api-key": "${MCP_KARELIN_PSK}"}
+  }
+}

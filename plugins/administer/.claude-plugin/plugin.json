@@ -1,0 +1,9 @@
+{
+  "name": "administer",
+  "version": "0.1.0",
+  "description": "Cloud and tenant administration: M365 tenant admin and GCP resource management.",
+  "author": {
+    "name": "Alex Karelin"
+  },
+  "keywords": ["admin", "m365", "gcp", "google-cloud", "tenant", "users", "groups", "iam", "compute"]
+}

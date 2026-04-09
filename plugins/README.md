@@ -12,42 +12,51 @@ Personal productivity plugins for Claude Code.
 /plugin marketplace list akarelin-skills
 
 # Install individual plugins
-/plugin install organize@akarelin-skills
+/plugin install core@akarelin-skills
+/plugin install research@akarelin-skills
 /plugin install work@akarelin-skills
-/plugin install search@akarelin-skills
+/plugin install organize@akarelin-skills
 /plugin install manage@akarelin-skills
+/plugin install administer@akarelin-skills
 ```
 
-## Available Plugins (4)
+## Available Plugins (6)
 
 | Plugin | Sub-skills | Description |
 |--------|-----------|-------------|
-| **organize** | organize-arxiv, medical-scan-obsidian | File organizer (arxiv papers, medical scans) |
-| **work** | work-m365, work-slack, work-jira | Workplace: M365, Slack (MCP), Jira/Confluence (MCP) |
-| **search** | search-everything, search-m365 | File search (Everything MCP) + M365 unified search |
-| **dex** | dex-neo4j, dex-sql | Data exploration: Neo4j (Cypher) + relational DBs via DBHub (SQL) |
-| **manage** | manage-sessions, manage-skills, manage-m365 | Sessions, plugins, M365 tenant admin |
+| **core** | memory, session, skill, agent, learn | Agent primitives: memory, sessions, skill management |
+| **research** | search, data (data-neo4j, data-sql) | Search + data exploration: knowledge search, Neo4j, SQL |
+| **work** | work-m365, work-slack, work-atlassian | Workplace: M365, Slack (MCP), Jira/Confluence (MCP) |
+| **organize** | organize-arxiv, organize-scan-medical | File organizer (arxiv papers, medical scans) |
+| **manage** | session, skill | Session and skill management |
+| **administer** | admin-m365, admin-gcp | Cloud admin: M365 tenant + GCP resources |
 
 ## Plugin Details
 
-### organize
-- **organize-arxiv** — arxiv PDFs: identify, fetch metadata, rename, move to library
-- **medical-scan-obsidian** — medical scans → bilingual EN/RU Obsidian vault
+### core
+- **memory** — Persist and recall facts, secrets, state across sessions
+- **session** — Claude Code sessions: sync, list, resume, rename, cleanup
+- **skill** — Plugin skills: review feedback, patch, test, rebuild, deploy
+
+### research
+- **search** — Multi-provider search (Obsidian, m365, Everything, Atlassian, Neo4j) scoped by ownership
+- **data** — Interactive data exploration
+  - **data-neo4j** — Neo4j graph via Neo4j MCP: schema, Cypher queries, auto-discovers servers from Key Vault
+  - **data-sql** — Relational DBs via DBHub MCP: PostgreSQL, MySQL, SQLite, SQL Server
 
 ### work
-- **work-m365** — M365 via Graph API: Mail, Calendar, Teams, Files, Tasks, Contacts, Presence (CLI)
+- **work-m365** — M365 via Graph API: Mail, Calendar, Teams, Files, Tasks, Contacts, Presence
 - **work-slack** — Slack via official MCP (mcp.slack.com, OAuth): messaging, search, channels, threads
-- **work-jira** — Jira + Confluence via Atlassian MCP: triage, meeting notes, status reports, spec→backlog, knowledge search
+- **work-atlassian** — Jira + Confluence via Atlassian MCP: triage, meeting notes, status reports, spec→backlog
 
-### search
-- **search-everything** — voidtools Everything MCP (16 tools, Windows). Also available as MCPB desktop extension.
-- **search-m365** — Cross-entity M365 search (emails, files, events, chat, SharePoint)
-
-### dex
-- **dex-neo4j** — Neo4j graph exploration via Karelin Neo4j MCP: schema, Cypher queries, auto-discovers servers from Key Vault
-- **dex-sql** — Relational DB exploration via DBHub MCP: PostgreSQL, MySQL, SQLite, SQL Server
+### organize
+- **organize-arxiv** — arxiv PDFs: identify, fetch metadata, rename, move to library
+- **organize-scan-medical** — medical scans → bilingual EN/RU Obsidian vault
 
 ### manage
-- **manage-sessions** — Claude Code sessions: sync, list, resume, rename, cleanup
-- **manage-skills** — Plugin skills: review feedback, patch, test, rebuild, deploy
-- **manage-m365** — M365 tenant admin: Users, Groups, Teams, Licenses, Audit, Security
+- **session** — Claude Code sessions: sync, list, resume, rename, cleanup
+- **skill** — Plugin skills: review feedback, patch, test, rebuild, deploy
+
+### administer
+- **admin-m365** — M365 tenant admin: Users, Groups, Teams, Licenses, Audit, Security
+- **admin-gcp** — GCP administration: Projects, Compute, IAM, Storage, Cloud Run, Secrets

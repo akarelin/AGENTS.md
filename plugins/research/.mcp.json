@@ -1,0 +1,25 @@
+{
+  "Neo4j": {
+    "type": "http",
+    "url": "https://mcp.karelin.ai/neo4j",
+    "headers": {"x-api-key": "${MCP_KARELIN_PSK}"}
+  },
+  "Obsidian": {
+    "type": "http",
+    "url": "https://mcp.karelin.ai/obsidian",
+    "headers": {"x-api-key": "${MCP_KARELIN_PSK}"}
+  },
+  "M365": {
+    "type": "http",
+    "url": "https://mcp.karelin.ai/m365",
+    "headers": {"x-api-key": "${MCP_KARELIN_PSK}"}
+  },
+  "atlassian": {
+    "type": "http",
+    "url": "https://mcp.atlassian.com/v1/mcp"
+  },
+  "search-everything": {
+    "command": "uvx",
+    "args": ["mcp-everything-search"]
+  }
+}

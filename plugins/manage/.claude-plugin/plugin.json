@@ -1,9 +1,9 @@
 {
   "name": "manage",
-  "version": "0.1.2",
-  "description": "Admin and management tools with sub-skills: Claude sessions, plugin skills, and M365 tenant administration.",
+  "version": "0.2.0",
+  "description": "Session and skill management: sync, list, resume, patch, test, deploy.",
   "author": {
     "name": "Alex Karelin"
   },
-  "keywords": ["manage", "admin", "sessions", "skills", "plugins", "m365", "tenant", "users", "groups", "licenses"]
+  "keywords": ["manage", "sessions", "skills", "plugins"]
 }

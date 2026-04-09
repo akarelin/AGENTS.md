@@ -15,7 +15,7 @@ Interactive exploration of graph and relational databases via MCP.
 
 | Skill | Database | MCP Connection |
 |-------|----------|----------------|
-| data-neo4j | Neo4j graph databases | Karelin Neo4j (`mcp.karelin.com/neo4j`) |
+| data-neo4j | Neo4j graph databases | Neo4j (`mcp.karelin.ai/neo4j`) |
 | data-sql | Relational databases (PostgreSQL, MySQL, SQLite) | DBHub (`dbhub`) |
 
 ## Routing

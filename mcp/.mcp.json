@@ -2,28 +2,28 @@
   "mcpServers": {
     "Karelin Keys": {
       "type": "http",
-      "url": "https://mcp.karelin.com/keys",
+      "url": "https://mcp.karelin.ai/keys",
       "headers": {
         "x-api-key": "${MCP_KARELIN_PSK}"
       }
     },
-    "Karelin M365": {
+    "M365": {
       "type": "http",
-      "url": "https://mcp.karelin.com/m365",
+      "url": "https://mcp.karelin.ai/m365",
       "headers": {
         "x-api-key": "${MCP_KARELIN_PSK}"
       }
     },
-    "Karelin M365 Admin": {
+    "M365 Admin": {
       "type": "http",
-      "url": "https://mcp.karelin.com/m365-admin",
+      "url": "https://mcp.karelin.ai/m365-admin",
       "headers": {
         "x-api-key": "${MCP_KARELIN_PSK}"
       }
     },
-    "Karelin Obsidian": {
+    "Obsidian": {
       "type": "http",
-      "url": "https://mcp.karelin.com/obsidian",
+      "url": "https://mcp.karelin.ai/obsidian",
       "headers": {
         "x-api-key": "${MCP_KARELIN_PSK}"
       }

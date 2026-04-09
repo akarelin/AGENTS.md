@@ -2,23 +2,23 @@
   "mcpServers": {
     "Karelin Keys": {
       "type": "http",
-      "url": "https://mcp.karelin.com/keys"
+      "url": "https://mcp.karelin.ai/keys"
     },
-    "Karelin M365": {
+    "M365": {
       "type": "http",
-      "url": "https://mcp.karelin.com/m365"
+      "url": "https://mcp.karelin.ai/m365"
     },
-    "Karelin M365 Admin": {
+    "M365 Admin": {
       "type": "http",
-      "url": "https://mcp.karelin.com/m365-admin"
+      "url": "https://mcp.karelin.ai/m365-admin"
     },
-    "Karelin Obsidian": {
+    "Obsidian": {
       "type": "http",
-      "url": "https://mcp.karelin.com/obsidian"
+      "url": "https://mcp.karelin.ai/obsidian"
     },
-    "Karelin Neo4j": {
+    "Neo4j": {
       "type": "http",
-      "url": "https://mcp.karelin.com/neo4j"
+      "url": "https://mcp.karelin.ai/neo4j"
     }
   }
 }

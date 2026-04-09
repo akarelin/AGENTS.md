@@ -1,4 +1,4 @@
-# MCP Server — mcp.karelin.com
+# MCP Server — mcp.karelin.ai
 
 Five MCP endpoints: M365 Graph API, Azure Key Vault, Obsidian vault access, and Neo4j graph database.
 
@@ -107,11 +107,11 @@ Auto-discovers Neo4j servers from Key Vault (secrets matching `neo4j-*-uri` / `n
 ```json
 {
   "mcpServers": {
-    "Karelin Keys":       {"type": "http", "url": "https://mcp.karelin.com/keys",       "headers": {"x-api-key": "${MCP_KARELIN_PSK}"}},
-    "Karelin M365":       {"type": "http", "url": "https://mcp.karelin.com/m365",       "headers": {"x-api-key": "${MCP_KARELIN_PSK}"}},
-    "Karelin M365 Admin": {"type": "http", "url": "https://mcp.karelin.com/m365-admin", "headers": {"x-api-key": "${MCP_KARELIN_PSK}"}},
-    "Karelin Obsidian":   {"type": "http", "url": "https://mcp.karelin.com/obsidian",   "headers": {"x-api-key": "${MCP_KARELIN_PSK}"}},
-    "Karelin Neo4j":      {"type": "http", "url": "https://mcp.karelin.com/neo4j",      "headers": {"x-api-key": "${MCP_KARELIN_PSK}"}}
+    "Karelin Keys":       {"type": "http", "url": "https://mcp.karelin.ai/keys",       "headers": {"x-api-key": "${MCP_KARELIN_PSK}"}},
+    "M365":       {"type": "http", "url": "https://mcp.karelin.ai/m365",       "headers": {"x-api-key": "${MCP_KARELIN_PSK}"}},
+    "M365 Admin": {"type": "http", "url": "https://mcp.karelin.ai/m365-admin", "headers": {"x-api-key": "${MCP_KARELIN_PSK}"}},
+    "Obsidian":   {"type": "http", "url": "https://mcp.karelin.ai/obsidian",   "headers": {"x-api-key": "${MCP_KARELIN_PSK}"}},
+    "Neo4j":      {"type": "http", "url": "https://mcp.karelin.ai/neo4j",      "headers": {"x-api-key": "${MCP_KARELIN_PSK}"}}
   }
 }
 ```

@@ -1,4 +1,9 @@
 {
+  "M365": {
+    "type": "http",
+    "url": "https://mcp.karelin.ai/m365",
+    "headers": {"x-api-key": "${MCP_KARELIN_PSK}"}
+  },
   "slack": {
     "type": "http",
     "url": "https://mcp.slack.com/mcp",

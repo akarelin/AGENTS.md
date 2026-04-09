@@ -2,7 +2,7 @@
   "mcpServers": {
     "Karelin M365": {
       "type": "streamableHttp",
-      "url": "https://mcp.karelin.com/m365"
+      "url": "https://mcp.karelin.ai/m365"
     }
   }
 }

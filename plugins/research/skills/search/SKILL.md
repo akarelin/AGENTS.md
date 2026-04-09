@@ -1,5 +1,5 @@
 ---
-name: search-knowledge
+name: search
 description: >
   Search across knowledge sources scoped by ownership level.
   Use when the user says "search for", "find", "look up", "where is",
@@ -38,7 +38,7 @@ Detect scope from context:
 | m365 | Graph API search via work-m365 script |
 | Everything | MCP server `mcp-everything-search` (my scope only) |
 | Atlassian | Atlassian MCP — Rovo Search, CQL, JQL |
-| Neo4j | Karelin Neo4j MCP — Cypher queries on knowledge graph (my, team scopes) |
+| Neo4j | Neo4j MCP — Cypher queries on knowledge graph (my, team scopes) |
 
 ## Workflow
 

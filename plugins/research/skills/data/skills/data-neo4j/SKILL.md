@@ -7,16 +7,16 @@ description: >
 
 # Neo4j Data Exploration
 
-Interactive Neo4j graph database exploration via Karelin Neo4j MCP.
+Interactive Neo4j graph database exploration via Neo4j MCP.
 
 ## MCP Connection
 
-Uses the Karelin Neo4j endpoint (auto-discovers servers from Key Vault):
+Uses the Neo4j endpoint (auto-discovers servers from Key Vault):
 ```json
 {
-  "Karelin Neo4j": {
+  "Neo4j": {
     "type": "http",
-    "url": "https://mcp.karelin.com/neo4j",
+    "url": "https://mcp.karelin.ai/neo4j",
     "headers": {"x-api-key": "${MCP_KARELIN_PSK}"}
   }
 }

@@ -1,24 +1,24 @@
 ---
 name: manage
 description: >
-  This skill should be used when the user asks to "create a user",
-  "manage M365 tenant", "assign license", "audit logs",
-  or any M365 tenant administration task.
-  Note: sessions and skills are now under AC plugin.
+  This skill should be used when the user asks to manage Claude Code sessions
+  (list, resume, sync, rename, cleanup) or manage plugins/skills
+  (patch, test, deploy, review feedback).
 ---
 
 # Manage
 
-M365 tenant administration.
+Session and skill management.
 
 ## Sub-skills
 
-| Sub-skill | Scope |
-|-----------|-------|
-| manage-m365 | M365 tenant admin: Users, Groups, Teams, Licenses, Audit, Security |
+| Sub-skill | Description |
+|-----------|-------------|
+| session | Claude Code sessions: sync, list, resume, rename, cleanup |
+| skill | Plugin skills: review feedback, patch, test, rebuild, deploy |
 
 ## Routing
 
-- **M365 admin** (users, groups, teams, licenses, audit, security) → `manage-m365`
-- **Sessions** → use AC `session` tool
-- **Skills/plugins** → use AC `skill` tool
+- **"list sessions", "resume session", "sync sessions"** → session
+- **"fix skill", "deploy plugin", "patch skill"** → skill
+- **M365/GCP admin** → use `administer` plugin instead

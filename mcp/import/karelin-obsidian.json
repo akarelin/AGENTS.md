@@ -2,7 +2,7 @@
   "mcpServers": {
     "Karelin Obsidian": {
       "type": "streamableHttp",
-      "url": "https://mcp.karelin.com/obsidian"
+      "url": "https://mcp.karelin.ai/obsidian"
     }
   }
 }

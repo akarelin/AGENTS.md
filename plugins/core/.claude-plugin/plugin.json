@@ -1,0 +1,9 @@
+{
+  "name": "core",
+  "version": "0.2.0",
+  "description": "Core agent primitives: memory, sessions, skills, agents, and learning.",
+  "author": {
+    "name": "Alex Karelin"
+  },
+  "keywords": ["core", "memory", "session", "skill", "agent", "learn"]
+}
