@@ -1,4 +1,4 @@
-# akarelin-skills — Claude Code Plugin Marketplace
+# akarelin — Claude Code Plugin Marketplace
 
 Personal productivity plugins for Claude Code.
 
@@ -9,22 +9,22 @@ Personal productivity plugins for Claude Code.
 /plugin marketplace add akarelin/AGENTS.md
 
 # Browse available plugins
-/plugin marketplace list akarelin-skills
+/plugin marketplace list akarelin
 
 # Install individual plugins
-/plugin install core@akarelin-skills
-/plugin install research@akarelin-skills
-/plugin install work@akarelin-skills
-/plugin install organize@akarelin-skills
-/plugin install manage@akarelin-skills
-/plugin install administer@akarelin-skills
+/plugin install core@akarelin
+/plugin install research@akarelin
+/plugin install work@akarelin
+/plugin install organize@akarelin
+/plugin install manage@akarelin
+/plugin install administer@akarelin
 ```
 
 ## Available Plugins (6)
 
-| Plugin | Sub-skills | Description |
-|--------|-----------|-------------|
-| **core** | memory, session, skill, agent, learn | Agent primitives: memory, sessions, skill management |
+| Plugin | Skills | Description |
+|--------|--------|-------------|
+| **core** | memory, session, skill, compose-agent, learn | Agent primitives: memory, sessions, skill management, agent composition |
 | **research** | search, data (data-neo4j, data-sql) | Search + data exploration: knowledge search, Neo4j, SQL |
 | **work** | work-m365, work-slack, work-atlassian | Workplace: M365, Slack (MCP), Jira/Confluence (MCP) |
 | **organize** | organize-arxiv, organize-scan-medical | File organizer (arxiv papers, medical scans) |
@@ -37,6 +37,7 @@ Personal productivity plugins for Claude Code.
 - **memory** — Persist and recall facts, secrets, state across sessions
 - **session** — Claude Code sessions: sync, list, resume, rename, cleanup
 - **skill** — Plugin skills: review feedback, patch, test, rebuild, deploy
+- **compose-agent** — Create managed agents from multiple agents/skills (local + cloud)
 
 ### research
 - **search** — Multi-provider search (Obsidian, m365, Everything, Atlassian, Neo4j) scoped by ownership

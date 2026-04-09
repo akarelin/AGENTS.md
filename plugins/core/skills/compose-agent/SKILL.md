@@ -27,6 +27,7 @@ Create a new agent by combining existing agents and skills. Supports two deploym
    - Ask for deployment target: **local** or **cloud**
    - For local: ask for scope — user (`~/.claude/agents/`), project (`.claude/agents/`), or plugin
    - For cloud: ask for environment config (networking, packages)
+   - For cloud: ask if the agent should have an outcome rubric
 
 3. **Determine configuration**
    - **tools**: union of all component agents' tools, or restrict per user preference
@@ -36,13 +37,19 @@ Create a new agent by combining existing agents and skills. Supports two deploym
    - **permissionMode**: ask if needed (local only)
    - **memory**: ask if the agent should persist learnings (local only)
 
-4. **Deploy**
-   - **Local**: write `.md` file with YAML frontmatter and system prompt
-   - **Cloud**: create agent and environment via Anthropic API, optionally start a session
+4. **Create rubric** (cloud only, optional)
+   - If user wants outcome-driven execution, generate a rubric
+   - Ask user for known-good examples or quality criteria
+   - Write explicit, gradeable criteria per category
+   - Upload via Files API for reuse, or inline with the outcome event
 
-5. **Validate**
+5. **Deploy**
+   - **Local**: write `.md` file with YAML frontmatter and system prompt
+   - **Cloud**: create agent and environment via Anthropic API, optionally start a session with outcome + rubric
+
+6. **Validate**
    - Local: verify all referenced skills and MCP servers exist
-   - Cloud: verify agent and environment were created successfully
+   - Cloud: verify agent and environment were created, stream for evaluation results
 
 ---
 
@@ -194,6 +201,93 @@ curl -sS -N "https://api.anthropic.com/v1/sessions/$SESSION_ID/stream" \
   -H "Accept: text/event-stream"
 ```
 
+### Step 5: Define Outcome with Rubric (optional)
+
+Outcomes turn a session from conversation into goal-directed work. The agent iterates
+until a separate grader confirms the rubric is satisfied.
+
+Requires additional beta header: `managed-agents-2026-04-01-research-preview`.
+
+#### Writing a rubric
+
+A rubric is a markdown document with explicit, gradeable criteria. Each criterion should
+be specific and independently scorable — "The CSV contains a price column with numeric
+values" not "The data looks good."
+
+If you don't have a rubric, give Claude an example of a known-good artifact and ask it
+to analyze what makes it good, then turn that into criteria.
+
+#### Rubric format
+
+```markdown
+# <Task> Rubric
+
+## <Category 1>
+- Criterion A (specific, testable)
+- Criterion B
+
+## <Category 2>
+- Criterion C
+- Criterion D
+
+## Output Quality
+- Format requirements
+- Completeness checks
+```
+
+#### Upload rubric (reusable across sessions)
+
+Requires beta header `files-api-2025-04-14`.
+
+```bash
+curl -sS https://api.anthropic.com/v1/files \
+  -H "x-api-key: $ANTHROPIC_API_KEY" \
+  -H "anthropic-version: 2023-06-01" \
+  -H "anthropic-beta: managed-agents-2026-04-01,files-api-2025-04-14" \
+  -F file=@rubric.md
+```
+
+#### Send outcome event
+
+```bash
+curl -sS "https://api.anthropic.com/v1/sessions/$SESSION_ID/events" \
+  -H "x-api-key: $ANTHROPIC_API_KEY" \
+  -H "anthropic-version: 2023-06-01" \
+  -H "anthropic-beta: managed-agents-2026-04-01-research-preview" \
+  -H "content-type: application/json" \
+  -d '{
+    "events": [{
+      "type": "user.define_outcome",
+      "description": "<what done looks like>",
+      "rubric": {"type": "file", "file_id": "<rubric-file-id>"},
+      "max_iterations": 5
+    }]
+  }'
+```
+
+Or inline: `"rubric": {"type": "text", "content": "# Rubric\n..."}`
+
+#### Evaluation results
+
+| Result | Meaning |
+|--------|---------|
+| `satisfied` | All criteria met — session goes idle |
+| `needs_revision` | Gaps found — agent iterates again |
+| `max_iterations_reached` | Hit the limit — one final revision, then idle |
+| `failed` | Rubric doesn't match the task |
+| `interrupted` | User sent `user.interrupt` |
+
+#### Retrieve deliverables
+
+Agent writes outputs to `/mnt/session/outputs/`. Fetch via Files API:
+
+```bash
+curl -sS "https://api.anthropic.com/v1/files?scope_id=$SESSION_ID" \
+  -H "x-api-key: $ANTHROPIC_API_KEY" \
+  -H "anthropic-version: 2023-06-01" \
+  -H "anthropic-beta: files-api-2025-04-14,managed-agents-2026-04-01-research-preview"
+```
+
 ### Cloud Concepts
 
 | Concept | Description |
@@ -202,6 +296,8 @@ curl -sS -N "https://api.anthropic.com/v1/sessions/$SESSION_ID/stream" \
 | **Environment** | Container template (packages, network access) |
 | **Session** | Running agent instance performing a task |
 | **Events** | Messages exchanged (user turns, tool results, status) |
+| **Outcome** | Goal + rubric — agent iterates until grader confirms criteria met |
+| **Rubric** | Markdown with per-criterion scoring used by a separate grader |
 
 ### Cloud Tools
 
