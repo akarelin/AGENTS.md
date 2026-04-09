@@ -1,5 +1,5 @@
 ---
-name: dex-neo4j
+name: data-neo4j
 description: >
   Neo4j graph database exploration via Cypher. Use when the user mentions
   Neo4j, Cypher, graph queries, nodes, relationships, or knowledge graph.

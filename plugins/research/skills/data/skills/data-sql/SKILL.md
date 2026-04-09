@@ -1,5 +1,5 @@
 ---
-name: dex-sql
+name: data-sql
 description: >
   Relational database exploration via SQL. Use when the user mentions
   SQL, PostgreSQL, MySQL, SQLite, tables, queries, or relational database
