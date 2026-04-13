@@ -210,7 +210,7 @@ def cmd_auth(args):
         print("Error: ticktick-client-id and ticktick-client-secret must be in Key Vault.", file=sys.stderr)
         sys.exit(1)
 
-    redirect_uri = "http://localhost:8080"
+    redirect_uri = "http://127.0.0.1:8080/"
     state = f"tt-{secrets.token_hex(16)}"
     auth_url = f"{OAUTH_BASE}/authorize?" + urlencode({
         "scope": "tasks:read tasks:write",
@@ -220,19 +220,28 @@ def cmd_auth(args):
         "response_type": "code",
     })
 
-    if args.manual:
-        print(f"\nOpen this URL:\n{auth_url}\n")
-        print("After authorizing, paste the full redirect URL:")
-        redirect_url = input("> ").strip()
-        params = parse_qs(urlparse(redirect_url).query)
-        if params.get("state", [None])[0] != state:
-            print("State mismatch.", file=sys.stderr)
-            sys.exit(1)
-        code = params.get("code", [None])[0]
-        if not code:
-            print("No code in URL.", file=sys.stderr)
-            sys.exit(1)
-    else:
+    # Handle --exchange: skip auth URL, just exchange a code directly
+    if args.exchange:
+        code = args.exchange
+        _exchange_and_save(client_id, client_secret, code, redirect_uri)
+        return
+
+    if args.manual is not None:
+        if args.manual:
+            # Redirect URL provided as argument
+            redirect_url = args.manual
+            params = parse_qs(urlparse(redirect_url).query)
+            code = params.get("code", [None])[0]
+            if not code:
+                print("No code in URL.", file=sys.stderr)
+                sys.exit(1)
+            _exchange_and_save(client_id, client_secret, code, redirect_uri)
+        else:
+            # Just print the URL
+            print(auth_url)
+        return
+
+    # Browser flow
         result = {"code": None, "error": None}
         event = threading.Event()
 
@@ -273,6 +282,10 @@ def cmd_auth(args):
             sys.exit(1)
         code = result["code"]
 
+    _exchange_and_save(client_id, client_secret, code, redirect_uri)
+
+
+def _exchange_and_save(client_id, client_secret, code, redirect_uri="http://127.0.0.1:8080/"):
     creds = base64.b64encode(f"{client_id}:{client_secret}".encode()).decode()
     resp = requests.post(f"{OAUTH_BASE}/token", headers={
         "Authorization": f"Basic {creds}",
@@ -284,10 +297,10 @@ def cmd_auth(args):
     data = resp.json()
     _save_token({
         "access_token": data["access_token"],
-        "refresh_token": data["refresh_token"],
+        "refresh_token": data.get("refresh_token", ""),
         "token_expiry": time.time() + data["expires_in"],
     })
-    print("Authentication successful! Token saved to Key Vault.")
+    print("Token saved to Key Vault.")
 
 
 def cmd_lists(args):
@@ -403,7 +416,9 @@ def main():
     sub.required = True
 
     a = sub.add_parser("auth", help="Authenticate")
-    a.add_argument("--manual", action="store_true")
+    a.add_argument("--manual", nargs="?", const="", metavar="REDIRECT_URL",
+                   help="Manual auth: prints URL. Pass redirect URL as arg, or omit to just print the URL.")
+    a.add_argument("--exchange", metavar="CODE", help="Exchange an auth code for tokens")
     a.add_argument("--logout", action="store_true")
     a.add_argument("--status", action="store_true")
     a.set_defaults(func=cmd_auth)
