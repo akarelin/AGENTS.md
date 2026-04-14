@@ -58,9 +58,9 @@ python3 "${CLAUDE_PLUGIN_ROOT}/scripts/m365.py" --user alex whoami
 python3 "${CLAUDE_PLUGIN_ROOT}/scripts/m365.py" --user alex mail list [--top N] [--folder FOLDER_ID]
 python3 "${CLAUDE_PLUGIN_ROOT}/scripts/m365.py" --user alex mail read MESSAGE_ID
 python3 "${CLAUDE_PLUGIN_ROOT}/scripts/m365.py" --user alex mail search "query" [--top N]
-python3 "${CLAUDE_PLUGIN_ROOT}/scripts/m365.py" --user alex mail send --to "a@b.com" --subject "Subj" --body "Body" [--cc "c@d.com"] [--html]
-python3 "${CLAUDE_PLUGIN_ROOT}/scripts/m365.py" --user alex mail draft --to "a@b.com" --subject "Subj" --body "Body"
-python3 "${CLAUDE_PLUGIN_ROOT}/scripts/m365.py" --user alex mail reply MESSAGE_ID --body "Reply text"
+python3 "${CLAUDE_PLUGIN_ROOT}/scripts/m365.py" --user alex mail send --to "a@b.com" --subject "Subj" --body "Body" [--cc "c@d.com"] [--html] [--attach file1.pdf file2.docx]
+python3 "${CLAUDE_PLUGIN_ROOT}/scripts/m365.py" --user alex mail draft --to "a@b.com" --subject "Subj" --body "Body" [--cc "c@d.com"] [--html] [--attach file1.pdf]
+python3 "${CLAUDE_PLUGIN_ROOT}/scripts/m365.py" --user alex mail reply MESSAGE_ID --body "Reply text" [--html] [--attach report.pdf]
 python3 "${CLAUDE_PLUGIN_ROOT}/scripts/m365.py" --user alex mail folders
 ```
 
@@ -91,7 +91,9 @@ python3 "${CLAUDE_PLUGIN_ROOT}/scripts/m365.py" --user alex channel send TEAM_ID
 ### Files (OneDrive)
 ```bash
 python3 "${CLAUDE_PLUGIN_ROOT}/scripts/m365.py" --user alex files list [--path "Documents/subfolder"]
-python3 "${CLAUDE_PLUGIN_ROOT}/scripts/m365.py" --user alex files search "query"
+python3 "${CLAUDE_PLUGIN_ROOT}/scripts/m365.py" --user alex files search "query" [--all-drives]
+python3 "${CLAUDE_PLUGIN_ROOT}/scripts/m365.py" --user alex files download --path "Documents/file.pdf" [-o local_name.pdf]
+python3 "${CLAUDE_PLUGIN_ROOT}/scripts/m365.py" --user alex files download --id ITEM_ID [--drive-id DRIVE_ID] [-o output.pdf]
 python3 "${CLAUDE_PLUGIN_ROOT}/scripts/m365.py" --user alex files sites "query"
 ```
 
@@ -140,3 +142,7 @@ Searches across multiple entity types in a single call via `/search/query`. Defa
 - The `--user` flag maps to AAD object IDs internally; `/me/` paths are rewritten to `/users/{aad_id}/`
 - Output is JSON
 - Requires `msal` and `requests` Python packages
+- **Attachments**: Files ≤3MB use inline base64; larger files use Graph upload sessions (4MB chunks)
+- **Env vars**: Accepts both `MS365_CLIENT_ID` and `MS365_MCP_CLIENT_ID` prefixes (plus `_TENANT_ID`, `_CLIENT_SECRET`)
+- **OneDrive shortcuts**: `files list` auto-resolves shortcuts/remote items to their target folders
+- **Cross-drive search**: `files search --all-drives` uses `/search/query` to find files across personal and shared drives
