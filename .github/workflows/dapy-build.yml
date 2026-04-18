@@ -91,7 +91,7 @@ jobs:
             -f sha="${NEW_COMMIT_SHA}"
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ steps.version.outputs.tag }}
           name: DAPY ${{ steps.version.outputs.tag }}
