@@ -1,0 +1,44 @@
+# Git mailmap for identity-collapse rewrites.
+# Copy this file, edit per job. Format:
+#   <preferred> <match-email>            -- match by commit email only
+#   <preferred> Bad Name <match-email>    -- match by name + email
+#
+# To discover current identities in a repo:
+#   git shortlog -sen --branches                        # authors
+#   git log --branches --format='%cn <%ce>' | sort -u   # committers
+
+# Preferred identity for all rewrites below
+# Alex Karelin <alex@karelin.com>
+
+# ── Email typos / variants of yourself ─────────────────────────────────────
+Alex Karelin <alex@karelin.com> <5864767+akarelin@users.noreply.github.com>
+Alex Karelin <alex@karelin.com> <akarelin@users.noreply.github.com>
+Alex Karelin <alex@karelin.com> <alex@karein.com>
+Alex Karelin <alex@karelin.com> <alex@karel.in>
+Alex Karelin <alex@karelin.com> akarelin <alex@karelin.com>
+Alex Karelin <alex@karelin.com> <alex@i2mqtt-exterior.karel.in>
+Alex Karelin <alex@karelin.com> <actions@karelin.ai>
+
+# ── AI authors → you ───────────────────────────────────────────────────────
+Alex Karelin <alex@karelin.com> <noreply@anthropic.com>
+Alex Karelin <alex@karelin.com> <manus@agent.ai>
+Alex Karelin <alex@karelin.com> <manus@agent.local>
+Alex Karelin <alex@karelin.com> <manus@manus.im>
+Alex Karelin <alex@karelin.com> <manus@karel.in>
+
+# ── Bots / service accounts → you ──────────────────────────────────────────
+Alex Karelin <alex@karelin.com> <github-actions[bot]@users.noreply.github.com>
+Alex Karelin <alex@karelin.com> <198982749+Copilot@users.noreply.github.com>
+Alex Karelin <alex@karelin.com> <49699333+dependabot[bot]@users.noreply.github.com>
+Alex Karelin <alex@karelin.com> <noreply@github.com>
+Alex Karelin <alex@karelin.com> <root@z2mqtt.cv.karel.in>
+Alex Karelin <alex@karelin.com> <root@core-ssh.local.hass.io>
+Alex Karelin <alex@karelin.com> <root@a0d7b954-vscode.local.hass.io>
+Alex Karelin <alex@karelin.com> <root@hassio.sway.karel.in>
+Alex Karelin <alex@karelin.com> <au@hassio.sway.karel.in>
+Alex Karelin <alex@karelin.com> <au@primary.cv.karel.in>
+Alex Karelin <alex@karelin.com> <au@cv.ha.karel.in>
+Alex Karelin <alex@karelin.com> <au@3.ha.karel.in>
+
+# External human collaborators — DO NOT collapse these.
+# e.g. Shurick Agapitov <a.agapitov@xsolla.com>
