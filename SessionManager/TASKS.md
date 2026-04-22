@@ -39,9 +39,21 @@ items keep their completion date so the history is auditable.
   - [x] Preservator README integrations section — current + desired SM handoff (2026-04-21) [session](~/.claude/projects/-home-alex-CRAP-preservator/a733ad67-781f-4a91-9ff0-829457eb1d3a.jsonl)
   - [x] SessionSkills Phase 3 track specifications under `docs/tracks/` (2026-04-21) [session](~/.claude/projects/-Users-alex-RAN-AI/f56a50a4-3dd9-49d9-a907-8ec1ee14859b.jsonl)
 
+## Pending actions (user-initiated)
+
+- [ ] **Spawn Phase-3 tracks** — on Mac: `/Users/alex/A/SessionManager/bin/spawn-tracks.sh` → three tmux sessions (`track1`/`track2`/`track3`) running in parallel. Replaces the `<tbd>` spawned-session markers above on first run.
+- [ ] **Install launchd schedules** — `/Users/alex/A/SessionManager/launchd/install.sh` → hourly analyze, nightly cluster+classify, weekly prune+archive, symlink guard every hour.
+- [ ] **Bulk Langfuse backfill** — `sm deposit-all` → closes the 3172-local vs 3017-remote gap. Safe since Phase 2 landed deterministic observation IDs (full idempotence).
+- [ ] **Full analyze cascade** over the 3160 named records — `sm-pipeline run analyze write_to_memory`. Multi-hour Ollama run; produces structured summaries + writes them into OpenClaw per-agent memory SQLite.
+- [ ] **Vault-skill migration** — `sm-pipeline migrate-skills --apply --rewrite-refs` → moves the 16 skills still in `~/_/{internals}/Skills/` into `SD.agents/skills/` and sweeps hardcoded references.
+
 ## How to maintain this file
 
 - Flat markdown checkboxes. Parent-first, children indented.
 - When a track spawns, replace `<tbd>` with the session UUID (`ls -lt ~/.claude/projects/-Users-alex-A-SessionManager/*.jsonl | head -1`).
 - When a task completes: check the box, add completion date, link the session(s) that did the work via `[session](~/.claude/projects/<slug>/<uuid>.jsonl)`.
 - When Track 2's §2.1 lands the canonical registry at `~/_/KG/Project/_registry.yaml`, migrate this file's hierarchy there and reduce this to a one-line pointer.
+
+---
+
+**Phase 2 build session closed 2026-04-21.** All code committed and pushed: `akarelin/AGENTS.md` at `5c593d3`+ (contains the tracks/spec + TASKS.md + spawn script) and `akarelin/SessionManager` at `969547e`+ (contains all scripts + bin/_bootstrap.sh + sm-tui enhancements + deterministic deposit IDs). Next work picks up from the **Pending actions** list above — any session can resume.
