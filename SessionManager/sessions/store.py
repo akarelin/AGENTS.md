@@ -129,3 +129,32 @@ class SessionStore:
     def count(self) -> int:
         with self._conn() as c:
             return c.execute("SELECT COUNT(*) FROM records").fetchone()[0]
+
+    def previous_claude_session_in_project(self, project: str, started_before: str,
+                                           within_seconds: int) -> SessionRecord | None:
+        """Find the most recent claude-code record in the same project that
+        started within `within_seconds` of `started_before` (ISO-8601)."""
+        if not project or not started_before:
+            return None
+        with self._conn() as c:
+            row = c.execute(
+                "SELECT json FROM records "
+                "WHERE source = 'claude-code' AND project = ? "
+                "  AND started_at IS NOT NULL AND started_at < ? "
+                "  AND strftime('%s', ?) - strftime('%s', started_at) <= ? "
+                "ORDER BY started_at DESC LIMIT 1",
+                (project, started_before, started_before, int(within_seconds)),
+            ).fetchone()
+        if row is None:
+            return None
+        return SessionRecord(**json.loads(row["json"]))
+
+    def known_langfuse_trace_ids(self) -> set[str]:
+        """Return trace IDs already attached to any record via
+        `paths.langfuse_trace_id`. Used by the langfuse-API ingest for dedupe."""
+        with self._conn() as c:
+            rows = c.execute(
+                "SELECT DISTINCT json_extract(json, '$.paths.langfuse_trace_id') AS t "
+                "FROM records WHERE t IS NOT NULL"
+            ).fetchall()
+        return {r["t"] for r in rows if r["t"]}

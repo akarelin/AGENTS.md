@@ -18,11 +18,14 @@ Idempotent: re-running produces processed=0 on unchanged files.
 """
 from __future__ import annotations
 
+import base64
 import fnmatch
 import json
 import os
 import re
-from datetime import datetime, timezone
+import urllib.error
+import urllib.request
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Iterable
 
@@ -242,6 +245,132 @@ EXTRACTORS = {
 }
 
 
+# ──────────────────────────────────────────────────────────────── langfuse ──
+
+_SINCE_RE = re.compile(r"^(\d+)([dhm])$")
+
+
+def _parse_since(spec: str | None) -> str | None:
+    """Turn '7d' / '12h' / '90m' → ISO timestamp `fromTimestamp` arg."""
+    if not spec:
+        return None
+    m = _SINCE_RE.match(spec.strip())
+    if not m:
+        return None
+    n, unit = int(m.group(1)), m.group(2)
+    delta = {"d": timedelta(days=n), "h": timedelta(hours=n),
+             "m": timedelta(minutes=n)}[unit]
+    return (datetime.now(timezone.utc) - delta).isoformat()
+
+
+def _langfuse_auth(src: dict) -> str | None:
+    """Return 'Basic <b64>' header or None if credentials missing."""
+    env_keys = src.get("auth_env") or ["LANGFUSE_PUBLIC_KEY", "LANGFUSE_SECRET_KEY"]
+    pk = os.environ.get(env_keys[0]) if len(env_keys) >= 1 else None
+    sk = os.environ.get(env_keys[1]) if len(env_keys) >= 2 else None
+    if not pk or not sk:
+        return None
+    return "Basic " + base64.b64encode(f"{pk}:{sk}".encode()).decode()
+
+
+def _langfuse_get(host: str, path: str, params: dict, auth: str) -> dict:
+    qs = "&".join(f"{k}={v}" for k, v in params.items() if v is not None)
+    url = f"{host.rstrip('/')}{path}?{qs}"
+    req = urllib.request.Request(
+        url, headers={"Authorization": auth, "Content-Type": "application/json"}
+    )
+    with urllib.request.urlopen(req, timeout=15) as resp:
+        return json.loads(resp.read())
+
+
+def _trace_to_record(trace: dict) -> SessionRecord:
+    meta = trace.get("metadata") or {}
+    trace_id = trace.get("id")
+    tags = trace.get("tags") or []
+    rec = SessionRecord(
+        source="langfuse",
+        source_id=trace_id,
+        project=meta.get("project"),
+        cwd=meta.get("cwd"),
+        started_at=_parse_ts(trace.get("timestamp")),
+        model=meta.get("model"),
+        provider=meta.get("provider"),
+        input_tokens=int(meta.get("total_input_tokens") or 0),
+        output_tokens=int(meta.get("total_output_tokens") or 0),
+        paths={"langfuse_trace_id": trace_id},
+        state="ingested",
+    )
+    if tags:
+        rec.classification["langfuse_tags"] = tags
+    if trace.get("name"):
+        rec.classification["langfuse_name"] = trace["name"]
+    return rec
+
+
+def _pull_langfuse(store: "SessionStore", src: dict, *,
+                   limit: int | None, dry_run: bool,
+                   force: bool, result: "StageResult") -> None:
+    host = src.get("host")
+    if not host:
+        print("[ingest:langfuse] no host configured; skipping")
+        return
+    auth = _langfuse_auth(src)
+    if not auth:
+        print("[ingest:langfuse] missing LANGFUSE_PUBLIC_KEY/SECRET_KEY; skipping")
+        return
+
+    known = store.known_langfuse_trace_ids() if not force else set()
+    since = _parse_since(src.get("pull_since"))
+    page_size = int(src.get("page_size") or 100)
+    max_pages = int(src.get("max_pages") or 200)
+
+    for page in range(1, max_pages + 1):
+        if limit is not None and result.processed >= limit:
+            break
+        params = {"page": page, "limit": page_size}
+        if since:
+            params["fromTimestamp"] = since
+        try:
+            data = _langfuse_get(host, "/api/public/traces", params, auth)
+        except (urllib.error.URLError, urllib.error.HTTPError, OSError) as e:
+            print(f"[ingest:langfuse] page {page} failed: {e}")
+            result.errors += 1
+            break
+        rows = data.get("data") or []
+        if not rows:
+            break
+        for trace in rows:
+            if limit is not None and result.processed >= limit:
+                break
+            tid = trace.get("id")
+            if not tid:
+                continue
+            if tid in known and not force:
+                result.skipped += 1
+                continue
+            existing = store.get("langfuse", tid)
+            if existing and not force:
+                result.skipped += 1
+                continue
+            if dry_run:
+                print(f"[ingest:langfuse] would ingest: langfuse:{tid}")
+                result.processed += 1
+                continue
+            try:
+                rec = _trace_to_record(trace)
+                rec.transition("ingested", stage="ingest",
+                               notes=f"langfuse pull page={page}")
+                store.upsert(rec)
+                known.add(tid)
+                result.processed += 1
+            except Exception as e:
+                print(f"[ingest:langfuse] error on trace {tid[:8]}: {e}")
+                result.errors += 1
+        total = ((data.get("meta") or {}).get("totalItems")) or 0
+        if total and page * page_size >= total:
+            break
+
+
 # ─────────────────────────────────────────────────────────── orphan snapshots ──
 
 # Matches: <uuid>.jsonl.reset.<iso>  or  <uuid>.jsonl.deleted.<iso>
@@ -352,10 +481,14 @@ def run(store: SessionStore, cfg: dict, *,
             continue
         kind = src.get("kind")
         if kind == "api":
-            # Langfuse pull — only run when backfill flag set
+            # Langfuse pull gated by backfill flag OR source.enabled.
             if not backfill and not src.get("enabled", False):
                 continue
-            print(f"[ingest] {src['name']} (api pull) — not yet implemented; skipping")
+            if src.get("name") == "langfuse":
+                _pull_langfuse(store, src, limit=limit, dry_run=dry_run,
+                               force=force, result=result)
+            else:
+                print(f"[ingest] unsupported api source={src['name']}; skipping")
             continue
         if kind != "jsonl":
             continue

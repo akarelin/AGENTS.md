@@ -30,6 +30,12 @@ from ..store import SessionStore
 RESET_SUFFIX_RE = re.compile(r"\.jsonl\.(reset|deleted)\.(\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}(?:\.\d+)?Z?)(?:\.md)?$")
 SUBAGENT_MARKER_RE = re.compile(r"\[Subagent Task\]", re.IGNORECASE)
 
+# Claude Code resume-chain detection. Slack's ~8-hour "session continuation"
+# window is too loose; start with 30 min. User-overridable via config.
+RESUME_PREFIX_RE = re.compile(r"^\s*(Continue|Resume|This session is being continued)",
+                              re.IGNORECASE)
+DEFAULT_RESUME_WINDOW_S = 30 * 60
+
 
 def _find_snapshots(base_jsonl: Path) -> list[str]:
     """Return paths to `.jsonl.reset.<ts>` / `.jsonl.deleted.<ts>` siblings."""
@@ -48,6 +54,42 @@ def _find_snapshots(base_jsonl: Path) -> list[str]:
         if m:
             snapshots.append(str(sibling))
     return sorted(snapshots)
+
+
+def _first_user_text(jsonl_path: Path, max_lines: int = 30) -> str | None:
+    """Return the first non-empty user-role message text from a JSONL session.
+    Handles Claude Code (`type: 'user', message.content`) and OpenClaw
+    (`type: 'message', message.role == 'user'`) formats."""
+    try:
+        with open(jsonl_path, "rb") as f:
+            for i, line in enumerate(f):
+                if i >= max_lines:
+                    break
+                try:
+                    entry = json.loads(line)
+                except (json.JSONDecodeError, UnicodeDecodeError):
+                    continue
+                # Claude Code
+                if entry.get("type") == "user":
+                    msg = entry.get("message") or {}
+                    content = msg.get("content")
+                    if isinstance(content, list):
+                        content = " ".join(
+                            p.get("text", "") for p in content
+                            if isinstance(p, dict)
+                        )
+                    if isinstance(content, str) and content.strip():
+                        return content
+                # OpenClaw
+                if entry.get("type") == "message":
+                    msg = entry.get("message") or {}
+                    if msg.get("role") == "user":
+                        content = msg.get("content")
+                        if isinstance(content, str) and content.strip():
+                            return content
+    except OSError:
+        pass
+    return None
 
 
 def _is_subagent(jsonl_path: Path) -> bool:
@@ -114,6 +156,30 @@ def run(store: SessionStore, cfg: dict, *,
                 if rec.session_group is None:
                     rec.session_group = f"openclaw:subagent:{rec.agent}"
                 changed = True
+
+        # Cross-session resume-chain detection (Claude Code only).
+        # Extends the v1 merge vocabulary to cover "Continue/Resume" sessions
+        # the user starts in the same project dir shortly after a prior one.
+        if rec.source == "claude-code" and rec.project and rec.started_at \
+                and rec.session_group is None \
+                and jsonl_path.exists() and jsonl_path.stat().st_size > 0:
+            first = _first_user_text(jsonl_path)
+            if first and RESUME_PREFIX_RE.match(first):
+                window = int(((cfg.get("thresholds") or {})
+                              .get("resume_chain_window_s")) or DEFAULT_RESUME_WINDOW_S)
+                prev = store.previous_claude_session_in_project(
+                    rec.project, rec.started_at, window)
+                if prev and prev.source_id != rec.source_id:
+                    group = prev.session_group or f"cc:resume-chain:{prev.source_id}"
+                    rec.session_group = group
+                    rec.classification["resume_chain_parent"] = prev.source_id
+                    # Backfill parent's session_group so both sides join the same
+                    # chain on first detection.
+                    if prev.session_group != group:
+                        prev.session_group = group
+                        if not dry_run:
+                            store.upsert(prev)
+                    changed = True
 
         if dry_run:
             if changed:

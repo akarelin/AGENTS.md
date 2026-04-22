@@ -18,6 +18,7 @@ import os
 import re
 import subprocess
 import sys
+import time
 import urllib.request
 import urllib.error
 import base64
@@ -29,7 +30,7 @@ from textual.app import App, ComposeResult
 from textual.binding import Binding
 from textual.containers import Horizontal, Vertical
 from textual.screen import Screen
-from textual.widgets import DataTable, Footer, Header, RichLog, Static
+from textual.widgets import DataTable, Footer, Header, ProgressBar, RichLog, Static
 from rich.text import Text
 
 # --- Config ---
@@ -134,13 +135,18 @@ def api_get(path, params=None, *, use_cache: bool = True):
     return data
 
 
-def api_get_paginated(path, max_pages=10, limit=100, *, use_cache: bool = True):
+def api_get_paginated(path, max_pages=10, limit=100, *, use_cache: bool = True,
+                      extra_params: dict | None = None):
     """Fetch up to max_pages of Langfuse list results. Each page cached
-    separately so partial invalidation is possible. Returns (all_data, total)."""
+    separately so partial invalidation is possible. Returns (all_data, total).
+    extra_params merges onto {limit,page} per request (e.g. {'name': 'foo'})."""
     all_data = []
     total = 0
     for page in range(1, max_pages + 1):
-        d = api_get(path, {"limit": str(limit), "page": str(page)}, use_cache=use_cache)
+        params = {"limit": str(limit), "page": str(page)}
+        if extra_params:
+            params.update({k: v for k, v in extra_params.items() if v is not None})
+        d = api_get(path, params, use_cache=use_cache)
         rows = d.get("data", [])
         if page == 1:
             total = (d.get("meta") or {}).get("totalItems", len(rows))
@@ -459,6 +465,7 @@ class SessionManagerApp(App):
         Binding("3", "show_projects", "Projects"),
         Binding("4", "show_stats", "Stats"),
         Binding("s", "cycle_sort", "Sort"),
+        Binding("S", "reverse_sort", "Reverse", show=False),
         Binding("slash", "filter_prompt", "Filter"),
         Binding("R", "refresh", "Refresh"),
         Binding("r", "rename_session", "Rename"),
@@ -469,6 +476,12 @@ class SessionManagerApp(App):
         Binding("escape", "back", "Back", show=False),
     ]
 
+    # Column labels per view. Index matches the tuple produced in `sort` keys.
+    _COLUMNS = {
+        "remote": ["Src", "Name", "Description", "Tags", "Age", "Size", "Tokens"],
+        "local":  ["Src", "Project", "Description", "Size", "Age"],
+    }
+
     def __init__(self):
         super().__init__()
         self._remote_traces = []
@@ -477,13 +490,19 @@ class SessionManagerApp(App):
         self._view = "remote"        # remote | local | projects | stats
         self._filter = ""            # substring filter applied to current view
         # per-view sort state: (column_index, descending)
-        # Remote cols:  0=Src 1=Name 2=Description 3=Tags 4=Age 5=Size 6=Tokens
-        # Local  cols:  0=Src 1=Project 2=Description 3=Size 4=Age
         self._sort = {
             "remote": (4, True),     # Age desc
             "local": (4, True),      # Age desc
             "projects": (1, True),   # Session count desc
         }
+
+    def _columns_with_arrow(self, view: str):
+        cols = list(self._COLUMNS.get(view, []))
+        active, desc = self._sort.get(view, (0, False))
+        if 0 <= active < len(cols):
+            glyph = "▼" if desc else "▲"
+            cols[active] = f"{cols[active]} {glyph}"
+        return cols
 
     def compose(self) -> ComposeResult:
         yield Header()
@@ -501,9 +520,14 @@ class SessionManagerApp(App):
         self._load_all()
 
     @work(thread=True)
-    def _load_all(self) -> None:
-        self.call_from_thread(self._update_status, "Loading remote sessions (paginated)…")
-        traces, total = api_get_paginated("/api/public/traces", max_pages=10, limit=100)
+    def _load_all(self, name_filter: str | None = None) -> None:
+        extra = {"name": name_filter} if name_filter else None
+        label = "Loading remote sessions (paginated)"
+        if name_filter:
+            label += f" · name~{name_filter!r}"
+        self.call_from_thread(self._update_status, label + "…")
+        traces, total = api_get_paginated("/api/public/traces", max_pages=10, limit=100,
+                                          extra_params=extra)
         self._remote_traces = traces
         self._remote_total = total
 
@@ -536,7 +560,7 @@ class SessionManagerApp(App):
         self._view = "remote"
         table = self.query_one("#session-table", DataTable)
         table.clear(columns=True)
-        table.add_columns("Src", "Name", "Description", "Tags", "Age", "Size", "Tokens")
+        table.add_columns(*self._columns_with_arrow("remote"))
 
         label = self.query_one("#list-label", Static)
         skip = {"claude-code", "openclaw", "codex", "archived"}
@@ -618,7 +642,7 @@ class SessionManagerApp(App):
         self._view = "local"
         table = self.query_one("#session-table", DataTable)
         table.clear(columns=True)
-        table.add_columns("Src", "Project", "Description", "Size", "Age")
+        table.add_columns(*self._columns_with_arrow("local"))
 
         rows = []
         for i, s in enumerate(self._local_sessions):
@@ -668,8 +692,17 @@ class SessionManagerApp(App):
             return rows
 
     def action_cycle_sort(self) -> None:
+        cols = self._COLUMNS.get(self._view)
+        if not cols:
+            return
         col, desc = self._sort.get(self._view, (0, False))
-        # Toggle direction on same press; arrow keys would advance column — keep simple.
+        self._sort[self._view] = ((col + 1) % len(cols), desc)
+        self._rerender()
+
+    def action_reverse_sort(self) -> None:
+        if self._view not in self._COLUMNS:
+            return
+        col, desc = self._sort.get(self._view, (0, False))
         self._sort[self._view] = (col, not desc)
         self._rerender()
 
@@ -681,7 +714,13 @@ class SessionManagerApp(App):
         if value is None:
             return
         self._filter = value.strip()
-        self._rerender()
+        # Remote view: re-pull traces with server-side `name=` so the filter
+        # searches the full Langfuse corpus, not just the first page. Client-
+        # side filter_match still runs on top to also catch tag/src hits.
+        if self._view == "remote":
+            self._load_all(name_filter=self._filter or None)
+        else:
+            self._rerender()
 
     def _rerender(self) -> None:
         {"remote": self._render_remote, "local": self._render_local,
@@ -1000,17 +1039,60 @@ class SessionManagerApp(App):
     @work(thread=True)
     def _do_deposit_all(self) -> None:
         log = self.query_one("#detail-log", RichLog)
-        self.call_from_thread(log.clear)
         total = len(self._local_sessions)
-        self.call_from_thread(self._update_status, f"Depositing {total} sessions...")
+
+        # Reusable ProgressBar mounted above the RichLog for the run. Cleared
+        # and re-created each invocation so total/progress reset cleanly.
+        def _mount_bar():
+            panel = self.query_one("#detail-panel", Vertical)
+            for existing in panel.query("ProgressBar"):
+                existing.remove()
+            log.clear()
+            bar = ProgressBar(total=total, show_eta=True, show_percentage=True,
+                              id="deposit-progress")
+            panel.mount(bar, before=log)
+            return bar
+
+        self.call_from_thread(_mount_bar)
+        self.call_from_thread(self._update_status, f"Depositing {total} sessions…")
         ok = 0
+        fail = 0
+        start = time.monotonic()
         for i, s in enumerate(self._local_sessions, 1):
-            self.call_from_thread(log.write, f"[{i}/{total}] {s['project']} ({s['session_id'][:12]}...)")
-            result = subprocess.run(["sm", "deposit", s["file"]], capture_output=True, text=True, timeout=30)
+            result = subprocess.run(
+                ["sm", "deposit", s["file"]], capture_output=True, text=True, timeout=30
+            )
             if result.returncode == 0:
                 ok += 1
-        self.call_from_thread(self._update_status, f"Deposited {ok}/{total} ✓")
-        data = api_get("/api/public/traces", {"limit": "100"})
+            else:
+                fail += 1
+                self.call_from_thread(
+                    log.write,
+                    f"[red]✗[/] {s['project']} ({s['session_id'][:12]}): "
+                    f"{(result.stderr or '').strip()[:80]}"
+                )
+
+            def _advance(done=i):
+                try:
+                    self.query_one("#deposit-progress", ProgressBar).advance(1)
+                except Exception:
+                    pass
+            self.call_from_thread(_advance)
+
+            # Live status with rolling ETA — ProgressBar's ETA is visual; a
+            # textual ETA in the status bar helps when the bar is off-screen.
+            elapsed = time.monotonic() - start
+            rate = i / elapsed if elapsed > 0 else 0
+            eta_s = (total - i) / rate if rate > 0 else 0
+            self.call_from_thread(
+                self._update_status,
+                f"Depositing {i}/{total}  ok={ok} fail={fail}  "
+                f"{rate:.1f}/s  ETA {int(eta_s // 60)}m{int(eta_s % 60):02d}s"
+            )
+
+        self.call_from_thread(self._update_status,
+                              f"Deposited {ok}/{total} ✓  ({fail} failed)")
+        data = api_get("/api/public/traces", {"limit": "100"}, use_cache=False)
         self._remote_traces = data.get("data", [])
         self.call_from_thread(self._render_remote)
 

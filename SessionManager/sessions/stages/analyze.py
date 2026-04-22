@@ -14,10 +14,12 @@ Idempotent: batch-extract & llm-analyze both support --skip-existing.
 """
 from __future__ import annotations
 
+import json
 import os
 import subprocess
 from pathlib import Path
 
+from ..llm import record_tokens
 from ..orchestrator import StageResult
 from ..store import SessionStore
 
@@ -74,6 +76,34 @@ def _run_llm_analyze(prompts_dir: Path, analyzed_dir: Path,
     if proc.returncode != 0:
         print(f"[analyze] llm-analyze rc={proc.returncode} stderr={proc.stderr[-300:]}")
     return proc.returncode
+
+
+def _load_token_log(analyzed_dir: Path) -> dict[str, dict]:
+    """Read ollama-tokens.jsonl emitted by llm-analyze.py. Returns
+    {output_filename: {'prompt_eval_count':..., 'eval_count':..., 'model':...}}.
+    Empty dict if the sidecar is missing or unreadable."""
+    log = analyzed_dir / "ollama-tokens.jsonl"
+    out: dict[str, dict] = {}
+    if not log.exists():
+        return out
+    try:
+        with log.open() as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    row = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                name = row.get("output_file")
+                if name:
+                    # Keep only the most recent entry per file (file is append-only
+                    # across runs; later wins).
+                    out[name] = row
+    except OSError:
+        pass
+    return out
 
 
 def _find_analyzed(rec_source: str, rec_source_id: str) -> Path | None:
@@ -147,11 +177,16 @@ def run(store: SessionStore, cfg: dict, *,
         print(f"[analyze] running ollama analyze: {src}/{tgt}")
         _run_llm_analyze(prompts_dir, analyzed_dir, host, model, limit=None)
 
+        token_log = _load_token_log(analyzed_dir)
+
         # Update records
         for rec in recs:
             analyzed = _find_analyzed(rec.source, rec.source_id)
             if analyzed and analyzed.exists():
                 rec.paths["analyzed_md"] = str(analyzed)
+                meta = token_log.get(analyzed.name)
+                if meta:
+                    record_tokens(rec, "analyze", meta)
                 rec.transition("analyzed", stage="analyze", notes=analyzed.name)
                 store.upsert(rec)
                 result.processed += 1

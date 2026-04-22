@@ -24,6 +24,25 @@ class LLMUnavailable(RuntimeError):
     pass
 
 
+def record_tokens(rec, stage: str, meta: dict) -> None:
+    """Persist an Ollama call's token counts onto a SessionRecord.
+
+    Accumulates across repeated calls (e.g. analyze invoked twice) so the
+    per-stage numbers stay a running total. `sm-pipeline stats` aggregates
+    via json_extract over classification.ollama_tokens."""
+    if not meta:
+        return
+    bucket = rec.classification.setdefault("ollama_tokens", {})
+    cur = bucket.setdefault(stage, {"prompt": 0, "eval": 0, "calls": 0,
+                                    "total_duration_ns": 0})
+    cur["prompt"] += int(meta.get("prompt_eval_count") or 0)
+    cur["eval"] += int(meta.get("eval_count") or 0)
+    cur["calls"] += 1
+    cur["total_duration_ns"] += int(meta.get("total_duration_ns") or 0)
+    if meta.get("model") and "model" not in cur:
+        cur["model"] = meta["model"]
+
+
 class LocalLLM:
     """Ollama HTTP client. No external deps beyond urllib."""
 
@@ -52,7 +71,12 @@ class LocalLLM:
             return []
 
     def generate(self, prompt: str, system: str | None = None,
-                 temperature: float = 0.3, format_json: bool = False) -> str:
+                 temperature: float = 0.3, format_json: bool = False,
+                 return_meta: bool = False) -> str | tuple[str, dict]:
+        """Generate text. When return_meta=True, returns (text, meta) where
+        meta carries Ollama's `prompt_eval_count` + `eval_count` + `total_duration`
+        (ns) for token-budget telemetry. Also stored on self.last_meta for the
+        fire-and-forget case."""
         payload: dict[str, Any] = {
             "model": self.model,
             "prompt": prompt,
@@ -70,9 +94,18 @@ class LocalLLM:
         )
         try:
             with urllib.request.urlopen(req, timeout=self.timeout) as r:
-                return json.load(r)["response"]
+                data = json.load(r)
         except (urllib.error.URLError, OSError) as e:
             raise LLMUnavailable(f"ollama generate failed: {e}") from e
+        meta = {
+            "prompt_eval_count": int(data.get("prompt_eval_count") or 0),
+            "eval_count": int(data.get("eval_count") or 0),
+            "total_duration_ns": int(data.get("total_duration") or 0),
+            "model": self.model,
+        }
+        self.last_meta = meta
+        text = data.get("response", "")
+        return (text, meta) if return_meta else text
 
     def embed(self, text: str) -> list[float]:
         payload = {"model": self.embed_model, "prompt": text}

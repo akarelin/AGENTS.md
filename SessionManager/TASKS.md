@@ -8,13 +8,20 @@ items keep their completion date so the history is auditable.
 
 - [ ] **Phase 3 — Parallel tracks** (in_progress; blocked_by Phase 2)
   - [ ] Track 1 — Sessions & Langfuse · spec [`docs/tracks/track-1-sessions-langfuse.md`](docs/tracks/track-1-sessions-langfuse.md)
-    - Spawned session: `<tbd>` · title target: `track-1-sessions-langfuse`
+    - Spawned session: `b1c418ff-5954-4d35-b0b9-196225cc8f2f` · title target: `track-1-sessions-langfuse`
     - 7 work items — backfill, Langfuse API pull, server-side filter, sort UX, deposit progress, token telemetry, resume-chain detection
+    - [~] 1.1 Bulk backfill — `sm deposit-all` running in background (pid 68460); log at `/tmp/track1/deposit-all.log` (block-buffered so empty until done)
+    - [x] 1.2 Langfuse API pull ingest (`sessions/stages/ingest.py` + `SessionStore.known_langfuse_trace_ids`)
+    - [x] 1.3 Server-side `name=` filter in TUI remote view
+    - [x] 1.4 Cycle-column sort UX + ▲/▼ header glyph (`s` advances col, `S` reverses)
+    - [x] 1.5 Deposit ProgressBar + rolling ETA in `_do_deposit_all()`
+    - [x] 1.6 Ollama token telemetry — `LocalLLM.generate(return_meta=True)` + `record_tokens()` helper; analyze stage reads `ollama-tokens.jsonl` sidecar emitted by `llm-analyze.py`; `sm-pipeline stats` rolls up per-stage prompt/eval counts
+    - [x] 1.7 Cross-session resume-chain detection in merge (`RESUME_PREFIX_RE`, `store.previous_claude_session_in_project()`, 30-min default window configurable via `thresholds.resume_chain_window_s`)
   - [ ] Track 2 — Projects ↔ Sessions linking · spec [`docs/tracks/track-2-projects-sessions.md`](docs/tracks/track-2-projects-sessions.md)
     - Spawned session: `<tbd>` · title target: `track-2-projects-sessions`
     - 9 work items — canonical project registry, resolver, link_project stage, shared skill at SD.agents/skills/projects-sessions/, Obsidian bidirectional views, work-atoms integration, TUI upgrade, unlinked review, task-hierarchy schema (§2.8)
   - [ ] Track 3 — Preservator → SessionSkills pipeline · spec [`docs/tracks/track-3-preservator-pipeline.md`](docs/tracks/track-3-preservator-pipeline.md)
-    - Spawned session: `<tbd>` · title target: `track-3-preservator-pipeline`
+    - Spawned session: `c5ef017d-f79c-4b7b-89af-a03d699147be` · title target: `track-3-preservator-pipeline`
     - 6 work items — RAR reader, host-aware dedup, config, slug-alias hints to Track 2, launchd schedule, reverse archival (optional)
   - Spawn script: [`bin/spawn-tracks.sh`](bin/spawn-tracks.sh); prompts under [`docs/tracks/spawn/`](docs/tracks/spawn)
 - [x] **Phase 2 — SessionSkills orchestrator build** (completed 2026-04-21)

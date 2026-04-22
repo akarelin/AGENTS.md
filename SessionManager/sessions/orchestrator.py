@@ -97,6 +97,42 @@ def cmd_stats(cfg: dict) -> int:
     print(f"total: {store.count()}")
     for state, n in sorted(counts.items()):
         print(f"  {state:<18} {n}")
+
+    # Token telemetry rolled up from classification.ollama_tokens (populated
+    # by record_tokens in sessions.llm). Silent when no calls recorded.
+    import sqlite3
+    conn = sqlite3.connect(store.path)
+    try:
+        rows = conn.execute(
+            "SELECT json_extract(json, '$.classification.ollama_tokens') AS t "
+            "FROM records "
+            "WHERE json_extract(json, '$.classification.ollama_tokens') IS NOT NULL"
+        ).fetchall()
+    finally:
+        conn.close()
+    if rows:
+        agg: dict[str, dict] = {}
+        for (raw,) in rows:
+            if not raw:
+                continue
+            try:
+                bucket = json.loads(raw)
+            except (TypeError, json.JSONDecodeError):
+                continue
+            for stage, m in bucket.items():
+                a = agg.setdefault(stage, {"prompt": 0, "eval": 0,
+                                           "calls": 0, "records": 0})
+                a["prompt"] += int(m.get("prompt") or 0)
+                a["eval"] += int(m.get("eval") or 0)
+                a["calls"] += int(m.get("calls") or 0)
+                a["records"] += 1
+        if agg:
+            print("\nollama tokens (by stage):")
+            print(f"  {'stage':<16} {'records':>8} {'calls':>8} "
+                  f"{'prompt':>12} {'eval':>12}")
+            for stage, a in sorted(agg.items()):
+                print(f"  {stage:<16} {a['records']:>8} {a['calls']:>8} "
+                      f"{a['prompt']:>12,} {a['eval']:>12,}")
     return 0
 
 
