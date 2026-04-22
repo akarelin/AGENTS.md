@@ -40,8 +40,9 @@ class StageResult:
 
 
 KNOWN_STAGES = (
-    "ingest", "merge", "name", "analyze",
+    "ingest", "ingest_preservator", "merge", "name", "analyze",
     "write_to_memory", "cluster", "classify",
+    "link_project",
     "prune", "archive", "review",
 )
 
@@ -192,6 +193,8 @@ def main(argv: list[str] | None = None) -> int:
                     help="ingest: include all historical (incl. Langfuse pull)")
     rp.add_argument("--reconcile-only", action="store_true",
                     help="name: skip subprocess, just scan symlinks and update store")
+    rp.add_argument("--emit-obsidian", action="store_true",
+                    help="link_project: regenerate sessions block on each ~/_/.../*.md project page")
 
     ap.add_argument("--config", default=None, help="path to sessionskills.yaml")
     args = ap.parse_args(argv)
@@ -216,6 +219,7 @@ def main(argv: list[str] | None = None) -> int:
             source_id=args.source_id,
             backfill=args.backfill,
             reconcile_only=args.reconcile_only,
+            emit_obsidian=args.emit_obsidian,
         )
     return 0
 

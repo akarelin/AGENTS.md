@@ -490,6 +490,20 @@ def run(store: SessionStore, cfg: dict, *,
             else:
                 print(f"[ingest] unsupported api source={src['name']}; skipping")
             continue
+        if kind == "rar":
+            # Track 3 — delegate to the preservator RAR reader. Mutates the
+            # same StageResult so the caller sees aggregate counts.
+            from . import ingest_preservator
+            sub_src = src["name"]
+            sub = ingest_preservator.run(
+                store, cfg, limit=limit, dry_run=dry_run, force=force,
+                source=sub_src, source_id=source_id,
+            )
+            result.processed += sub.processed
+            result.skipped += sub.skipped
+            result.errors += sub.errors
+            result.to_review += sub.to_review
+            continue
         if kind != "jsonl":
             continue
 
@@ -531,6 +545,9 @@ def run(store: SessionStore, cfg: dict, *,
             try:
                 rec = extractor(path, src)
                 rec.content_hash = h
+                # Track 3 — local-fs ingest is always this host; cross-host
+                # ingest lives in ingest_preservator.
+                rec.origin_host = "alex-mac"
                 # Preserve existing classification / paths on re-ingest
                 if existing:
                     rec.id = existing.id
@@ -589,6 +606,7 @@ def run(store: SessionStore, cfg: dict, *,
                 try:
                     rec = _extract_orphan(path, base, kind, ts, agent)
                     rec.content_hash = h
+                    rec.origin_host = "alex-mac"
                     if existing:
                         rec.id = existing.id
                         rec.first_seen = existing.first_seen

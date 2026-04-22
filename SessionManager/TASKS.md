@@ -8,7 +8,7 @@ items keep their completion date so the history is auditable.
 
 - [ ] **Phase 3 — Parallel tracks** (in_progress; blocked_by Phase 2)
   - [ ] Track 1 — Sessions & Langfuse · spec [`docs/tracks/track-1-sessions-langfuse.md`](docs/tracks/track-1-sessions-langfuse.md)
-    - Spawned session: `b1c418ff-5954-4d35-b0b9-196225cc8f2f` · title target: `track-1-sessions-langfuse`
+    - Spawned session: `c5ef017d-f79c-4b7b-89af-a03d699147be` · title target: `track-1-sessions-langfuse`
     - 7 work items — backfill, Langfuse API pull, server-side filter, sort UX, deposit progress, token telemetry, resume-chain detection
     - [~] 1.1 Bulk backfill — `sm deposit-all` running in background (pid 68460); log at `/tmp/track1/deposit-all.log` (block-buffered so empty until done)
     - [x] 1.2 Langfuse API pull ingest (`sessions/stages/ingest.py` + `SessionStore.known_langfuse_trace_ids`)
@@ -18,11 +18,27 @@ items keep their completion date so the history is auditable.
     - [x] 1.6 Ollama token telemetry — `LocalLLM.generate(return_meta=True)` + `record_tokens()` helper; analyze stage reads `ollama-tokens.jsonl` sidecar emitted by `llm-analyze.py`; `sm-pipeline stats` rolls up per-stage prompt/eval counts
     - [x] 1.7 Cross-session resume-chain detection in merge (`RESUME_PREFIX_RE`, `store.previous_claude_session_in_project()`, 30-min default window configurable via `thresholds.resume_chain_window_s`)
   - [ ] Track 2 — Projects ↔ Sessions linking · spec [`docs/tracks/track-2-projects-sessions.md`](docs/tracks/track-2-projects-sessions.md)
-    - Spawned session: `<tbd>` · title target: `track-2-projects-sessions`
+    - Sessions (chain): `66afd881-8b89-4e24-bd00-64bdb7704dae` (initial build, handoff) → `a2e8beb5-d2e9-426c-9c0c-eeb279bbae0f` (resume, finished 2026-04-21)
     - 9 work items — canonical project registry, resolver, link_project stage, shared skill at SD.agents/skills/projects-sessions/, Obsidian bidirectional views, work-atoms integration, TUI upgrade, unlinked review, task-hierarchy schema (§2.8)
+    - [x] 2.1 Canonical project registry — 39 entries at `~/_/KG/Project/_registry.yaml` (session `66afd881`, 2026-04-21)
+    - [x] 2.2 Resolver library — `sessions/projects.py`, priority-ordered, mtime-cached (session `66afd881`, 2026-04-21)
+    - [x] 2.3 link_project pipeline stage — `sessions/stages/link_project.py`, wired to default+nightly, idempotent (session `66afd881`, 2026-04-21)
+    - [x] 2.4 Obsidian emitter — `sessions/stages/_obsidian_emit.py`; `## Sessions` + `## Task tree` blocks on project pages, splice sentinels, idempotent (session `a2e8beb5`, 2026-04-21)
+    - [x] 2.5 Unlinked-project review flow — kind-dispatch in `sessions/review_tui.py`; `[p]ick/[n]ew/[i]gnore/[s]kip/[q]uit` against the 39-entry registry; text-append for new entries preserves YAML comments (session `a2e8beb5`, 2026-04-21)
+    - [x] 2.7 work-atoms prefer canonical — `/Users/alex/_/{internals}/Skills/work-atoms/classify.py` new `lookup_canonical()` short-circuits the LLM call when SessionSkills already resolved the project (cost + consistency win per spec) (session `a2e8beb5`, 2026-04-21)
+    - [x] 2.9 Shared skill — instruction-style `~/SD.agents/skills/projects-sessions/SKILL.md` (session `66afd881`, 2026-04-21)
+    - [ ] 2.6 TUI Projects view — plan in handoff (source registry rows from `~/_/KG/Project/_registry.yaml`, additive to Langfuse-tag aggregation; sync `/A` ↔ `/RAN`)
+    - [ ] 2.8 Finalization — reduce this TASKS.md to a pointer to the registry's `tasks:` block once 2.6 lands
+    - Incidental fixes this chain: Track 1/3 UUIDs were swapped in TASKS.md and corrected; registry `sessionmanager.tasks` now carries `name:`/`status:` + `session_ids:` list on Track 2
+    - **Session title note:** this resume session (`a2e8beb5`) got auto-classified to project `backstop` (via `/rename` or client-side tagger) — the canonical project is `sessionmanager`. Registry + store linkage for this session will need to be re-stamped manually (or by running `link_project` once the session's JSONL is ingested)
   - [ ] Track 3 — Preservator → SessionSkills pipeline · spec [`docs/tracks/track-3-preservator-pipeline.md`](docs/tracks/track-3-preservator-pipeline.md)
-    - Spawned session: `c5ef017d-f79c-4b7b-89af-a03d699147be` · title target: `track-3-preservator-pipeline`
-    - 6 work items — RAR reader, host-aware dedup, config, slug-alias hints to Track 2, launchd schedule, reverse archival (optional)
+    - Spawned session: `b1c418ff-5954-4d35-b0b9-196225cc8f2f` · title target: `track-3-preservator-pipeline`
+    - [x] 3.1 RAR reader — `sessions/stages/ingest_preservator.py` walks `prsvtr.by_hst/<host>/YYYYMMDD/*.rar`, filters members by `inner_patterns`, stream-extracts via `rar p -inul` into sha256 content-addressed cache under `~/.sessionskills/preservator-cache/<aa>/<digest>/`. Delegated into the existing `ingest` stage via the new `kind: rar` case, so `sm-pipeline run ingest --source preservator` works end-to-end. Harnessed against live RARs on `/Volumes/S1/SD.Lake/prsvtr.by_hst` — 109/2720 matches on alex-xsolla 2026-04-20 RAR, 20 records materialized (2026-04-21)
+    - [x] 3.2 `sessionskills.yaml` `preservator` source block + `SessionRecord.origin_host` field; local-fs ingest tags `origin_host='alex-mac'` (2026-04-21)
+    - [x] 3.3 Host-aware dedup via `content_hash`; duplicate-content upsert merges `paths.preservator_rar_history[]` and rewrites `paths.preservator_rar` to the newer RAR (2026-04-21)
+    - [x] 3.4 Cross-host Claude Code `host_slug_alias` hints written to `~/.sessionskills/review_queue.json` for Track 2's unlinked-project reviewer. Dedup key `(kind, host, slug)` (2026-04-21)
+    - [x] 3.5 `launchd/ai.sessionskills.preservator-ingest.plist` — every 6 h `sm-pipeline run ingest --source preservator`, logs to `~/Library/Logs/sessionskills-preservator.log`. Auto-picked up by the existing `launchd/install.sh` glob (2026-04-21)
+    - [x] 3.6 Reverse archival — decision (option a) stays: preservator-side adds alex-mac to `workstations.yaml` over SSH; SessionSkills is read-only against the archive tree, no code needed here (2026-04-21)
   - Spawn script: [`bin/spawn-tracks.sh`](bin/spawn-tracks.sh); prompts under [`docs/tracks/spawn/`](docs/tracks/spawn)
 - [x] **Phase 2 — SessionSkills orchestrator build** (completed 2026-04-21)
     session: `f56a50a4-3dd9-49d9-a907-8ec1ee14859b` · title: `session-skills` · host: alex-mac

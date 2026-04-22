@@ -37,9 +37,24 @@ sources:
     auth_env: [LANGFUSE_PUBLIC_KEY, LANGFUSE_SECRET_KEY]
     enabled: false                # turn on after local ingest is stable
 
+  # Track 3 — multi-host sessions from preservator RAR archives on SD.Lake.
+  # Members matched by suffix against inner_patterns; hostname taken from the
+  # path segment under `root`.
+  - name: preservator
+    kind: rar
+    root: /Volumes/S1/SD.Lake/prsvtr.by_hst
+    inner_patterns:
+      - "**/.claude/projects/*/*.jsonl"
+      - "**/.openclaw/agents/*/sessions/*.jsonl"
+      - "**/.codex/sessions/*/*.jsonl"
+    include_hosts: []              # empty = all hosts
+    exclude_hosts: [alex-mac]      # skip — local fs ingest already covers these
+    cache_dir: ~/.sessionskills/preservator-cache
+    age_limit_days: 365            # ignore RARs older than this
+
 pipeline:
-  default:  [ingest, merge, name, analyze, write_to_memory, cluster, classify, review]
-  nightly:  [cluster, classify]
+  default:  [ingest, merge, name, analyze, write_to_memory, cluster, classify, link_project, review]
+  nightly:  [cluster, classify, link_project]
   weekly:   [prune, archive]
 
 thresholds:

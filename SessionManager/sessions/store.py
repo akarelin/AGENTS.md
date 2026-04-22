@@ -158,3 +158,13 @@ class SessionStore:
                 "FROM records WHERE t IS NOT NULL"
             ).fetchall()
         return {r["t"] for r in rows if r["t"]}
+
+    def iter_with_canonical_project(self) -> list[SessionRecord]:
+        """Every record whose classification.canonical_project is set.
+        Used by the Obsidian emitter to group sessions per project page."""
+        with self._conn() as c:
+            rows = c.execute(
+                "SELECT json FROM records "
+                "WHERE json_extract(json, '$.classification.canonical_project') IS NOT NULL"
+            ).fetchall()
+        return [SessionRecord(**json.loads(r["json"])) for r in rows]

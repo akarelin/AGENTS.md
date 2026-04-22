@@ -81,8 +81,13 @@ class SessionRecord:
     state_history: list[dict[str, Any]] = field(default_factory=list)
 
     # Paths: raw_jsonl, rendered_md, symlink_name, analyzed_md,
-    #        langfuse_trace_id, memory_row_id, archive_tar
+    #        langfuse_trace_id, memory_row_id, archive_tar,
+    #        preservator_rar, preservator_rar_history
     paths: dict[str, Any] = field(default_factory=dict)
+
+    # Track 3 — origin host. None on older rows is treated as 'alex-mac' by
+    # readers; ingest stages set this explicitly going forward.
+    origin_host: str | None = None
 
     # Bookkeeping
     id: str = field(default_factory=lambda: str(uuid.uuid4()))
