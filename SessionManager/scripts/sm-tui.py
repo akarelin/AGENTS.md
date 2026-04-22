@@ -1048,10 +1048,11 @@ class SessionManagerApp(App):
             for existing in panel.query("ProgressBar"):
                 existing.remove()
             log.clear()
-            bar = ProgressBar(total=total, show_eta=True, show_percentage=True,
-                              id="deposit-progress")
-            panel.mount(bar, before=log)
-            return bar
+            panel.mount(
+                ProgressBar(total=total, show_eta=True, show_percentage=True,
+                            id="deposit-progress"),
+                before=log,
+            )
 
         self.call_from_thread(_mount_bar)
         self.call_from_thread(self._update_status, f"Depositing {total} sessions…")
@@ -1072,7 +1073,7 @@ class SessionManagerApp(App):
                     f"{(result.stderr or '').strip()[:80]}"
                 )
 
-            def _advance(done=i):
+            def _advance():
                 try:
                     self.query_one("#deposit-progress", ProgressBar).advance(1)
                 except Exception:
