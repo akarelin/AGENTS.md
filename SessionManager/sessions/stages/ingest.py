@@ -251,7 +251,9 @@ _SINCE_RE = re.compile(r"^(\d+)([dhm])$")
 
 
 def _parse_since(spec: str | None) -> str | None:
-    """Turn '7d' / '12h' / '90m' → ISO timestamp `fromTimestamp` arg."""
+    """Turn '7d' / '12h' / '90m' → ISO8601 `fromTimestamp` arg with a
+    trailing `Z` (Langfuse's datetime validator rejects the `+00:00`
+    offset form)."""
     if not spec:
         return None
     m = _SINCE_RE.match(spec.strip())
@@ -260,7 +262,7 @@ def _parse_since(spec: str | None) -> str | None:
     n, unit = int(m.group(1)), m.group(2)
     delta = {"d": timedelta(days=n), "h": timedelta(hours=n),
              "m": timedelta(minutes=n)}[unit]
-    return (datetime.now(timezone.utc) - delta).isoformat()
+    return (datetime.now(timezone.utc) - delta).isoformat().replace("+00:00", "Z")
 
 
 def _langfuse_auth(src: dict) -> str | None:
