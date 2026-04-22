@@ -10,7 +10,7 @@ items keep their completion date so the history is auditable.
   - [ ] Track 1 — Sessions & Langfuse · spec [`docs/tracks/track-1-sessions-langfuse.md`](docs/tracks/track-1-sessions-langfuse.md)
     - Spawned session: `c5ef017d-f79c-4b7b-89af-a03d699147be` · title target: `track-1-sessions-langfuse`
     - 7 work items — backfill, Langfuse API pull, server-side filter, sort UX, deposit progress, token telemetry, resume-chain detection
-    - [~] 1.1 Bulk backfill — `sm deposit-all` running in background (pid 68460); log at `/tmp/track1/deposit-all.log` (block-buffered so empty until done)
+    - [x] 1.1 Bulk backfill (72 min, 2026-04-21): `sm deposit-all` 6,348 deposited / 0 failed; Langfuse `meta.totalItems` = 5,925 post-run (≥ 3,172 local target ✓). Log: `/tmp/track1/deposit-all.log`
     - [x] 1.2 Langfuse API pull ingest (`sessions/stages/ingest.py` + `SessionStore.known_langfuse_trace_ids`)
     - [x] 1.3 Server-side `name=` filter in TUI remote view
     - [x] 1.4 Cycle-column sort UX + ▲/▼ header glyph (`s` advances col, `S` reverses)
