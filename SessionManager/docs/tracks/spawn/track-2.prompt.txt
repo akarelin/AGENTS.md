@@ -1,0 +1,18 @@
+Please /rename this session to track-2-projects-sessions.
+
+You are Track 2 of Phase 3 of SessionSkills (task #29). Read docs/tracks/track-2-projects-sessions.md in full (pay attention to §2.8 project task hierarchy and §2.9 shared skill), then docs/tracks/README.md.
+
+Execute in order:
+  2.1 canonical project registry at ~/_/KG/Project/_registry.yaml
+  2.2 resolver library at sessions/projects.py
+  2.3 new link_project pipeline stage
+  2.9 shared skill at SD.agents/skills/projects-sessions/
+  2.7 work-atoms integration (prefer canonical over LLM call)
+  2.4 Obsidian bidirectional sessions-on-project-pages generation
+  2.6 TUI Projects view upgrade
+  2.5 unlinked-project review flow
+  2.8 task-hierarchy schema (migrate TASKS.md into registry)
+
+First action: update TASKS.md Track 2 spawned-session line with this session's UUID.
+
+Constraints: Do NOT touch sm-tui.py or session-to-langfuse.py except for narrow additive columns. Auto mode. Sync edits between /Users/alex/A/SessionManager and /Users/alex/RAN/AI/SessionManager.
