@@ -39,6 +39,21 @@ items keep their completion date so the history is auditable.
   - [x] Preservator README integrations section — current + desired SM handoff (2026-04-21) [session](~/.claude/projects/-home-alex-CRAP-preservator/a733ad67-781f-4a91-9ff0-829457eb1d3a.jsonl)
   - [x] SessionSkills Phase 3 track specifications under `docs/tracks/` (2026-04-21) [session](~/.claude/projects/-Users-alex-RAN-AI/f56a50a4-3dd9-49d9-a907-8ec1ee14859b.jsonl)
 
+## Quick-start — run this on alex-mac to resume Phase 3
+
+```bash
+ssh alex@Alex-Mac.local
+cd /Users/alex/A/SessionManager
+./bin/spawn-tracks.sh          # fires Track 1 + 2 + 3 in detached tmux
+./launchd/install.sh           # installs hourly/nightly/weekly schedules + symlink guard
+tmux attach -t track1          # supervise any of {track1,track2,track3}; Ctrl-b d to detach
+
+# Optional, large-scope:
+sm deposit-all                 # backfill ~155 undeposited Langfuse traces (idempotent)
+sm-pipeline run analyze write_to_memory   # multi-hour Ollama run; 3000+ sessions → agent memory
+sm-pipeline migrate-skills --apply --rewrite-refs    # 16 vault skills → SD.agents/skills/
+```
+
 ## Pending actions (user-initiated, Phase-3 side)
 
 - [ ] **Spawn Phase-3 tracks** — on Mac: `/Users/alex/A/SessionManager/bin/spawn-tracks.sh` → three tmux sessions (`track1`/`track2`/`track3`) running in parallel. Replaces the `<tbd>` spawned-session markers above on first run.
