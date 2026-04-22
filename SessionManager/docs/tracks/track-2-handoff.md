@@ -147,3 +147,13 @@ Recommend: 2.4 first (Obsidian emitter — finishes the bidirectional view that
 makes everything else demonstrable), then 2.5 (review TUI — small), then 2.7
 (work-atoms — small), then 2.6 (TUI Projects view — coordinate with Track 1),
 then 2.8 finalization (TASKS.md → pointer).
+
+---
+
+**Session 66afd881 closed 2026-04-22.** Track-2 ownership transferred to
+session `a2e8beb5-d2e9-426c-9c0c-eeb279bbae0f` (resume), which shipped
+2.4 / 2.5 / 2.7 — see the latest checkpoint at the top of this file.
+Remaining for the next session: **2.6** (TUI Projects view — narrow
+additive change to scripts/sm-tui.py; coordinate with Track 1) and
+**2.8 finalization** (reduce TASKS.md to a one-line pointer to the
+registry's `tasks:` block).
