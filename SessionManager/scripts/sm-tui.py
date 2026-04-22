@@ -139,7 +139,11 @@ def api_get_paginated(path, max_pages=10, limit=100, *, use_cache: bool = True,
                       extra_params: dict | None = None):
     """Fetch up to max_pages of Langfuse list results. Each page cached
     separately so partial invalidation is possible. Returns (all_data, total).
-    extra_params merges onto {limit,page} per request (e.g. {'name': 'foo'})."""
+
+    extra_params merges onto {limit,page} per request. Langfuse's usable
+    list-scope knobs are `fromTimestamp` / `toTimestamp` / `tags` / `userId`;
+    `name` is exact-match (so not useful for substring search — widen
+    max_pages instead and filter client-side)."""
     all_data = []
     total = 0
     for page in range(1, max_pages + 1):
@@ -600,13 +604,17 @@ class SessionManagerApp(App):
 
     @work(thread=True)
     def _load_all(self, name_filter: str | None = None) -> None:
-        extra = {"name": name_filter} if name_filter else None
+        # Langfuse's `name=` is an exact-match filter, not substring — so we
+        # can't push a partial needle server-side. Instead, when a filter is
+        # set, widen pagination so client-side filter_match sweeps the whole
+        # corpus, not just the first page. 60 pages × 100 covers ~6000 traces.
+        max_pages = 60 if name_filter else 10
         label = "Loading remote sessions (paginated)"
         if name_filter:
-            label += f" · name~{name_filter!r}"
+            label += f" · full-corpus scan for {name_filter!r}"
         self.call_from_thread(self._update_status, label + "…")
-        traces, total = api_get_paginated("/api/public/traces", max_pages=10, limit=100,
-                                          extra_params=extra)
+        traces, total = api_get_paginated("/api/public/traces",
+                                          max_pages=max_pages, limit=100)
         self._remote_traces = traces
         self._remote_total = total
 
