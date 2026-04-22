@@ -97,8 +97,10 @@ lf resume [search]                    # list & resume (interactive)
 lf rename <target> <name> [--tag t]   # rename + tag
 lf merge <t1> <t2> [--name n]         # merge under shared session
 lf archive <target> [--undo]          # archive/unarchive
-lf deposit <file|id|all>              # push local JSONL → Langfuse
+lf deposit <file|id|dir|all>          # push local JSONL → Langfuse
 lf deposit-all                        # bulk push everything
+# dir form lets preservator hand a staged pull tree (before RAR):
+lf deposit /mnt/d/Cache/batch_<ts>/<host>/llms/
 
 # Projects
 lf projects [name]                    # list by project

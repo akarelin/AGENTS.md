@@ -408,77 +408,59 @@ def cmd_session_archive(args):
 
 
 def cmd_session_deposit(args):
-    """Deposit a session to Langfuse. Usage: session deposit <file|session-id|all>"""
+    """Deposit a session (or a dir of sessions) to Langfuse.
+
+    Usage:
+        session deposit <jsonl-file>      # single file
+        session deposit <session-id>      # search $HOME for that session
+        session deposit <directory>       # recurse .jsonl under the dir
+        session deposit all               # every local Claude+OpenClaw session
+    """
     if not args:
-        print("Usage: sm session deposit <jsonl-file|session-id|all>")
+        print("Usage: sm session deposit <jsonl-file|session-id|directory|all>")
         return
 
     target = args[0]
-    source = "claude-code"  # default
-    if "--oc" in args or "--openclaw" in args:
-        source = "openclaw"
 
     if target == "all":
         return cmd_session_deposit_all(args[1:])
 
-    # Find the file
-    path = Path(target)
+    path = Path(target).expanduser()
+
+    # Directory — recurse for .jsonl.  Used by preservator to hand over a
+    # staged pull tree before RAR runs.  One SSH session's worth of files
+    # typically sits under <batch>/<host>/llms/.
+    if path.is_dir():
+        files = sorted(p for p in path.rglob("*.jsonl")
+                       if ".reset." not in p.name)
+        if not files:
+            print(f"❌ No .jsonl files under {path}")
+            return
+        return _deposit_batch(files)
+
+    # Single file — either a literal path or a session-id we search for
     if path.exists() and path.suffix == ".jsonl":
         jsonl_path = path
     else:
-        # Search by session ID
         jsonl_path = _find_session_file(target)
 
     if not jsonl_path:
         print(f"❌ Cannot find session file for '{target}'")
         return
 
-    # Use the existing deposit script
-    hook_script = Path.home() / ".claude" / "hooks" / "session-to-langfuse.py"
-    venv_python = Path.home() / ".claude" / "hooks" / ".venv" / "bin" / "python3"
-
-    result = subprocess.run(
-        [str(venv_python), str(hook_script)],
-        input=json.dumps({"session_file": str(jsonl_path)}),
-        capture_output=True, text=True, timeout=30,
-    )
-    if result.returncode == 0:
-        print(f"✅ Deposited: {jsonl_path.name}")
-    else:
-        print(f"❌ Failed: {result.stderr[:200]}")
-
-    # Check log
-    log_file = Path.home() / ".claude" / "hooks" / "langfuse-hook.log"
-    if log_file.exists():
-        lines = log_file.read_text().strip().split("\n")
-        for line in lines[-3:]:
-            if "Shipped" in line or "ERROR" in line:
-                print(f"   {line}")
+    _deposit_batch([jsonl_path])
 
 
-def cmd_session_deposit_all(args):
-    """Deposit all local sessions to Langfuse."""
-    sources = []
-
-    # Claude Code sessions
-    if "--oc" not in args:
-        for f in CLAUDE_PROJECTS_DIR.rglob("*.jsonl"):
-            sources.append(("cc", f))
-
-    # OpenClaw sessions
-    if "--cc" not in args:
-        for f in OPENCLAW_AGENTS_DIR.rglob("*.jsonl"):
-            if f.name.endswith(".jsonl") and ".reset." not in f.name:
-                sources.append(("oc", f))
-
-    print(f"  Found {len(sources)} session files")
-
+def _deposit_batch(files):
+    """Ship a list of JSONL paths through the Langfuse hook.  Shared by
+    single-file, directory, and --all paths.
+    """
     hook_script = Path.home() / ".claude" / "hooks" / "session-to-langfuse.py"
     venv_python = Path.home() / ".claude" / "hooks" / ".venv" / "bin" / "python3"
 
     ok = 0
     fail = 0
-    for src, f in sources:
+    for f in files:
         try:
             result = subprocess.run(
                 [str(venv_python), str(hook_script)],
@@ -487,15 +469,29 @@ def cmd_session_deposit_all(args):
             )
             if result.returncode == 0:
                 ok += 1
-                print(f"  ✅ [{src}] {f.name[:40]}")
+                print(f"  ✅ {f.name[:60]}")
             else:
                 fail += 1
-                print(f"  ❌ [{src}] {f.name[:40]}")
+                print(f"  ❌ {f.name[:60]}: {result.stderr[:120].strip()}")
         except Exception as e:
             fail += 1
-            print(f"  ❌ [{src}] {f.name[:40]}: {e}")
+            print(f"  ❌ {f.name[:60]}: {e}")
 
-    print(f"\n  Done: {ok} deposited, {fail} failed")
+    if len(files) > 1:
+        print(f"\n  Done: {ok} deposited, {fail} failed")
+
+
+def cmd_session_deposit_all(args):
+    """Deposit every local Claude Code and/or OpenClaw session to Langfuse."""
+    files: list[Path] = []
+    if "--oc" not in args:
+        files.extend(CLAUDE_PROJECTS_DIR.rglob("*.jsonl"))
+    if "--cc" not in args:
+        files.extend(p for p in OPENCLAW_AGENTS_DIR.rglob("*.jsonl")
+                     if ".reset." not in p.name)
+    files = sorted(set(files))
+    print(f"  Found {len(files)} session files")
+    _deposit_batch(files)
 
 
 # --- Project commands ---
