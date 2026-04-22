@@ -175,6 +175,24 @@ def src_badge(src: str) -> str:
     return SRC_ICON.get(src, "·")
 
 
+# Track 3 — flag emoji per origin_host. Hostnames Alex actually uses:
+# alex-mac (Darwin), alex-pc/alex-laptop/alex-surface (Windows native or WSL),
+# alex-xsolla (WSL), kolme/five/seven/trix (Linux/headless).
+_HOST_FLAG_OVERRIDES = {
+    "alex-mac": "🍎",
+    "alex-pc": "🪟", "alex-laptop": "🪟", "alex-surface": "🪟",
+    "alex-xsolla": "🪟",
+}
+
+
+def host_flag(host: str | None) -> str:
+    """Single-char OS flag for an origin_host. Unknown hosts → 🐧 (default
+    Linux/headless workstation in Alex's fleet)."""
+    if not host:
+        return "·"
+    return _HOST_FLAG_OVERRIDES.get(host, "🐧")
+
+
 def age_color(dt) -> str:
     """Rich color string based on age of the timestamp.
     Recent → bright green; weeks → yellow; months+ → dim."""
@@ -312,6 +330,7 @@ def fetch_local_sessions():
                 "size": f.stat().st_size,
                 "mtime": datetime.fromtimestamp(f.stat().st_mtime),
                 "description": _session_description(f),
+                "origin_host": "alex-mac",
             })
     if OPENCLAW_AGENTS_DIR.exists():
         for agent_dir in sorted(d for d in OPENCLAW_AGENTS_DIR.iterdir() if d.is_dir()):
@@ -329,8 +348,68 @@ def fetch_local_sessions():
                     "size": f.stat().st_size,
                     "mtime": datetime.fromtimestamp(f.stat().st_mtime),
                     "description": _session_description(f),
+                    "origin_host": "alex-mac",
                 })
+    sessions.extend(_fetch_cross_host_sessions())
     return sessions
+
+
+def _fetch_cross_host_sessions():
+    """Read preservator-archived sessions from the SessionSkills store and
+    expose them in the Local view alongside on-disk sessions. Read-only;
+    silently no-ops if the store hasn't been initialized yet."""
+    store_path = Path.home() / ".sessionskills" / "store.sqlite"
+    if not store_path.exists():
+        return []
+    import sqlite3
+    out = []
+    try:
+        conn = sqlite3.connect(f"file:{store_path}?mode=ro", uri=True)
+        conn.row_factory = sqlite3.Row
+        try:
+            rows = conn.execute(
+                "SELECT source, source_id, project, started_at, json "
+                "FROM records "
+                "WHERE json_extract(json, '$.origin_host') IS NOT NULL "
+                "  AND json_extract(json, '$.origin_host') != 'alex-mac'"
+            ).fetchall()
+        finally:
+            conn.close()
+    except sqlite3.Error:
+        return []
+
+    for r in rows:
+        try:
+            data = json.loads(r["json"])
+        except (TypeError, json.JSONDecodeError):
+            continue
+        paths = data.get("paths") or {}
+        raw = paths.get("raw_jsonl") or paths.get("snapshot_jsonl") or ""
+        size = 0
+        mtime = datetime.min
+        if raw and Path(raw).exists():
+            st = Path(raw).stat()
+            size = st.st_size
+            mtime = datetime.fromtimestamp(st.st_mtime)
+        elif data.get("started_at"):
+            try:
+                mtime = datetime.fromisoformat(
+                    data["started_at"].replace("Z", "+00:00")).replace(tzinfo=None)
+            except ValueError:
+                pass
+        src_kind = "cc" if r["source"] == "claude-code" else \
+                   "oc" if r["source"] == "openclaw" else r["source"]
+        out.append({
+            "source": src_kind,
+            "project": r["project"] or "?",
+            "session_id": r["source_id"],
+            "file": raw,
+            "size": size,
+            "mtime": mtime,
+            "description": (data.get("classification") or {}).get("topic_slug") or "",
+            "origin_host": data.get("origin_host"),
+        })
+    return out
 
 
 # --- Detail Screen ---
@@ -479,7 +558,7 @@ class SessionManagerApp(App):
     # Column labels per view. Index matches the tuple produced in `sort` keys.
     _COLUMNS = {
         "remote": ["Src", "Name", "Description", "Tags", "Age", "Size", "Tokens"],
-        "local":  ["Src", "Project", "Description", "Size", "Age"],
+        "local":  ["Src", "Host", "Project", "Description", "Size", "Age"],
     }
 
     def __init__(self):
@@ -492,7 +571,7 @@ class SessionManagerApp(App):
         # per-view sort state: (column_index, descending)
         self._sort = {
             "remote": (4, True),     # Age desc
-            "local": (4, True),      # Age desc
+            "local": (5, True),      # Age desc (after Host inserted)
             "projects": (1, True),   # Session count desc
         }
 
@@ -651,11 +730,14 @@ class SessionManagerApp(App):
             desc = s.get("description") or s["session_id"][:8]
             size_str = format_size(s["size"])
             age_str = format_age(s["mtime"])
+            host = s.get("origin_host") or "alex-mac"
 
-            if not self._filter_match(src_kind, project, s["session_id"], desc):
+            if not self._filter_match(src_kind, host, project,
+                                       s["session_id"], desc):
                 continue
 
             badge = src_badge(src_kind)
+            host_cell = host_flag(host)
             proj_cell = tint(project, s["mtime"], s["size"])
             desc_cell = tint(desc[:45], s["mtime"], s["size"]) if desc else Text("—", style="dim")
             size_cell = tint(size_str, s["mtime"], s["size"])
@@ -663,8 +745,8 @@ class SessionManagerApp(App):
 
             rows.append({
                 "key": str(i),
-                "cells": (badge, proj_cell, desc_cell, size_cell, age_cell),
-                "sort": (src_kind, project.lower(), desc.lower(),
+                "cells": (badge, host_cell, proj_cell, desc_cell, size_cell, age_cell),
+                "sort": (src_kind, host, project.lower(), desc.lower(),
                          s["size"], s["mtime"]),
             })
 
