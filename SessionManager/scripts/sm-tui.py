@@ -237,6 +237,45 @@ _SLUG_RE = re.compile(
 )
 
 
+def _read_first_user_message(jsonl_path: Path, max_scan: int = 30) -> str:
+    """Extract the first user-message content from a session JSONL.
+    Handles both Claude Code (`type=user`) and OpenClaw (`type=message` with
+    role=user) shapes. Returns empty string on failure."""
+    try:
+        with open(jsonl_path, "rb") as f:
+            for i, line in enumerate(f):
+                if i >= max_scan:
+                    break
+                try:
+                    entry = json.loads(line)
+                except (json.JSONDecodeError, UnicodeDecodeError):
+                    continue
+                t = entry.get("type")
+                msg = entry.get("message") or {}
+                if t == "user" or (t == "message" and msg.get("role") == "user"):
+                    c = msg.get("content") if msg else entry.get("content")
+                    if isinstance(c, list):
+                        c = " ".join(p.get("text", "") for p in c if isinstance(p, dict))
+                    if isinstance(c, str) and c.strip():
+                        return c.strip()
+    except OSError:
+        pass
+    return ""
+
+
+def _find_analyzed_md(session_id: str, source: str) -> Path | None:
+    """Look up the SessionSkills-analyzed markdown for this session."""
+    base = Path("/Users/alex/_/{internals}/session-intel/analyzed")
+    tool = "openclaw" if source == "oc" else "claude-code"
+    d = base / tool
+    if not d.is_dir():
+        return None
+    id12 = session_id[:12]
+    for f in d.glob(f"{tool}-*-{id12}.md"):
+        return f
+    return None
+
+
 def _session_description(source_file: Path) -> str:
     """Look for a sessions-named/ symlink matching this file's uuid8 prefix
     and extract the descriptive slug. Checks both conventional layouts:
@@ -563,6 +602,12 @@ class SessionManagerApp(App):
         rows = self._apply_sort(rows)
         for r in rows:
             table.add_row(*r["cells"], key=r["key"])
+        # Fire initial preview for row 0 so right pane isn't empty on first load.
+        try:
+            if rows:
+                table.move_cursor(row=0)
+        except Exception:
+            pass
         flt = f" filter={self._filter!r}" if self._filter else ""
         label.update(f"Remote ({len(rows)} shown / {self._remote_total or len(self._remote_traces)} total){flt}")
         table.focus()
@@ -602,6 +647,12 @@ class SessionManagerApp(App):
         rows = self._apply_sort(rows)
         for r in rows:
             table.add_row(*r["cells"], key=r["key"])
+        # Fire initial preview for row 0 so right pane isn't empty on first load.
+        try:
+            if rows:
+                table.move_cursor(row=0)
+        except Exception:
+            pass
         label = self.query_one("#list-label", Static)
         flt = f" filter={self._filter!r}" if self._filter else ""
         label.update(f"Local ({len(rows)} shown / {len(self._local_sessions)} total){flt}")
@@ -702,11 +753,36 @@ class SessionManagerApp(App):
     def _show_local_detail(self, s: dict) -> None:
         log = self.query_one("#detail-log", RichLog)
         log.clear()
-        log.write(f"[bold]{s['project']}[/]  [{s['source']}]")
+        badge = src_badge(s["source"])
+        log.write(f"[bold]{badge} {s['project']}[/]")
+        if s.get("description"):
+            log.write(f"  [italic cyan]{s['description']}[/]")
         log.write(f"  Session:   {s['session_id']}")
         log.write(f"  File:      {s['file']}")
-        log.write(f"  Size:      {format_size(s['size'])}")
+        log.write(f"  Size:      {format_size(s['size'])}    Age: {format_age(s['mtime'])}")
         log.write(f"  Modified:  {s['mtime'].strftime('%Y-%m-%d %H:%M')}")
+        log.write("")
+
+        # Preview: first user message from the JSONL, plus analyzed summary if present.
+        preview = _read_first_user_message(Path(s["file"]))
+        if preview:
+            log.write("[bold]First prompt:[/]")
+            log.write(preview[:1200])
+            log.write("")
+
+        analyzed = _find_analyzed_md(s["session_id"], s["source"])
+        if analyzed:
+            log.write(f"[bold]Analyzed summary:[/]  [dim]{analyzed}[/]")
+            try:
+                body = analyzed.read_text()
+                # Skip frontmatter
+                if body.startswith("---"):
+                    end = body.find("---", 3)
+                    if end > 0:
+                        body = body[end + 3:]
+                log.write(body.strip()[:2500])
+            except OSError as e:
+                log.write(f"(could not read: {e})")
 
     def _show_project_detail(self, project: str) -> None:
         log = self.query_one("#detail-log", RichLog)
