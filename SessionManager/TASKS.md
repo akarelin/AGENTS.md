@@ -7,8 +7,8 @@ items keep their completion date so the history is auditable.
 ## SessionManager (meta project)
 
 - [ ] **Phase 3 — Parallel tracks** (in_progress; blocked_by Phase 2)
-  - [ ] Track 1 — Sessions & Langfuse · spec [`docs/tracks/track-1-sessions-langfuse.md`](docs/tracks/track-1-sessions-langfuse.md)
-    - Spawned session: `c5ef017d-f79c-4b7b-89af-a03d699147be` · title target: `track-1-sessions-langfuse`
+  - [x] Track 1 — Sessions & Langfuse · spec [`docs/tracks/track-1-sessions-langfuse.md`](docs/tracks/track-1-sessions-langfuse.md) (completed 2026-04-22)
+    - Spawned session: `b1c418ff-5954-4d35-b0b9-196225cc8f2f` · title: `track1-langfuse` · host: alex-mac
     - 7 work items — backfill, Langfuse API pull, server-side filter, sort UX, deposit progress, token telemetry, resume-chain detection
     - [x] 1.1 Bulk backfill (72 min, 2026-04-21): `sm deposit-all` 6,348 deposited / 0 failed; Langfuse `meta.totalItems` = 5,925 post-run (≥ 3,172 local target ✓). Log: `/tmp/track1/deposit-all.log`
     - [x] 1.2 Langfuse API pull ingest (`sessions/stages/ingest.py` + `SessionStore.known_langfuse_trace_ids`)
@@ -29,10 +29,10 @@ items keep their completion date so the history is auditable.
     - [x] 2.9 Shared skill — instruction-style `~/SD.agents/skills/projects-sessions/SKILL.md` (session `66afd881`, 2026-04-21)
     - [ ] 2.6 TUI Projects view — plan in handoff (source registry rows from `~/_/KG/Project/_registry.yaml`, additive to Langfuse-tag aggregation; sync `/A` ↔ `/RAN`)
     - [ ] 2.8 Finalization — reduce this TASKS.md to a pointer to the registry's `tasks:` block once 2.6 lands
-    - Incidental fixes this chain: Track 1/3 UUIDs were swapped in TASKS.md and corrected; registry `sessionmanager.tasks` now carries `name:`/`status:` + `session_ids:` list on Track 2
+    - Incidental fixes this chain: registry `sessionmanager.tasks` now carries `name:`/`status:` + `session_ids:` list on Track 2. (Note: the earlier "Track 1/3 UUIDs swapped" fix over-corrected — actual spawns are b1c418ff=Track1, c5ef017d=Track3, restored 2026-04-22.)
     - **Session title note:** this resume session (`a2e8beb5`) got auto-classified to project `backstop` (via `/rename` or client-side tagger) — the canonical project is `sessionmanager`. Registry + store linkage for this session will need to be re-stamped manually (or by running `link_project` once the session's JSONL is ingested)
-  - [ ] Track 3 — Preservator → SessionSkills pipeline · spec [`docs/tracks/track-3-preservator-pipeline.md`](docs/tracks/track-3-preservator-pipeline.md)
-    - Spawned session: `b1c418ff-5954-4d35-b0b9-196225cc8f2f` · title target: `track-3-preservator-pipeline`
+  - [x] Track 3 — Preservator → SessionSkills pipeline · spec [`docs/tracks/track-3-preservator-pipeline.md`](docs/tracks/track-3-preservator-pipeline.md) (completed 2026-04-21)
+    - Spawned session: `c5ef017d-f79c-4b7b-89af-a03d699147be` · title target: `track-3-preservator-pipeline`
     - [x] 3.1 RAR reader — `sessions/stages/ingest_preservator.py` walks `prsvtr.by_hst/<host>/YYYYMMDD/*.rar`, filters members by `inner_patterns`, stream-extracts via `rar p -inul` into sha256 content-addressed cache under `~/.sessionskills/preservator-cache/<aa>/<digest>/`. Delegated into the existing `ingest` stage via the new `kind: rar` case, so `sm-pipeline run ingest --source preservator` works end-to-end. Harnessed against live RARs on `/Volumes/S1/SD.Lake/prsvtr.by_hst` — 109/2720 matches on alex-xsolla 2026-04-20 RAR, 20 records materialized (2026-04-21)
     - [x] 3.2 `sessionskills.yaml` `preservator` source block + `SessionRecord.origin_host` field; local-fs ingest tags `origin_host='alex-mac'` (2026-04-21)
     - [x] 3.3 Host-aware dedup via `content_hash`; duplicate-content upsert merges `paths.preservator_rar_history[]` and rewrites `paths.preservator_rar` to the newer RAR (2026-04-21)
@@ -79,10 +79,10 @@ sm-pipeline migrate-skills --apply --rewrite-refs    # 16 vault skills → SD.ag
 
 ## Pending actions (user-initiated, Phase-3 side)
 
-- [ ] **Spawn Phase-3 tracks** — on Mac: `/Users/alex/A/SessionManager/bin/spawn-tracks.sh` → three tmux sessions (`track1`/`track2`/`track3`) running in parallel. Replaces the `<tbd>` spawned-session markers above on first run.
-- [ ] **Install launchd schedules** — `/Users/alex/A/SessionManager/launchd/install.sh` → hourly analyze, nightly cluster+classify, weekly prune+archive, symlink guard every hour.
-- [ ] **Bulk Langfuse backfill** — `sm deposit-all` → closes the 3172-local vs 3017-remote gap. Safe since Phase 2 landed deterministic observation IDs (full idempotence).
-- [ ] **Full analyze cascade** over the 3160 named records — `sm-pipeline run analyze write_to_memory`. Multi-hour Ollama run; produces structured summaries + writes them into OpenClaw per-agent memory SQLite.
+- [x] **Spawn Phase-3 tracks** (2026-04-21) — three parallel tmux sessions fired via `bin/spawn-tracks.sh`; all three landed (Track 1 completed 2026-04-22, Tracks 2/3 completed 2026-04-21).
+- [x] **Bulk Langfuse backfill** (2026-04-21, closed by Track 1 session `b1c418ff`) — `sm deposit-all` 6,348 deposits / 0 failed / 72 min; Langfuse `meta.totalItems` = 5,925 post-run.
+- [ ] **Install launchd schedules** — `/Users/alex/A/SessionManager/launchd/install.sh` → hourly analyze, nightly cluster+classify, weekly prune+archive, symlink guard every hour. Now also includes `ai.sessionskills.preservator-ingest.plist` (6 h) courtesy of Track 3 §3.5.
+- [ ] **Full analyze cascade** over the 3160 named records — `sm-pipeline run analyze write_to_memory`. Multi-hour Ollama run; produces structured summaries + writes them into OpenClaw per-agent memory SQLite. Token telemetry (Track 1 §1.6) will surface in `sm-pipeline stats` after.
 - [ ] **Vault-skill migration** — `sm-pipeline migrate-skills --apply --rewrite-refs` → moves the 16 skills still in `~/_/{internals}/Skills/` into `SD.agents/skills/` and sweeps hardcoded references.
 
 ## Preservator-backfill
@@ -117,3 +117,5 @@ scope (cross-host session ingest) — reconcile when Track 3 lands §3.1.
 ---
 
 **Phase 2 build session closed 2026-04-21.** All code committed and pushed: `akarelin/AGENTS.md` at `5c593d3`+ (contains the tracks/spec + TASKS.md + spawn script) and `akarelin/SessionManager` at `969547e`+ (contains all scripts + bin/_bootstrap.sh + sm-tui enhancements + deterministic deposit IDs). Next work picks up from the **Pending actions** list above — any session can resume.
+
+**Track 1 session closed 2026-04-22** (session `b1c418ff`). All 7 work items landed + verified. Canonical commits: `082de40` (main Track 1 land), `694fcb5` (sm-tui self-review nits), `c895b95` (TASKS.md backfill close). Mirror at `akarelin/SessionManager`: `090d71d`, `572d3a5` (sm-tui sync). Post-run Langfuse state: 5,925 traces / 10-day-span median ~500 sessions/day; daily breakdown captured in this session's transcript. Phase 3 tracks 1 + 3 are fully complete; Track 2 has 2.6 (TUI Projects view) + 2.8 (TASKS.md → registry migration) remaining.
