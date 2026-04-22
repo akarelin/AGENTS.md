@@ -57,7 +57,11 @@ scope (cross-host session ingest) — reconcile when Track 3 lands §3.1.
 - [ ] **Preservator-backfill — end-to-end** [session](~/.claude/projects/-home-alex-CRAP-preservator/2211216d-340c-4649-94ec-0ea52024e254.jsonl)
   - [x] Phase 1a — max_mtime filter in matchers + find helpers (content_pattern, file_extension, folders; local + SSH fast-paths with sentinel-touch) (2026-04-21)
   - [x] Phase 1b — `max_mtime: '2026-04-20'` set on llms.yaml content_pattern + folders entries (2026-04-21)
-  - [ ] Phase 2 — hand-edit `_config/config.yaml` (staging.wsl → `/mnt/d/Cache.backfill`; aggregate_archive_name → `prsvtr_backfill_*`; dest_dirs → `prsvtr.backfill/`); run `preservator_v2.py --all --preserve --merge --parallel 8`; revert edits after Phase 7
+  - [ ] Phase 2 — config scoped + backfill run
+    - [x] `_config/config.yaml` edited (staging.*.backfill; `aggregate_archive_name: prsvtr_backfill_*`; `dest_dirs.by_host: prsvtr.backfill`) — commit `671786db`, (2026-04-21)
+    - [ ] Dress rehearsal on alex-mac: `preservator_v2.py --target alex-mac --preserve --no-tui`; confirm RAR at `SD.Lake/prsvtr.backfill/<date>/prsvtr_backfill_*_alex-mac.rar` + `_MANIFEST/inventory.csv` has no `mtime >= 2026-04-20`
+    - [ ] Full run: `preservator_v2.py --all --preserve --merge --parallel 8`
+    - [ ] After Phase 7 completes: `git revert 671786db` to restore nightly staging/output paths
   - [ ] Phase 3 — SessionManager/SessionSkills classify + Thread merge/dedup against staged tree. Re-scope to hook into `sm-pipeline` (ingest/merge/name steps) rather than a parallel sm-backfill.py, since the SessionSkills pipeline already owns the lifecycle
   - [ ] Phase 4 — `sm session deposit <staged/host>/llms.merged/` → Langfuse traces
   - [ ] Phase 5 — drop `.render-md.pending` markers next to merged sessions (renderer is a separate later one-shot — out of scope here)
