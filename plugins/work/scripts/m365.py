@@ -9,7 +9,8 @@ import sys
 import os
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from graph_client import graph_get, graph_post, graph_patch, graph_delete, get_token, pp
+from graph_client import (graph_get, graph_post, graph_patch, graph_put,
+                          graph_delete, get_token, pp, attach_files_to_message)
 
 TENANT = "karelin"
 USER = "default"
@@ -67,19 +68,79 @@ def cmd_mail_search(args):
 def cmd_mail_send(args):
     set_context(args)
     to_list = [{"emailAddress": {"address": a.strip()}} for a in args.to.split(",")]
-    body = {"message": {"subject": args.subject, "body": {"contentType": "HTML" if args.html else "Text", "content": args.body}, "toRecipients": to_list}}
-    if args.cc:
-        body["message"]["ccRecipients"] = [{"emailAddress": {"address": a.strip()}} for a in args.cc.split(",")]
-    pp(graph_post("/me/sendMail", json_body=body, **kw()))
+    attach = getattr(args, "attach", None)
+    if attach:
+        # Create draft, attach files, then send
+        draft_body = {
+            "subject": args.subject,
+            "body": {"contentType": "HTML" if args.html else "Text", "content": args.body},
+            "toRecipients": to_list,
+        }
+        if args.cc:
+            draft_body["ccRecipients"] = [{"emailAddress": {"address": a.strip()}} for a in args.cc.split(",")]
+        draft = graph_post("/me/messages", json_body=draft_body, **kw())
+        if "error" in draft:
+            pp(draft); return
+        msg_id = draft["id"]
+        att_results = attach_files_to_message(msg_id, attach, tenant=TENANT, user_hint=USER)
+        print("Attachments:", flush=True)
+        pp(att_results)
+        pp(graph_post(f"/me/messages/{msg_id}/send", json_body=None, **kw()))
+    else:
+        body = {"message": {"subject": args.subject, "body": {"contentType": "HTML" if args.html else "Text", "content": args.body}, "toRecipients": to_list}}
+        if args.cc:
+            body["message"]["ccRecipients"] = [{"emailAddress": {"address": a.strip()}} for a in args.cc.split(",")]
+        pp(graph_post("/me/sendMail", json_body=body, **kw()))
 
 def cmd_mail_draft(args):
     set_context(args)
-    body = {"subject": args.subject, "body": {"contentType": "Text", "content": args.body}, "toRecipients": [{"emailAddress": {"address": a.strip()}} for a in args.to.split(",")]}
-    pp(graph_post("/me/messages", json_body=body, **kw()))
+    content_type = "HTML" if getattr(args, "html", False) else "Text"
+    body = {
+        "subject": args.subject,
+        "body": {"contentType": content_type, "content": args.body},
+        "toRecipients": [{"emailAddress": {"address": a.strip()}} for a in args.to.split(",")],
+    }
+    if getattr(args, "cc", None):
+        body["ccRecipients"] = [{"emailAddress": {"address": a.strip()}} for a in args.cc.split(",")]
+    draft = graph_post("/me/messages", json_body=body, **kw())
+    if "error" in draft:
+        pp(draft); return
+    attach = getattr(args, "attach", None)
+    if attach:
+        att_results = attach_files_to_message(draft["id"], attach, tenant=TENANT, user_hint=USER)
+        print("Attachments:", flush=True)
+        pp(att_results)
+    pp(draft)
 
 def cmd_mail_reply(args):
     set_context(args)
-    pp(graph_post(f"/me/messages/{args.id}/reply", json_body={"comment": args.body}, **kw()))
+    attach = getattr(args, "attach", None)
+    html = getattr(args, "html", False)
+    if attach:
+        # Create reply draft, attach files, then send
+        draft = graph_post(f"/me/messages/{args.id}/createReply", json_body=None, **kw())
+        if "error" in draft:
+            pp(draft); return
+        reply_id = draft["id"]
+        # Update the reply body
+        content_type = "HTML" if html else "Text"
+        graph_patch(f"/me/messages/{reply_id}",
+                    json_body={"body": {"contentType": content_type, "content": args.body}}, **kw())
+        att_results = attach_files_to_message(reply_id, attach, tenant=TENANT, user_hint=USER)
+        print("Attachments:", flush=True)
+        pp(att_results)
+        pp(graph_post(f"/me/messages/{reply_id}/send", json_body=None, **kw()))
+    elif html:
+        # HTML reply without attachments — use createReply + patch + send
+        draft = graph_post(f"/me/messages/{args.id}/createReply", json_body=None, **kw())
+        if "error" in draft:
+            pp(draft); return
+        reply_id = draft["id"]
+        graph_patch(f"/me/messages/{reply_id}",
+                    json_body={"body": {"contentType": "HTML", "content": args.body}}, **kw())
+        pp(graph_post(f"/me/messages/{reply_id}/send", json_body=None, **kw()))
+    else:
+        pp(graph_post(f"/me/messages/{args.id}/reply", json_body={"comment": args.body}, **kw()))
 
 def cmd_mail_folders(args):
     set_context(args)
@@ -157,12 +218,80 @@ def cmd_channel_send(args):
 
 def cmd_files_list(args):
     set_context(args)
-    path = f"/me/drive/root:/{args.path}:/children" if args.path else "/me/drive/root/children"
-    pp(graph_get(f"{path}?$top=50&$select=id,name,size,lastModifiedDateTime,folder,file,webUrl", **kw()))
+    if args.path:
+        # First try as a regular folder path
+        path = f"/me/drive/root:/{args.path}:/children"
+        result = graph_get(f"{path}?$top=50&$select=id,name,size,lastModifiedDateTime,folder,file,webUrl,remoteItem", **kw())
+        if "error" in result:
+            # Might be a shortcut/remote item — resolve it
+            item_path = f"/me/drive/root:/{args.path}"
+            item = graph_get(f"{item_path}?$select=id,name,remoteItem,folder,file", **kw())
+            if "error" not in item and "remoteItem" in item:
+                ri = item["remoteItem"]
+                remote_drive = ri.get("parentReference", {}).get("driveId")
+                remote_id = ri.get("id")
+                if remote_drive and remote_id:
+                    print(f"(Resolved shortcut → remote drive {remote_drive})", flush=True)
+                    result = graph_get(f"/drives/{remote_drive}/items/{remote_id}/children?$top=50&$select=id,name,size,lastModifiedDateTime,folder,file,webUrl", **kw())
+                else:
+                    result = {"error": "Shortcut found but could not resolve remote item", "item": item}
+        pp(result)
+    else:
+        pp(graph_get("/me/drive/root/children?$top=50&$select=id,name,size,lastModifiedDateTime,folder,file,webUrl", **kw()))
 
 def cmd_files_search(args):
     set_context(args)
-    pp(graph_get(f"/me/drive/root/search(q='{args.query}')?$top=20&$select=id,name,size,webUrl,parentReference", **kw()))
+    all_drives = getattr(args, "all_drives", False)
+    if all_drives:
+        # Search across all accessible drives (personal + shared)
+        body = {
+            "requests": [{
+                "entityTypes": ["driveItem"],
+                "query": {"queryString": args.query},
+                "from": 0,
+                "size": 25,
+            }]
+        }
+        pp(graph_post("/search/query", json_body=body, **kw()))
+    else:
+        pp(graph_get(f"/me/drive/root/search(q='{args.query}')?$top=20&$select=id,name,size,webUrl,parentReference", **kw()))
+
+def cmd_files_download(args):
+    set_context(args)
+    import urllib.parse
+    # Resolve file by path or ID
+    if args.file_path:
+        item_url = f"/me/drive/root:/{args.file_path}:/content"
+    elif args.file_id:
+        drive_id = getattr(args, "drive_id", None)
+        if drive_id:
+            item_url = f"/drives/{drive_id}/items/{args.file_id}/content"
+        else:
+            item_url = f"/me/drive/items/{args.file_id}/content"
+    else:
+        print("Error: provide --path or --id", file=sys.stderr); return
+    resp = graph_get(item_url, raw=True, **kw())
+    if resp.status_code >= 400:
+        print(f"Error: HTTP {resp.status_code}", file=sys.stderr)
+        try: pp(resp.json())
+        except: print(resp.text)
+        return
+    # Determine output filename
+    out = getattr(args, "output", None)
+    if not out:
+        if args.file_path:
+            out = os.path.basename(args.file_path)
+        else:
+            cd = resp.headers.get("Content-Disposition", "")
+            if "filename=" in cd:
+                out = cd.split("filename=")[1].strip('"\' ')
+            else:
+                out = f"download_{args.file_id[:8]}"
+    with open(out, "wb") as f:
+        for chunk in resp.iter_content(chunk_size=8192):
+            f.write(chunk)
+    print(f"Downloaded: {out} ({os.path.getsize(out)} bytes)")
+
 
 def cmd_sites_search(args):
     set_context(args)
@@ -265,9 +394,9 @@ def main():
     s = ml.add_parser("list"); s.add_argument("--top", type=int); s.add_argument("--folder"); s.set_defaults(func=cmd_mail_list)
     s = ml.add_parser("read"); s.add_argument("id"); s.set_defaults(func=cmd_mail_read)
     s = ml.add_parser("search"); s.add_argument("query"); s.add_argument("--top", type=int); s.set_defaults(func=cmd_mail_search)
-    s = ml.add_parser("send"); s.add_argument("--to", required=True); s.add_argument("--subject", required=True); s.add_argument("--body", required=True); s.add_argument("--cc"); s.add_argument("--html", action="store_true"); s.set_defaults(func=cmd_mail_send)
-    s = ml.add_parser("draft"); s.add_argument("--to", required=True); s.add_argument("--subject", required=True); s.add_argument("--body", required=True); s.set_defaults(func=cmd_mail_draft)
-    s = ml.add_parser("reply"); s.add_argument("id"); s.add_argument("--body", required=True); s.set_defaults(func=cmd_mail_reply)
+    s = ml.add_parser("send"); s.add_argument("--to", required=True); s.add_argument("--subject", required=True); s.add_argument("--body", required=True); s.add_argument("--cc"); s.add_argument("--html", action="store_true"); s.add_argument("--attach", nargs="+", metavar="FILE", help="Attach files (supports >3MB via upload sessions)"); s.set_defaults(func=cmd_mail_send)
+    s = ml.add_parser("draft"); s.add_argument("--to", required=True); s.add_argument("--subject", required=True); s.add_argument("--body", required=True); s.add_argument("--cc"); s.add_argument("--html", action="store_true"); s.add_argument("--attach", nargs="+", metavar="FILE", help="Attach files to draft"); s.set_defaults(func=cmd_mail_draft)
+    s = ml.add_parser("reply"); s.add_argument("id"); s.add_argument("--body", required=True); s.add_argument("--html", action="store_true"); s.add_argument("--attach", nargs="+", metavar="FILE", help="Attach files to reply"); s.set_defaults(func=cmd_mail_reply)
     ml.add_parser("folders").set_defaults(func=cmd_mail_folders)
 
     # Calendar
@@ -294,7 +423,8 @@ def main():
     # Files
     fl = sub.add_parser("files").add_subparsers(dest="sub")
     s = fl.add_parser("list"); s.add_argument("--path"); s.set_defaults(func=cmd_files_list)
-    s = fl.add_parser("search"); s.add_argument("query"); s.set_defaults(func=cmd_files_search)
+    s = fl.add_parser("search"); s.add_argument("query"); s.add_argument("--all-drives", action="store_true", help="Search across all drives (personal + shared) via /search/query"); s.set_defaults(func=cmd_files_search)
+    s = fl.add_parser("download"); s.add_argument("--path", dest="file_path", help="OneDrive file path"); s.add_argument("--id", dest="file_id", help="OneDrive item ID"); s.add_argument("--drive-id", help="Drive ID (for shared/remote items)"); s.add_argument("--output", "-o", help="Local output filename"); s.set_defaults(func=cmd_files_download)
     s = fl.add_parser("sites"); s.add_argument("query"); s.set_defaults(func=cmd_sites_search)
 
     # Tasks
