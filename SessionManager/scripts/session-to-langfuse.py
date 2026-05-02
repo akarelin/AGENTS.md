@@ -302,29 +302,58 @@ def _make_obs_id(session_id: str, kind: str, index: int = 0) -> str:
     return hashlib.sha256(key.encode()).hexdigest()[:32]
 
 
-def find_otel_trace(session_id: str) -> str | None:
-    """Find an existing OTEL trace by sessionId. Returns trace ID or None.
+def find_otel_traces(session_id: str) -> list[str]:
+    """Find all existing OTEL traces for a sessionId. Returns list of trace IDs.
 
-    OTEL traces are identified by having no "source" key in their metadata
-    (the hook-created traces always set metadata.source).
+    Claude Code emits one OTEL trace per user prompt (claude_code.interaction),
+    all sharing the same sessionId — so a session usually has many bare OTEL
+    traces that need enrichment, not just one. We page through results and
+    return every trace whose metadata is OTEL-shaped (no top-level "source"
+    key, which the hook always sets when it creates traces itself).
     """
+    import urllib.parse
     import urllib.request
 
-    url = f"{LANGFUSE_HOST}/api/public/traces?sessionId={session_id}&limit=5"
-    req = urllib.request.Request(url, headers=_langfuse_headers(), method="GET")
-    try:
-        with urllib.request.urlopen(req, timeout=10) as resp:
-            data = json.loads(resp.read())
-    except Exception as e:
-        log(f"find_otel_trace: error querying Langfuse: {e}")
-        return None
+    found: list[str] = []
+    page = 1
+    while True:
+        params = urllib.parse.urlencode({
+            "sessionId": session_id,
+            "limit": 100,
+            "page": page,
+        })
+        url = f"{LANGFUSE_HOST}/api/public/traces?{params}"
+        req = urllib.request.Request(url, headers=_langfuse_headers(), method="GET")
+        try:
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                data = json.loads(resp.read())
+        except Exception as e:
+            log(f"find_otel_traces: error querying Langfuse page {page}: {e}")
+            break
 
-    for trace in data.get("data", []):
-        metadata = trace.get("metadata") or {}
-        # OTEL traces have empty metadata or no "source" key
-        if not metadata.get("source"):
-            return trace["id"]
-    return None
+        rows = data.get("data", []) or []
+        if not rows:
+            break
+
+        for trace in rows:
+            metadata = trace.get("metadata") or {}
+            # OTEL traces have no top-level "source" key (hook-created ones do).
+            if not metadata.get("source"):
+                found.append(trace["id"])
+
+        meta = data.get("meta") or {}
+        total_pages = meta.get("totalPages") or 1
+        if page >= total_pages:
+            break
+        page += 1
+
+    return found
+
+
+def find_otel_trace(session_id: str) -> str | None:
+    """Backwards-compatible single-trace lookup. Returns first OTEL trace ID."""
+    traces = find_otel_traces(session_id)
+    return traces[0] if traces else None
 
 
 def _build_trace_body(session: dict, trace_id: str) -> dict:
@@ -368,46 +397,87 @@ def _build_trace_body(session: dict, trace_id: str) -> dict:
     }
 
 
-def _send_batch(batch: list):
-    """Send a batch of events to the Langfuse ingestion API."""
+_INGEST_MAX_BYTES = 3 * 1024 * 1024  # Langfuse ingestion endpoint rejects payloads
+                                     # >~4 MB; stay under that with headroom.
+_INGEST_MAX_EVENTS = 100             # Soft cap on events per POST.
+
+
+def _post_ingestion(events: list):
+    """POST a single ingestion batch."""
     import urllib.request
 
-    body = json.dumps({"batch": batch}).encode()
+    body = json.dumps({"batch": events}).encode()
     req = urllib.request.Request(
         f"{LANGFUSE_HOST}/api/public/ingestion",
         data=body, headers=_langfuse_headers(), method="POST",
     )
-    with urllib.request.urlopen(req, timeout=30) as resp:
+    with urllib.request.urlopen(req, timeout=60) as resp:
         resp.read()
 
 
-def ship_to_langfuse(session: dict):
+def _send_batch(batch: list):
+    """Send events to Langfuse, splitting into chunks under size + count caps.
+
+    Sessions with hundreds of generations exceed Langfuse's ingestion payload
+    limit if posted as a single batch. We greedily pack events until the next
+    one would push us over either bound, then flush.
+    """
+    chunk: list = []
+    chunk_size = 2  # account for `{"batch":[]}` envelope
+
+    for ev in batch:
+        ev_bytes = len(json.dumps(ev).encode()) + 1  # +1 for the comma separator
+        if chunk and (
+            chunk_size + ev_bytes > _INGEST_MAX_BYTES
+            or len(chunk) >= _INGEST_MAX_EVENTS
+        ):
+            _post_ingestion(chunk)
+            chunk = []
+            chunk_size = 2
+        chunk.append(ev)
+        chunk_size += ev_bytes
+
+    if chunk:
+        _post_ingestion(chunk)
+
+
+def ship_to_langfuse(session: dict, force_full: bool = False):
     """Ship parsed session to Langfuse, upserting an existing OTEL trace if found.
 
-    Path 1 (OTEL trace found): send a single trace-create upsert with metadata.
+    Path 1 (OTEL trace found, force_full=False): send a single trace-create upsert with metadata.
             Skip span/generation creation — OTEL already has those with accurate timing.
             Use datetime.now() as event timestamp so the upsert wins ClickHouse merge ordering.
 
-    Path 2 (no OTEL trace): create full trace + span + generations (backfill / chmo / OTEL failure).
+    Path 2 (no OTEL trace, OR force_full=True): create full trace + span + generations
+            with a deterministic trace ID derived from session_id. Use force_full when
+            the OTEL upsert path silently drops trace-level fields (Langfuse OTEL-vs-
+            ingestion-API merge limitation), or for fresh backfills.
     """
     import uuid
 
     source = session.get("source", "claude-code")
 
-    # Try to find an existing OTEL trace for this session
-    otel_trace_id = find_otel_trace(session["session_id"])
+    # Try to find existing OTEL traces for this session, unless force_full bypasses.
+    # Claude Code emits one OTEL trace per interaction, all sharing the sessionId.
+    otel_trace_ids = [] if force_full else find_otel_traces(session["session_id"])
 
-    if otel_trace_id:
-        # -- Path 1: upsert the existing OTEL trace with metadata --
-        trace_body = _build_trace_body(session, otel_trace_id)
-        batch = [{
-            "id": str(uuid.uuid4()),
-            "type": "trace-create",
-            "timestamp": datetime.now(timezone.utc).isoformat(),  # CURRENT time for upsert ordering
-            "body": trace_body,
-        }]
+    if otel_trace_ids:
+        # -- Path 1: upsert every OTEL trace with the session metadata --
+        now_iso = datetime.now(timezone.utc).isoformat()  # CURRENT time wins ClickHouse merge ordering
+        batch = [
+            {
+                "id": str(uuid.uuid4()),
+                "type": "trace-create",
+                "timestamp": now_iso,
+                "body": _build_trace_body(session, tid),
+            }
+            for tid in otel_trace_ids
+        ]
         _send_batch(batch)
-        log(f"Upserted OTEL trace {otel_trace_id} for session {session['session_id']}")
+        log(
+            f"Upserted {len(otel_trace_ids)} OTEL trace(s) for session "
+            f"{session['session_id']}: {otel_trace_ids[:3]}{'...' if len(otel_trace_ids) > 3 else ''}"
+        )
         return
 
     # -- Path 2: no OTEL trace — full creation --
@@ -563,7 +633,7 @@ def backfill(args):
                 skipped += 1
                 continue
 
-            ship_to_langfuse(session)
+            ship_to_langfuse(session, force_full=args.force_full)
             deposited += 1
             print(f"  deposited: {session['source']}: {session['project']} ({len(session['generations'])} gens) — {jsonl_path.name}")
 
@@ -648,6 +718,12 @@ def main():
     parser.add_argument(
         "--project", type=str, default=None,
         help="Filter files by project name substring",
+    )
+    parser.add_argument(
+        "--force-full", dest="force_full", action="store_true",
+        help="Always create full trace + span + generations with a deterministic "
+             "ID derived from session_id, bypassing the OTEL-trace upsert path. "
+             "Use when the OTEL upsert silently drops trace-level fields.",
     )
     parser.add_argument(
         "file", nargs="?", default=None,
