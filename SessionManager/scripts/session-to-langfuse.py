@@ -77,6 +77,13 @@ def parse_session(jsonl_path: Path) -> dict:
     provider = None
     thinking_level = None
     session_version = None
+    # claude-code metadata captured from any entry
+    cc_version = None        # Claude Code release (e.g. "2.1.126")
+    cc_entrypoint = None     # "cli", "vscode", etc.
+    cc_user_type = None      # "external", etc.
+    cc_permission_mode = None
+    cc_ai_title = None       # auto-generated session title
+    cc_last_prompt = None    # last user prompt before session ended
 
     with open(jsonl_path) as f:
         for line in f:
@@ -110,6 +117,27 @@ def parse_session(jsonl_path: Path) -> dict:
             if entry_type == "thinking_level_change":
                 if entry.get("thinkingLevel"):
                     thinking_level = entry["thinkingLevel"]
+
+            # Claude Code-only entries with auxiliary metadata
+            if entry_type == "ai-title" and entry.get("aiTitle"):
+                cc_ai_title = entry["aiTitle"]
+            if entry_type == "last-prompt" and entry.get("lastPrompt"):
+                cc_last_prompt = entry["lastPrompt"]
+            if entry_type == "permission-mode" and entry.get("permissionMode"):
+                cc_permission_mode = entry["permissionMode"]
+
+            # Claude Code stamps version/entrypoint/userType on most entries
+            if not cc_version and entry.get("version"):
+                # Distinguish CC release version (e.g. "2.1.126") from
+                # chmo session_version (small int like 3) — only accept
+                # dotted strings as CC version.
+                v = entry["version"]
+                if isinstance(v, str) and "." in v:
+                    cc_version = v
+            if not cc_entrypoint and entry.get("entrypoint"):
+                cc_entrypoint = entry["entrypoint"]
+            if not cc_user_type and entry.get("userType"):
+                cc_user_type = entry["userType"]
 
             if not session_id and entry.get("sessionId"):
                 session_id = entry["sessionId"]
@@ -156,10 +184,11 @@ def parse_session(jsonl_path: Path) -> dict:
             elif entry_type == "assistant":
                 msg = entry.get("message", {})
                 msg_model = msg.get("model", model)
-                # Skip delivery-mirror entries (chmo channel echoes)
-                if msg_model and "mirror" in str(msg_model):
-                    continue
-                if msg_model:
+                # Mark chmo delivery-mirror entries (channel echoes) so they
+                # ship to Langfuse but don't get conflated with LLM generations
+                # for cost/usage roll-up.
+                is_mirror = bool(msg_model) and "mirror" in str(msg_model)
+                if msg_model and not is_mirror:
                     model = msg_model
                 # Capture provider from chmo assistant messages
                 if msg.get("provider"):
@@ -187,8 +216,10 @@ def parse_session(jsonl_path: Path) -> dict:
                 output_tokens = usage.get("output_tokens", 0) or usage.get("output", 0)
                 cache_read = usage.get("cache_read_input_tokens", 0) or usage.get("cacheRead", 0)
                 cache_create = usage.get("cache_creation_input_tokens", 0) or usage.get("cacheWrite", 0)
-                total_input_tokens += input_tokens + cache_read + cache_create
-                total_output_tokens += output_tokens
+                # Mirror entries echo a real generation; don't double-count tokens.
+                if not is_mirror:
+                    total_input_tokens += input_tokens + cache_read + cache_create
+                    total_output_tokens += output_tokens
 
                 # Find the preceding user message for this generation
                 last_user_msg = ""
@@ -204,6 +235,7 @@ def parse_session(jsonl_path: Path) -> dict:
                     "output": content,
                     "tool_uses": tool_uses,
                     "timestamp": timestamp,
+                    "is_mirror": is_mirror,
                     "usage": {
                         "input_tokens": input_tokens,
                         "output_tokens": output_tokens,
@@ -234,7 +266,7 @@ def parse_session(jsonl_path: Path) -> dict:
                     )
                 messages.append({
                     "role": "tool",
-                    "content": content[:500],  # Truncate tool outputs
+                    "content": content,
                     "timestamp": timestamp,
                 })
 
@@ -257,10 +289,37 @@ def parse_session(jsonl_path: Path) -> dict:
     if not project_name:
         project_name = jsonl_path.parent.name.replace("-Users-alex-", "").replace("-", "/")
 
+    # Folder: full posix-style path of cwd, falling back to the slug-derived dir.
+    # Project is the basename; folder is the qualified path so Langfuse users can
+    # filter "everything under /Users/alex/RAN" cleanly.
+    folder = session_cwd
+    if not folder:
+        slug = jsonl_path.parent.name
+        # Reconstruct: "-home-alex-foo-bar" → "/home/alex/foo/bar"
+        if slug.startswith("-"):
+            folder = "/" + slug[1:].replace("-", "/")
+
+    # Pull richer chmo metadata from a sibling .trajectory.jsonl, when present.
+    # Trajectory files carry session.started, trace.metadata, and trace.artifacts
+    # events with harness/model/agent/channel/usage details that the regular
+    # session JSONL omits.
+    trajectory = {}
+    if is_chmo:
+        traj_path = jsonl_path.with_suffix(".trajectory.jsonl") \
+            if not jsonl_path.name.endswith(".trajectory.jsonl") \
+            else jsonl_path
+        # Older sessions may use `<stem>.trajectory.jsonl` even when the
+        # session file is `<stem>.jsonl`.
+        if not traj_path.exists():
+            traj_path = jsonl_path.parent / f"{jsonl_path.stem}.trajectory.jsonl"
+        if traj_path.exists() and traj_path != jsonl_path:
+            trajectory = _parse_trajectory(traj_path)
+
     return {
         "session_id": session_id or jsonl_path.stem,
         "source": "chmo" if is_chmo else "claude-code",
         "project": project_name,
+        "folder": folder,
         "agent": agent_name,
         "provider": provider,
         "thinking_level": thinking_level,
@@ -268,6 +327,29 @@ def parse_session(jsonl_path: Path) -> dict:
         "cwd": session_cwd,
         "model": model,
         "git_branch": git_branch,
+        # Claude Code metadata
+        "cc_version": cc_version,
+        "cc_entrypoint": cc_entrypoint,
+        "cc_user_type": cc_user_type,
+        "cc_permission_mode": cc_permission_mode,
+        "cc_ai_title": cc_ai_title,
+        "cc_last_prompt": cc_last_prompt,
+        # OpenClaw trajectory metadata (chmo only; empty dict for cc)
+        "openclaw_version": trajectory.get("openclaw_version"),
+        "openclaw_git_sha": trajectory.get("git_sha"),
+        "os_label": trajectory.get("os_label"),
+        "model_api": trajectory.get("model_api"),
+        "agent_id": trajectory.get("agent_id"),
+        "message_channel": trajectory.get("message_channel"),
+        "session_key": trajectory.get("session_key"),
+        "workspace_dir": trajectory.get("workspace_dir"),
+        "tool_count": trajectory.get("tool_count"),
+        "compaction_count": trajectory.get("compaction_count"),
+        "final_status": trajectory.get("final_status"),
+        "aborted": trajectory.get("aborted"),
+        "timed_out": trajectory.get("timed_out"),
+        "fast_mode": trajectory.get("fast_mode"),
+        "reasoning_level": trajectory.get("reasoning_level"),
         "start_time": start_time,
         "end_time": end_time,
         "total_input_tokens": total_input_tokens,
@@ -276,6 +358,57 @@ def parse_session(jsonl_path: Path) -> dict:
         "messages": messages,
         "file": str(jsonl_path),
     }
+
+
+def _parse_trajectory(traj_path: Path) -> dict:
+    """Pull metadata from a chmo .trajectory.jsonl file.
+
+    Returns a flat dict of fields suitable for inclusion in the trace metadata.
+    Silent failure on parse errors — trajectory data is enrichment, not
+    load-bearing.
+    """
+    out: dict = {}
+    try:
+        with open(traj_path) as f:
+            for line in f:
+                try: e = json.loads(line)
+                except json.JSONDecodeError: continue
+                t = e.get("type")
+                d = e.get("data") or {}
+                if not isinstance(d, dict):
+                    continue
+
+                if t == "session.started":
+                    out.setdefault("agent_id", d.get("agentId"))
+                    out.setdefault("message_channel", d.get("messageChannel"))
+                    out.setdefault("workspace_dir", d.get("workspaceDir"))
+                    out.setdefault("tool_count", d.get("toolCount"))
+                elif t == "trace.metadata":
+                    harness = d.get("harness") or {}
+                    if isinstance(harness, dict):
+                        out.setdefault("openclaw_version", harness.get("version"))
+                        out.setdefault("git_sha", harness.get("gitSha"))
+                        os_block = harness.get("os") or {}
+                        if isinstance(os_block, dict):
+                            out.setdefault("os_label", os_block.get("label"))
+                    mdl = d.get("model") or {}
+                    if isinstance(mdl, dict):
+                        out.setdefault("model_api", mdl.get("api"))
+                        out.setdefault("fast_mode", mdl.get("fastMode"))
+                        out.setdefault("reasoning_level", mdl.get("reasoningLevel"))
+                    md = d.get("metadata") or {}
+                    if isinstance(md, dict):
+                        out.setdefault("session_key", md.get("sessionKey"))
+                elif t in ("trace.artifacts", "session.ended"):
+                    out.setdefault("compaction_count", d.get("compactionCount"))
+                    out.setdefault("final_status", d.get("finalStatus") or d.get("status"))
+                    if d.get("aborted") is not None:
+                        out.setdefault("aborted", d.get("aborted"))
+                    if d.get("timedOut") is not None:
+                        out.setdefault("timed_out", d.get("timedOut"))
+    except OSError:
+        pass
+    return out
 
 
 # -- Langfuse helpers -------------------------------------------------------
@@ -366,9 +499,55 @@ def _build_trace_body(session: dict, trace_id: str) -> dict:
         tags.append(f"agent:{session['agent']}")
     if session.get("git_branch"):
         tags.append(f"branch:{session['git_branch']}")
+    if session.get("message_channel"):
+        tags.append(f"channel:{session['message_channel']}")
+    if session.get("model"):
+        tags.append(f"model:{session['model']}")
 
     start_ts = session["start_time"].isoformat() if session["start_time"] else None
 
+    # Hard rule: ship everything. We keep nulls so absent values are visible
+    # in Langfuse rather than silently elided, and so per-source schema is stable.
+    metadata = {
+        "source": source,
+        "project": project,
+        "folder": session.get("folder"),
+        "agent": session.get("agent"),
+        "provider": session.get("provider"),
+        "thinking_level": session.get("thinking_level"),
+        "session_version": session.get("session_version"),
+        "cwd": session["cwd"],
+        "model": session["model"],
+        "git_branch": session["git_branch"],
+        "file": session["file"],
+        "total_generations": len(session["generations"]),
+        "total_messages": len(session["messages"]),
+        "total_input_tokens": session["total_input_tokens"],
+        "total_output_tokens": session["total_output_tokens"],
+        # Claude Code-only fields
+        "cc_version": session.get("cc_version"),
+        "cc_entrypoint": session.get("cc_entrypoint"),
+        "cc_user_type": session.get("cc_user_type"),
+        "cc_permission_mode": session.get("cc_permission_mode"),
+        "cc_ai_title": session.get("cc_ai_title"),
+        "cc_last_prompt": session.get("cc_last_prompt"),
+        # OpenClaw trajectory-derived fields
+        "openclaw_version": session.get("openclaw_version"),
+        "openclaw_git_sha": session.get("openclaw_git_sha"),
+        "os_label": session.get("os_label"),
+        "model_api": session.get("model_api"),
+        "agent_id": session.get("agent_id"),
+        "message_channel": session.get("message_channel"),
+        "session_key": session.get("session_key"),
+        "workspace_dir": session.get("workspace_dir"),
+        "tool_count": session.get("tool_count"),
+        "compaction_count": session.get("compaction_count"),
+        "final_status": session.get("final_status"),
+        "aborted": session.get("aborted"),
+        "timed_out": session.get("timed_out"),
+        "fast_mode": session.get("fast_mode"),
+        "reasoning_level": session.get("reasoning_level"),
+    }
     return {
         "id": trace_id,
         "name": f"{source}: {project}",
@@ -376,24 +555,9 @@ def _build_trace_body(session: dict, trace_id: str) -> dict:
         "userId": "alex",
         "sessionId": session["session_id"],
         "tags": tags,
-        "input": session["messages"][0]["content"][:3000] if session["messages"] else None,
-        "output": session["messages"][-1]["content"][:3000] if session["messages"] else None,
-        "metadata": {
-            "source": source,
-            "project": project,
-            "agent": session.get("agent"),
-            "provider": session.get("provider"),
-            "thinking_level": session.get("thinking_level"),
-            "session_version": session.get("session_version"),
-            "cwd": session["cwd"],
-            "model": session["model"],
-            "git_branch": session["git_branch"],
-            "file": session["file"],
-            "total_generations": len(session["generations"]),
-            "total_messages": len(session["messages"]),
-            "total_input_tokens": session["total_input_tokens"],
-            "total_output_tokens": session["total_output_tokens"],
-        },
+        "input": session["messages"][0]["content"] if session["messages"] else None,
+        "output": session["messages"][-1]["content"] if session["messages"] else None,
+        "metadata": metadata,
     }
 
 
@@ -508,8 +672,8 @@ def ship_to_langfuse(session: dict, force_full: bool = False):
             "name": f"{source}: {session['project'] or 'unknown'}",
             "startTime": start_ts,
             "endTime": end_ts,
-            "input": session["messages"][0]["content"][:3000] if session["messages"] else None,
-            "output": session["messages"][-1]["content"][:3000] if session["messages"] else None,
+            "input": session["messages"][0]["content"] if session["messages"] else None,
+            "output": session["messages"][-1]["content"] if session["messages"] else None,
             "metadata": {
                 "total_generations": len(session["generations"]),
                 "total_messages": len(session["messages"]),
@@ -554,8 +718,8 @@ def ship_to_langfuse(session: dict, force_full: bool = False):
                 "startTime": gen_ts,
                 "endTime": gen_ts,
                 "model": gen["model"],
-                "input": gen["input"][:2000] if gen["input"] else None,
-                "output": output[:5000] if output else None,
+                "input": gen["input"] if gen["input"] else None,
+                "output": output if output else None,
                 "usage": usage if usage else None,
                 "metadata": {
                     "source": source,
@@ -564,6 +728,7 @@ def ship_to_langfuse(session: dict, force_full: bool = False):
                     "cost": gen.get("cost"),
                     "request_id": gen["request_id"],
                     "tool_calls": [t["name"] for t in gen["tool_uses"]] if gen["tool_uses"] else None,
+                    "is_mirror": gen.get("is_mirror", False),
                 },
             },
         })
