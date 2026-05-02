@@ -1,8 +1,0 @@
-apps:
-  local: local.yaml
-  map: map.yaml
-  sessions: sessions.yaml
-  tui: tui.yaml
-  pipeline: sm-pipeline.yaml
-  review: sm-review.yaml
-  import: sm-import.yaml
