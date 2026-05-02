@@ -1,5 +1,9 @@
 # Plan: OTEL Trace Enrichment + Backfill
 
+**Status:** Closed — completed 2026-04-21, verified 2026-04-22.
+
+**Outcome:** Implemented in `session-to-langfuse.py`. Bulk run via `sm deposit-all`: 6,348 events deposited, 0 failed, 72 min wall time. Langfuse `meta.totalItems` = 5,925 post-run (≥ 3,172 local target ✓). Idempotency proven by re-runs: deterministic `_make_trace_id()` / `_make_obs_id()` (SHA-256 of session ID) cause Langfuse `trace-create` and observation events to upsert instead of duplicate. Tracked in `../TASKS.md` Phase 3 Track 1 §1.1; Track 1 closed 2026-04-22 (session `b1c418ff`).
+
 ## Context
 
 OTEL traces flow in real-time from Claude Code and chmo through the OTEL collector to Langfuse (`langfuse.karelin.ai`). They have token usage and structural spans but lack tags, project names, input/output content, and `userId`. The existing `SessionEnd` hook (`session-to-langfuse.py`) has all this data but currently creates a **separate** trace with a different trace ID, causing duplicates.
