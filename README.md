@@ -173,12 +173,7 @@ See [Gadya/README.md](Gadya/README.md) for full documentation.
 │   ├── claude-code-orchestration-plan.md
 │   └── agents/                → Alternative agent definitions
 │
-└── archive/                   → Previous iterations, old plans, templates, guides
-    ├── INSTRUCTIONS_CORE.md, INSTRUCTIONS_EXPERIMENTAL.md
-    ├── ROADMAP.md, 2Do.md
-    ├── templates/             → README, AGENTS, archive templates
-    ├── plans/                 → Subagent project plans
-    └── guides/                → Best practices (archiving, etc.)
+└── archive/                   → Moved to kar1024/archive-A (history preserved)
 ```
 
 ## No longer developed
