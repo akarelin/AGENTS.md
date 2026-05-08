@@ -1,6 +1,7 @@
 """Microsoft Graph beta API client for Azure Functions — client credentials flow."""
 
 import logging
+import os
 import msal
 import requests
 
@@ -8,12 +9,20 @@ from gppu import resolve_secret
 
 GRAPH_BASE = "https://graph.microsoft.com/beta"
 
-# ##  User hints → AAD object IDs  ##
-USERS = {
-    "alex":    "be083348-9398-4a22-acef-c48ab74806c1",
-    "irina":   "6fff1ee8-31ca-4480-b7b2-04dc6d20c81e",
-    "default": "be083348-9398-4a22-acef-c48ab74806c1",
-}
+_MSGRAPH_PREFIX = os.environ.get("MSGRAPH_SECRET_PREFIX", "msgraph")
+
+def _parse_users():
+    raw = os.environ.get("GRAPH_USERS", "")
+    if not raw:
+        return {}
+    users = {}
+    for pair in raw.split(","):
+        if ":" in pair:
+            name, oid = pair.split(":", 1)
+            users[name.strip()] = oid.strip()
+    return users
+
+USERS = _parse_users()
 
 _token_cache = {}
 
@@ -21,9 +30,9 @@ _token_cache = {}
 def get_token():
     if "t" in _token_cache:
         return _token_cache["t"]
-    tenant_id = resolve_secret("msgraph-karelin-tenant-id")
-    client_id = resolve_secret("msgraph-karelin-client-id")
-    client_secret = resolve_secret("msgraph-karelin-client-secret")
+    tenant_id = resolve_secret(f"{_MSGRAPH_PREFIX}-tenant-id")
+    client_id = resolve_secret(f"{_MSGRAPH_PREFIX}-client-id")
+    client_secret = resolve_secret(f"{_MSGRAPH_PREFIX}-client-secret")
     authority = f"https://login.microsoftonline.com/{tenant_id}"
     app = msal.ConfidentialClientApplication(
         client_id, authority=authority, client_credential=client_secret

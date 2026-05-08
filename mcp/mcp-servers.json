@@ -2,35 +2,49 @@
   "mcpServers": {
     "Karelin Keys": {
       "type": "http",
-      "url": "https://mcp.karelin.ai/keys",
+      "url": "https://your-mcp-host/keys",
       "headers": {
         "x-api-key": "${MCP_KARELIN_PSK}"
       }
     },
     "M365": {
       "type": "http",
-      "url": "https://mcp.karelin.ai/m365",
+      "url": "https://your-mcp-host/m365",
       "headers": {
         "x-api-key": "${MCP_KARELIN_PSK}"
       }
     },
     "M365 Admin": {
       "type": "http",
-      "url": "https://mcp.karelin.ai/m365-admin",
+      "url": "https://your-mcp-host/m365-admin",
       "headers": {
         "x-api-key": "${MCP_KARELIN_PSK}"
       }
     },
     "Obsidian": {
       "type": "http",
-      "url": "https://mcp.karelin.ai/obsidian",
+      "url": "https://your-mcp-host/obsidian",
       "headers": {
         "x-api-key": "${MCP_KARELIN_PSK}"
       }
     },
     "Neo4j": {
       "type": "http",
-      "url": "https://mcp.karelin.ai/neo4j",
+      "url": "https://your-mcp-host/neo4j",
+      "headers": {
+        "x-api-key": "${MCP_KARELIN_PSK}"
+      }
+    },
+    "TickTick": {
+      "type": "http",
+      "url": "https://your-mcp-host/ticktick",
+      "headers": {
+        "x-api-key": "${MCP_KARELIN_PSK}"
+      }
+    },
+    "QMD": {
+      "type": "http",
+      "url": "https://your-mcp-host/qmd",
       "headers": {
         "x-api-key": "${MCP_KARELIN_PSK}"
       }

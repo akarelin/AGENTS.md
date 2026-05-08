@@ -12,7 +12,7 @@ from urllib3.exceptions import InsecureRequestWarning
 
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
-HOSTS = os.environ.get("OBSIDIAN_HOSTS", "alex-mac,alex-pc,alex-laptop").split(",")
+HOSTS = os.environ.get("OBSIDIAN_HOSTS", "").split(",") if os.environ.get("OBSIDIAN_HOSTS") else []
 PORT = int(os.environ.get("OBSIDIAN_PORT", "27123"))
 SCHEME = os.environ.get("OBSIDIAN_SCHEME", "http")
 API_KEY = os.environ.get("OBSIDIAN_API_KEY", "")

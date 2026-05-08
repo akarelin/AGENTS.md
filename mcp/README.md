@@ -1,6 +1,6 @@
-# MCP Server — mcp.karelin.ai
+# MCP Server
 
-Five MCP endpoints: M365 Graph API, Azure Key Vault, Obsidian vault access, and Neo4j graph database.
+Seven MCP endpoints over Streamable HTTP transport: M365 Graph API, Azure Key Vault, Obsidian vault, Neo4j graph database, TickTick tasks, and QMD search index.
 
 **Auth:** OAuth 2.0 PKCE (claude.ai) or `x-api-key` header (Claude Code)
 
@@ -13,7 +13,7 @@ Five MCP endpoints: M365 Graph API, Azure Key Vault, Obsidian vault access, and 
 
 ## /m365 — User M365 Operations (31 tools)
 
-`user` parameter on all tools: `alex` or `irina` (default: `alex`)
+`user` parameter on all tools selects which mailbox/calendar to act on (default: env `MCP_DEFAULT_USER`)
 
 | Tool | Description | Parameters |
 |------|-------------|------------|
@@ -69,7 +69,7 @@ Five MCP endpoints: M365 Graph API, Azure Key Vault, Obsidian vault access, and 
 
 ## /obsidian — Obsidian Vault Access (16 tools)
 
-Tries hosts in order: alex-laptop, alex-mac, alex-pc (port 27123). Requires Obsidian Local REST API plugin.
+Tries hosts from `OBSIDIAN_HOSTS` env var in order. Requires Obsidian Local REST API plugin.
 
 | Tool | Description | Parameters |
 |------|-------------|------------|
@@ -90,31 +90,77 @@ Tries hosts in order: alex-laptop, alex-mac, alex-pc (port 27123). Requires Obsi
 | `vault_daily` | Get today's daily note | |
 | `vault_daily_append` | Append to today's daily note | content |
 
-## /neo4j — Neo4j Graph Database (5 tools)
+## /neo4j — Graph Database (5 tools)
 
-Auto-discovers Neo4j servers from Key Vault (secrets matching `neo4j-*-uri` / `neo4j-*-password`).
+Auto-discovers Neo4j servers from Key Vault secrets (neo4j-*-uri / neo4j-*-password).
 
 | Tool | Description | Parameters |
 |------|-------------|------------|
-| `neo4j_list_servers` | List available Neo4j servers (auto-discovered from Key Vault) | |
-| `neo4j_use_server` | Select which Neo4j server to use for subsequent queries | server |
+| `neo4j_list_servers` | List available Neo4j servers | |
+| `neo4j_use_server` | Select which server to use | server |
 | `read_neo4j_cypher` | Execute a read-only Cypher query | query, params? |
 | `write_neo4j_cypher` | Execute a write Cypher query | query, params? |
-| `get_neo4j_schema` | Get graph schema (labels, relationship types, properties) | |
+| `get_neo4j_schema` | Get graph schema (labels, relationships, properties) | |
+
+## /ticktick — Task Management (6 tools)
+
+| Tool | Description | Parameters |
+|------|-------------|------------|
+| `tt_lists` | List all TickTick projects/lists | |
+| `tt_tasks` | List tasks, optionally filtered | list?, status? |
+| `tt_create` | Create a new task | title, list, content?, priority?, due?, tags? |
+| `tt_update` | Update an existing task | task, list?, title?, content?, priority?, due?, tags? |
+| `tt_complete` | Mark a task as completed | task, list? |
+| `tt_abandon` | Mark a task as won't do | task, list? |
+
+## /qmd — QMD Search Index (4 tools)
+
+Hybrid BM25+vector search over a local QMD index via subprocess.
+
+| Tool | Description | Parameters |
+|------|-------------|------------|
+| `qmd_search` | Hybrid BM25+vector search | query, collection?, limit? |
+| `qmd_vsearch` | Vector-only semantic search | query, collection?, limit? |
+| `qmd_get` | Get a specific file from the index | file_path |
+| `qmd_status` | Index status and collection list | |
 
 ## Connect from Claude Code
 
 ```json
 {
   "mcpServers": {
-    "Karelin Keys":       {"type": "http", "url": "https://mcp.karelin.ai/keys",       "headers": {"x-api-key": "${MCP_KARELIN_PSK}"}},
-    "M365":       {"type": "http", "url": "https://mcp.karelin.ai/m365",       "headers": {"x-api-key": "${MCP_KARELIN_PSK}"}},
-    "M365 Admin": {"type": "http", "url": "https://mcp.karelin.ai/m365-admin", "headers": {"x-api-key": "${MCP_KARELIN_PSK}"}},
-    "Obsidian":   {"type": "http", "url": "https://mcp.karelin.ai/obsidian",   "headers": {"x-api-key": "${MCP_KARELIN_PSK}"}},
-    "Neo4j":      {"type": "http", "url": "https://mcp.karelin.ai/neo4j",      "headers": {"x-api-key": "${MCP_KARELIN_PSK}"}}
+    "Keys":       {"type": "http", "url": "https://your-mcp-host/keys",       "headers": {"x-api-key": "${MCP_PSK}"}},
+    "M365":       {"type": "http", "url": "https://your-mcp-host/m365",       "headers": {"x-api-key": "${MCP_PSK}"}},
+    "M365 Admin": {"type": "http", "url": "https://your-mcp-host/m365-admin", "headers": {"x-api-key": "${MCP_PSK}"}},
+    "Obsidian":   {"type": "http", "url": "https://your-mcp-host/obsidian",   "headers": {"x-api-key": "${MCP_PSK}"}},
+    "Neo4j":      {"type": "http", "url": "https://your-mcp-host/neo4j",      "headers": {"x-api-key": "${MCP_PSK}"}},
+    "TickTick":   {"type": "http", "url": "https://your-mcp-host/ticktick",   "headers": {"x-api-key": "${MCP_PSK}"}},
+    "QMD":        {"type": "http", "url": "https://your-mcp-host/qmd",        "headers": {"x-api-key": "${MCP_PSK}"}}
   }
 }
 ```
+
+## Environment Variables
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `MCP_API_KEY` | Pre-shared key for x-api-key auth | |
+| `AZURE_KEYVAULT_NAME` | Azure Key Vault name | |
+| `GRAPH_USERS` | User hint map: `name:aad-id,name:aad-id` | |
+| `MSGRAPH_SECRET_PREFIX` | Secret name prefix for Graph creds | `msgraph` |
+| `MCP_DEFAULT_USER` | Default user hint for M365 tools | `default` |
+| `OBSIDIAN_HOSTS` | Comma-separated host list | |
+| `OBSIDIAN_PORT` | Obsidian REST API port | `27123` |
+| `OBSIDIAN_SCHEME` | HTTP or HTTPS | `http` |
+| `OBSIDIAN_API_KEY` | Obsidian REST API bearer token | |
+| `TICKTICK_CLIENT_ID` | TickTick OAuth client ID | |
+| `TICKTICK_CLIENT_SECRET` | TickTick OAuth client secret | |
+| `TICKTICK_ACCESS_TOKEN` | TickTick access token | |
+| `QMD_BIN` | Path to qmd binary | `qmd` |
+| `QMD_XDG_CONFIG` | XDG_CONFIG_HOME for qmd | |
+| `QMD_XDG_CACHE` | XDG_CACHE_HOME for qmd | |
+| `QMD_TIMEOUT` | Subprocess timeout in seconds | `30` |
+| `MCP_TOOL_TEXT_LIMIT` | Max chars per tool response | `12000` |
 
 ## Run
 

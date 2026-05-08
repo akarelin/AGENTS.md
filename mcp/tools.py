@@ -1,12 +1,13 @@
 """MCP tool definitions and handlers for M365 Graph API."""
 
+import os
 from datetime import datetime, timezone
 from graph_client import graph_get, graph_post, graph_patch, graph_delete
 
 
 # ── Tool Definitions ────────────────────────────────────────────────
 
-_U = {"type": "string", "description": "User hint: alex or irina (default: alex)"}
+_U = {"type": "string", "description": "User hint (default: env MCP_DEFAULT_USER)"}
 _TOP = {"type": "integer", "description": "Max results to return"}
 
 TOOLS = [
@@ -264,9 +265,10 @@ for _t in TOOLS:
 
 # ── Handlers ────────────────────────────────────────────────────────
 
+_DEFAULT_USER = os.environ.get("MCP_DEFAULT_USER", "default")
+
 def _u(a):
-    """Extract user hint, defaulting to alex."""
-    return a.get("user", "alex")
+    return a.get("user", _DEFAULT_USER)
 
 
 # --  Mail  --

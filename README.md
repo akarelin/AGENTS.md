@@ -140,7 +140,6 @@ See [Gadya/README.md](Gadya/README.md) for full documentation.
 ```
 .
 ├── AGENTS.md                  → Master instructions for autonomous agents (Claude, Gemini, etc.)
-├── AGENTS_mistakes.md         → Log of agent mistakes and lessons learned
 ├── CLAUDE.md / GEMINI.md      → Per-LLM instruction pointers
 │
 ├── DA/                       → Personal multi-agent CLI/TUI (Anthropic SDK)

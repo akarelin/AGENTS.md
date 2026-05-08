@@ -3,15 +3,15 @@
 The SessionManager repo no longer lives at `~/A/SessionManager/`.
 It is now part of Cruft.
 
-**New location:** `~/CRAP/SessionManager/`
+**New location:** `~/CRAP/f/`
 
-The Windmill bridge that used to live inside SessionManager
+The Cruft bridge that used to live inside SessionManager
 (`f/sessions/`) is now a sibling of the repo:
 
   - Library code: `~/CRAP/SessionManager/sessions/`
   - CLI / TUI / hook entrypoints: `~/CRAP/SessionManager/scripts/`
-  - Windmill bridge: `~/CRAP/f/sessions/`
-  - Windmill sync config: `~/CRAP/wmill.yaml`
+  - Cruft bridge: `~/CRAP/f/sessions/`
+  - Cruft sync config: `~/CRAP/cruft.yaml`
 
 This file is a stub left at the old location so anyone (or anything)
 that follows a stale path lands here instead of an opaque "no such

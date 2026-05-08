@@ -4,3 +4,4 @@ requests
 gppu @ https://github.com/akarelin/gppu/releases/download/gppu/latest/gppu-latest-py3-none-any.whl
 azure-identity
 azure-keyvault-secrets
+neo4j

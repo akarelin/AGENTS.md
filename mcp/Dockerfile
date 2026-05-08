@@ -4,7 +4,7 @@ ENV AzureWebJobsScriptRoot=/home/site/wwwroot \
     FUNCTIONS_WORKER_RUNTIME=python \
     AzureFunctionsJobHost__Logging__Console__IsEnabled=true \
     AzureWebJobsStorage=none \
-    AZURE_KEYVAULT_NAME=karelin
+    AZURE_KEYVAULT_NAME=
 
 COPY requirements.txt /home/site/wwwroot/
 RUN pip install --no-cache-dir -r /home/site/wwwroot/requirements.txt

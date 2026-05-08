@@ -14,6 +14,9 @@ import tools as m365_tools
 import tools_admin as admin_tools
 import tools_keys as keys_tools
 import tools_obsidian as obsidian_tools
+import tools_neo4j as neo4j_tools
+import tools_ticktick as ticktick_tools
+import tools_qmd as qmd_tools
 
 app = func.FunctionApp()
 
@@ -34,14 +37,8 @@ _ICON_FILES = {
     "keys": "Keys.png",
     "m365": "M365.png",
     "m365-admin": "M365-admin.png",
-    "obsidian": "Obsidian.png",
 }
-_SERVER_ICONS = {
-    "Karelin Keys": "keys",
-    "Karelin M365": "m365",
-    "Karelin M365 Admin": "m365-admin",
-    "Karelin Obsidian": "obsidian",
-}
+_SERVER_ICONS = {}
 
 
 # ── JSON-RPC helpers ────────────────────────────────────────────────
@@ -205,7 +202,7 @@ def docs(req: func.HttpRequest) -> func.HttpResponse:
     with open(readme_path, "r", encoding="utf-8") as f:
         md = f.read()
     html = f"""<!DOCTYPE html>
-<html><head><meta charset="utf-8"><title>MCP Server — mcp.karelin.com</title>
+<html><head><meta charset="utf-8"><title>MCP Server</title>
 <style>
 body {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; max-width: 900px; margin: 40px auto; padding: 0 20px; color: #24292e; line-height: 1.6; }}
 table {{ border-collapse: collapse; width: 100%; margin: 16px 0; }}
@@ -332,22 +329,40 @@ def token(req: func.HttpRequest) -> func.HttpResponse:
 @app.route(route="keys", methods=["GET", "POST", "DELETE", "OPTIONS"],
            auth_level=func.AuthLevel.ANONYMOUS)
 def keys(req: func.HttpRequest) -> func.HttpResponse:
-    return _mcp_response(req, keys_tools.TOOLS, keys_tools.dispatch_tool, "Karelin Keys")
+    return _mcp_response(req, keys_tools.TOOLS, keys_tools.dispatch_tool, "Keys")
 
 
 @app.route(route="m365", methods=["GET", "POST", "DELETE", "OPTIONS"],
            auth_level=func.AuthLevel.ANONYMOUS)
 def m365(req: func.HttpRequest) -> func.HttpResponse:
-    return _mcp_response(req, m365_tools.TOOLS, m365_tools.dispatch_tool, "Karelin M365")
+    return _mcp_response(req, m365_tools.TOOLS, m365_tools.dispatch_tool, "M365")
 
 
 @app.route(route="m365-admin", methods=["GET", "POST", "DELETE", "OPTIONS"],
            auth_level=func.AuthLevel.ANONYMOUS)
 def m365_admin(req: func.HttpRequest) -> func.HttpResponse:
-    return _mcp_response(req, admin_tools.TOOLS, admin_tools.dispatch_tool, "Karelin M365 Admin")
+    return _mcp_response(req, admin_tools.TOOLS, admin_tools.dispatch_tool, "M365 Admin")
 
 
 @app.route(route="obsidian", methods=["GET", "POST", "DELETE", "OPTIONS"],
            auth_level=func.AuthLevel.ANONYMOUS)
 def obsidian(req: func.HttpRequest) -> func.HttpResponse:
-    return _mcp_response(req, obsidian_tools.TOOLS, obsidian_tools.dispatch_tool, "Karelin Obsidian")
+    return _mcp_response(req, obsidian_tools.TOOLS, obsidian_tools.dispatch_tool, "Obsidian")
+
+
+@app.route(route="neo4j", methods=["GET", "POST", "DELETE", "OPTIONS"],
+           auth_level=func.AuthLevel.ANONYMOUS)
+def neo4j(req: func.HttpRequest) -> func.HttpResponse:
+    return _mcp_response(req, neo4j_tools.TOOLS, neo4j_tools.dispatch_tool, "Neo4j")
+
+
+@app.route(route="ticktick", methods=["GET", "POST", "DELETE", "OPTIONS"],
+           auth_level=func.AuthLevel.ANONYMOUS)
+def ticktick(req: func.HttpRequest) -> func.HttpResponse:
+    return _mcp_response(req, ticktick_tools.TOOLS, ticktick_tools.dispatch, "TickTick")
+
+
+@app.route(route="qmd", methods=["GET", "POST", "DELETE", "OPTIONS"],
+           auth_level=func.AuthLevel.ANONYMOUS)
+def qmd(req: func.HttpRequest) -> func.HttpResponse:
+    return _mcp_response(req, qmd_tools.TOOLS, qmd_tools.dispatch_tool, "QMD")
