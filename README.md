@@ -384,19 +384,7 @@ See [Gadya/README.md](Gadya/README.md) for full documentation.
 │   ├── hooks/                 → Voice system, continuous listening
 │   └── services/              → LLM integration, notes, storage
 │
-├── agents/                    → Specialized subagent definitions (legacy)
-│   ├── knowledge-management-agent.md
-│   ├── changelog-agent.md
-│   ├── docs-agent.md
-│   ├── archive-agent.md
-│   ├── validation-agent.md
-│   ├── push-agent.md
-│   └── mistake-review-agent.md
-│
-├── agent-swarm/               → Multi-agent orchestration experiments (legacy)
-│   ├── ORCHESTRATOR.md
-│   ├── claude-code-orchestration-plan.md
-│   └── agents/                → Alternative agent definitions
+├── agents/                    → Moved to kar1024/archive-A (history preserved)
 │
 └── archive/                   → Moved to kar1024/archive-A (history preserved)
 ```
