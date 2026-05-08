@@ -1,3 +1,229 @@
+# Xsolla — Claude Code Plugin Marketplace
+
+**v0.0.1** — A plugin marketplace for Claude Code and Cowork. Meta-skills, reusable agents, MCP connections, and nested skill hierarchies — packaged as installable plugins.
+
+[![organize](https://img.shields.io/badge/plugin-organize-green?style=flat-square)](#organize)
+[![work](https://img.shields.io/badge/plugin-work-blue?style=flat-square)](#work)
+[![search](https://img.shields.io/badge/plugin-search-orange?style=flat-square)](#search)
+[![manage](https://img.shields.io/badge/plugin-manage-red?style=flat-square)](#manage)
+[![shurick-start](https://img.shields.io/badge/plugin-shurick--start-purple?style=flat-square)](#shurick-start)
+
+## Quick Start
+
+```bash
+# Add the marketplace
+/plugin marketplace add xsolla/claude-plugin-marketplace
+
+# Browse available plugins
+/plugin marketplace list xsolla
+
+# Install a plugin
+/plugin install work@xsolla
+```
+
+In Cowork, use the plugin manager UI or ask Claude to install a plugin by name.
+
+---
+
+## Core Concepts
+
+### Plugins
+
+A **plugin** is the distribution unit — a `.plugin` zip containing skills, scripts, MCP server definitions, and commands. Each plugin has a `plugin.json` manifest and lives under `plugins/<name>/`.
+
+```
+plugin-name/
+├── .claude-plugin/plugin.json    # Manifest (name, version, description)
+├── skills/                       # Skill definitions (SKILL.md files)
+├── scripts/                      # Bundled Python/Shell implementations
+├── commands/                     # Slash commands (.md files)
+├── .mcp.json                     # MCP server definitions (optional)
+└── README.md
+```
+
+### Skills
+
+A **skill** is defined by a single `SKILL.md` file with YAML frontmatter. It is the atomic unit of capability — a set of instructions that tells Claude how to accomplish a specific task.
+
+```yaml
+---
+name: work-m365
+description: "Microsoft 365: Mail, Calendar, Teams, Files, Tasks"
+user-invocable: true
+---
+```
+
+The description doubles as the trigger — Claude reads it to decide when to invoke the skill.
+
+### Meta-Skills (Routing & Dispatch)
+
+A **meta-skill** is a skill that performs no work itself. It acts as a router: its `SKILL.md` contains a routing table that tells Claude which sub-skill to invoke based on context.
+
+Example — the `work` meta-skill routes like this:
+
+| Request mentions | Routes to |
+|---|---|
+| Outlook, Exchange, Teams, OneDrive | `work-m365` |
+| Gmail, Google Drive | `work-google` |
+| Slack messages, channels | `work-slack` (MCP) |
+| Jira issues, Confluence pages | `work-jira` (MCP) |
+| Ambiguous "email" | Asks the user |
+
+There is no hardcoded dispatcher. Routing is natural language in markdown — Claude reads the routing section and makes a judgment call. This makes the system flexible and context-aware without requiring code changes.
+
+### Nesting & Hierarchy
+
+Skills nest up to two levels:
+
+```
+Meta-skill (router)
+└── Concrete skill (does work)
+    └── Nested workflow (sub-task within a skill)
+```
+
+Real example:
+
+```
+work/                              ← meta-skill (routes by platform)
+├── work-m365/                     ← concrete skill (Graph API)
+├── work-slack/                    ← concrete skill (Slack MCP)
+└── work-jira/                     ← concrete skill (Atlassian MCP)
+    ├── triage-issue/              ← nested workflow
+    ├── capture-tasks-from-meeting-notes/
+    ├── generate-status-report/
+    ├── spec-to-backlog/
+    └── search-company-knowledge/
+```
+
+Deeper nesting is intentionally avoided to keep the mental model simple.
+
+### Connections (MCP Servers)
+
+Plugins connect to external services via **MCP servers** defined in `.mcp.json`:
+
+| Connection | Protocol | Auth |
+|---|---|---|
+| Slack | `https://mcp.slack.com/mcp` | OAuth |
+| Atlassian (Jira/Confluence) | `https://mcp.atlassian.com/v1/mcp` | Browser auth |
+| voidtools Everything | Local `uvx` process | None |
+| Microsoft Graph API | CLI script (`m365.py`) | Azure Key Vault client credentials |
+
+MCP connections provide tools that skills can use. CLI scripts provide capabilities where no MCP server exists.
+
+### Reusable Agents
+
+Skills and their scripts are designed to be reusable across plugins. The `manage-skills` skill provides a full lifecycle for plugin development: review feedback, patch, test, rebuild `.plugin` zip, deploy. Version tracking is enforced — every change bumps the patch version in both `plugin.json` and `SKILL.md` frontmatter.
+
+---
+
+## Using Cowork & Dispatch
+
+### Cowork Mode
+
+In Cowork (Claude desktop app), plugins are installed via the UI or by asking Claude. Once installed, skills appear in Claude's available skill list and are triggered automatically by keywords in your request.
+
+**How dispatch works**: When you say "check my Jira backlog", Claude matches your request against installed skill descriptions, loads the `work` meta-skill, reads its routing table, and dispatches to `work-jira`. No slash commands needed — just describe what you want.
+
+**Explicit invocation** is also supported:
+```
+/skill work-jira
+/skill search-m365
+/skill organize
+```
+
+### Claude Code CLI
+
+Same plugins work in Claude Code. Install via `/plugin install`, invoke via `/skill` or let Claude auto-dispatch based on your prompt.
+
+---
+
+## Available Plugins (5)
+
+### organize
+File organizer with sub-skill discovery. Scans a folder, runs each sub-skill in `--scan` (dry-run) mode, presents a combined plan, waits for approval.
+
+| Sub-skill | Description |
+|---|---|
+| `organize-arxiv` | Identify arXiv PDFs, fetch metadata, rename, move to library |
+| `medical-scan-obsidian` | Convert medical scans into bilingual EN/RU Obsidian vault |
+
+### work
+Workplace productivity hub. Routes to the right platform based on your request.
+
+| Sub-skill | Description |
+|---|---|
+| `work-m365` | Mail, Calendar, Teams Chat, Files, Tasks, Contacts, OneNote, Presence |
+| `work-google` | Gmail, Google Drive |
+| `work-slack` | Messaging, search, threads, canvases (Slack MCP) |
+| `work-jira` | Issues, epics, sprints, Confluence docs (Atlassian MCP) — includes 5 nested workflows |
+
+### search
+Cross-platform search. Routes by target: local files, M365, or Slack.
+
+| Sub-skill | Description |
+|---|---|
+| `search-everything` | voidtools Everything MCP — 16 tools, Windows-only |
+| `search-m365` | Unified search across emails, files, events, chat, SharePoint |
+| `search-slack` | Messages, channels, files, people |
+
+### manage
+Administration and lifecycle management.
+
+| Sub-skill | Description |
+|---|---|
+| `manage-sessions` | Claude Code sessions: sync, list, resume, rename, cleanup |
+| `manage-skills` | Plugin skills: review, patch, test, rebuild, deploy |
+| `manage-m365` | M365 tenant admin: Users, Groups, Teams, Licenses, Audit, Security |
+
+### shurick-start
+CEO workspace — 51 skills covering employee rewards, Neuronet knowledge graph, Quest Platform, Neo4j, Cloud Run, mini-apps, Atlassian, Slack, Gmail, GCP, and multi-agent orchestration.
+
+---
+
+## Contributing
+
+**Wanted: contributors for these integrations:**
+
+- **Okta / Auth0** — Identity & access management skill (SSO, user provisioning, MFA policies, audit logs). If your org uses Okta, we'd love help building an `work-okta` or `manage-okta` sub-skill.
+- **GCP testing** — The `shurick-start` plugin includes GCP / Cloud Run skills that need testing across different project configurations and IAM setups. If you have a GCP sandbox, please help validate.
+
+To contribute a new skill:
+
+1. Fork the repo
+2. Create `plugins/<parent>/skills/<your-skill>/SKILL.md` with frontmatter
+3. Add implementation scripts under `plugins/<parent>/scripts/`
+4. Update `plugin.json` and `marketplace.json`
+5. Open a PR
+
+See `plugins/manage/skills/manage-skills/references/plugin-structure.md` for the full spec.
+
+---
+
+## Earlier Projects
+
+This repository evolved from a series of earlier experiments in agentic tooling. For historical context:
+
+| Project | Status | Description |
+|---|---|---|
+| **DA (ДА)** | Active — see [DA/](DA/) | Multi-agent CLI/TUI built on Anthropic SDK. Sessions, tools, remote hosts. |
+| **Gadya (Гадя)** | Active — see [Gadya/](Gadya/) | Voice-first iOS/Android assistant (React Native / Expo) |
+| ~~AGENTS.md pattern~~ | ~~Superseded by plugins~~ | ~~Single markdown file to control agent behavior per repo~~ |
+| ~~Multi-agent orchestration~~ | ~~Superseded by meta-skills~~ | ~~Specialized subagents (changelog, docs, archive, validation, push) coordinated by parent agent~~ |
+| ~~Mistake-driven improvement~~ | ~~Folded into manage-skills~~ | ~~Agents log mistakes; patterns feed back into instructions~~ |
+| ~~DAPY CLI~~ | ~~Abandoned~~ | ~~LangChain/LangGraph CLI for agentic workflows~~ |
+| ~~Agent swarm~~ | ~~Abandoned~~ | ~~ORCHESTRATOR.md-based multi-agent experiments~~ |
+| ~~Subagent definitions~~ | ~~Replaced by skills/~~ | ~~Standalone .md agent specs in agents/ directory~~ |
+| ~~Archive templates~~ | ~~Inlined~~ | ~~README, AGENTS, archive templates in archive/templates/~~ |
+
+---
+
+```
+Xsolla — Claude Code Plugin Marketplace
+v0.0.1
+```
+
+---
+
 ```
       ░████             ░██        ░██░██       ░███                                        ░██
     ░██  ░██            ░██           ░██      ░██░██                                       ░██
