@@ -1,7 +1,7 @@
 azure-functions
 msal
 requests
-gppu @ https://github.com/akarelin/gppu/releases/download/gppu/latest/gppu-latest-py3-none-any.whl
+gppu @ https://github.com/akarelin/gppu/releases/download/gppu/v3.2.3/gppu-3.2.3-py3-none-any.whl
 azure-identity
 azure-keyvault-secrets
 neo4j

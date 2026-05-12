@@ -2,7 +2,7 @@
   "mcpServers": {
     "Karelin Keys": {
       "type": "streamableHttp",
-      "url": "https://your-mcp-host/keys"
+      "url": "https://mcp.karelin.com/keys"
     }
   }
 }
