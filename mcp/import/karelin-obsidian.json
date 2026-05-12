@@ -1,8 +1,0 @@
-{
-  "mcpServers": {
-    "Karelin Obsidian": {
-      "type": "streamableHttp",
-      "url": "https://mcp.karelin.com/obsidian"
-    }
-  }
-}

@@ -1,8 +1,0 @@
-{
-  "mcpServers": {
-    "Karelin Neo4j": {
-      "type": "streamableHttp",
-      "url": "https://mcp.karelin.com/neo4j"
-    }
-  }
-}

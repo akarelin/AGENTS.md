@@ -1,8 +1,0 @@
-{
-  "mcpServers": {
-    "Karelin QMD": {
-      "type": "streamableHttp",
-      "url": "https://mcp.karelin.com/qmd"
-    }
-  }
-}
