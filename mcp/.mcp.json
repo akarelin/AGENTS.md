@@ -4,28 +4,28 @@
       "type": "http",
       "url": "https://your-mcp-host/keys",
       "headers": {
-        "x-api-key": "${MCP_KARELIN_PSK}"
+        "Authorization": "Bearer ${MCP_KARELIN_TOKEN}"
       }
     },
     "M365": {
       "type": "http",
       "url": "https://your-mcp-host/m365",
       "headers": {
-        "x-api-key": "${MCP_KARELIN_PSK}"
+        "Authorization": "Bearer ${MCP_KARELIN_TOKEN}"
       }
     },
     "M365 Admin": {
       "type": "http",
       "url": "https://your-mcp-host/m365-admin",
       "headers": {
-        "x-api-key": "${MCP_KARELIN_PSK}"
+        "Authorization": "Bearer ${MCP_KARELIN_TOKEN}"
       }
     },
     "Obsidian": {
       "type": "http",
       "url": "https://your-mcp-host/obsidian",
       "headers": {
-        "x-api-key": "${MCP_KARELIN_PSK}"
+        "Authorization": "Bearer ${MCP_KARELIN_TOKEN}"
       }
     }
   }
