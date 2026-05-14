@@ -167,8 +167,9 @@ helper (MSAL device-code, manual paste, etc.):
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `MCP_API_KEY` | Pre-shared key for x-api-key auth | |
-| `AZURE_KEYVAULT_NAME` | Azure Key Vault name | |
+| `MCP_AUTH_MODE` | `psk` \| `entra` \| `both` \| `disabled` | `psk` |
+| `MCP_API_KEY` | Pre-shared key for legacy `x-api-key`/Bearer-PSK auth | |
+| `AZURE_KEYVAULT_NAME` | Azure Key Vault name (Entra config + allowlist live there) | |
 | `GRAPH_USERS` | User hint map: `name:aad-id,name:aad-id` | |
 | `MSGRAPH_SECRET_PREFIX` | Secret name prefix for Graph creds | `msgraph` |
 | `MCP_DEFAULT_USER` | Default user hint for M365 tools | `default` |

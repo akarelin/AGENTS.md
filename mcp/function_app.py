@@ -43,6 +43,7 @@ PROTOCOL_VERSION = "2025-03-26"
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 TOOL_TEXT_LIMIT = int(os.environ.get("MCP_TOOL_TEXT_LIMIT", "12000"))
 AUTH_MODE = os.environ.get("MCP_AUTH_MODE", "psk").lower()
+BASE_URL = os.environ["MCP_BASE_URL"].rstrip("/")
 
 CORS_HEADERS = {
     "Access-Control-Allow-Origin": "*",
@@ -199,9 +200,7 @@ def _err(id, code, message):
 
 
 def _base_url(req):
-    proto = req.headers.get("X-Forwarded-Proto", "http")
-    host = req.headers.get("Host", "localhost")
-    return f"{proto}://{host}"
+    return BASE_URL
 
 
 def _handle(body, tools, dispatcher, server_name, req=None):
