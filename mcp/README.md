@@ -10,12 +10,13 @@ against Entra JWKS; the `oid` claim must appear in the `mcp-allowed-oids` Key
 Vault secret. Legacy PSK (`x-api-key`) is still accepted in transition mode
 (see `MCP_AUTH_MODE`).
 
-## /keys — Secret Management (2 tools)
+## /keys — Secret Management (3 tools)
 
 | Tool | Description | Parameters |
 |------|-------------|------------|
-| `get_secret` | Retrieve a secret or API key by name from Azure Key Vault | name |
-| `list_secrets` | List available secret names in Azure Key Vault | |
+| `secret_get` | Retrieve a secret or API key by name from Azure Key Vault | name |
+| `secret_list` | List available secret names in Azure Key Vault | |
+| `secret_set` | Create a secret or add a new version (idempotent) | name, value |
 
 ## /m365 — User M365 Operations (31 tools)
 

@@ -53,7 +53,7 @@ sqlite:///path/to/database.db
 ## Workflow
 
 1. Determine which database the user wants to explore
-2. Resolve credentials from Key Vault if available (`get_secret`)
+2. Resolve credentials from Key Vault if available (`secret_get`)
 3. Use `search_objects` to explore schema (tables, columns)
 4. Execute SQL queries with `execute_sql`
 5. Present results in readable format

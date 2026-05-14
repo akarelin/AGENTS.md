@@ -24,7 +24,7 @@ Personal productivity plugins for Claude Code.
 
 | Plugin | Skills | Description |
 |--------|--------|-------------|
-| **core** | memory, session, skill, compose-agent, learn | Agent primitives: memory, sessions, skill management, agent composition |
+| **core** | secrets, memory, session, skill, compose-agent, learn | Agent primitives: secrets (Key Vault), memory, sessions, skill management, agent composition |
 | **research** | search, data (data-neo4j, data-sql) | Search + data exploration: knowledge search, Neo4j, SQL |
 | **work** | work-m365, work-slack, work-atlassian | Workplace: M365, Slack (MCP), Jira/Confluence (MCP) |
 | **organize** | organize-arxiv, organize-scan-medical | File organizer (arxiv papers, medical scans) |
@@ -34,7 +34,8 @@ Personal productivity plugins for Claude Code.
 ## Plugin Details
 
 ### core
-- **memory** — Persist and recall facts, secrets, state across sessions
+- **secrets** — Azure Key Vault (`karelin`) via Karelin Keys MCP: get/list/save/update credentials
+- **memory** — Persist and recall facts, state across sessions
 - **session** — Claude Code sessions: sync, list, resume, rename, cleanup
 - **skill** — Plugin skills: review feedback, patch, test, rebuild, deploy
 - **compose-agent** — Create managed agents from multiple agents/skills (local + cloud)

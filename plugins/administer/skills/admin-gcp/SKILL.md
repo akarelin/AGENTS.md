@@ -14,7 +14,7 @@ Google Cloud Platform resource and IAM management via `gcloud` CLI.
 ## Prerequisites
 
 - `gcloud` CLI installed and authenticated (`gcloud auth login`)
-- Credentials resolved from Key Vault when needed (`get_secret`)
+- Credentials resolved from Key Vault when needed (`secret_get`)
 
 ## Capabilities
 
