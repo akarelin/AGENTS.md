@@ -432,12 +432,10 @@ def authorize(req: func.HttpRequest) -> func.HttpResponse:
         return func.HttpResponse("Missing redirect_uri", status_code=400)
 
     nonce = secrets.token_urlsafe(32)
-    our_verifier, our_challenge = _pkce_pair()
     _pending[nonce] = {
         "state": callers_state,
         "code_challenge": callers_challenge,
         "redirect_uri": callers_redirect,
-        "our_verifier": our_verifier,
         "ts": _now(),
     }
 
@@ -451,8 +449,6 @@ def authorize(req: func.HttpRequest) -> func.HttpResponse:
             "response_mode": "query",
             "scope": f"{cfg['audience']}/MCP.Access offline_access",
             "state": nonce,
-            "code_challenge": our_challenge,
-            "code_challenge_method": "S256",
             "prompt": "select_account",
         })
     )
@@ -487,7 +483,6 @@ def oauth_callback(req: func.HttpRequest) -> func.HttpResponse:
         code=entra_code,
         scopes=[f"{cfg['audience']}/MCP.Access"],
         redirect_uri=f"{base}/oauth/callback",
-        code_verifier=pending["our_verifier"],
     )
     if "access_token" not in result:
         err_desc = result.get("error_description", result.get("error", "unknown"))
