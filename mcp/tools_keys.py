@@ -1,4 +1,4 @@
-"""MCP tools for secret/key management via Azure Key Vault (gppu.Vault)."""
+"""MCP tools for secret/key management via gppu.Vault."""
 
 from gppu import Vault
 
@@ -18,7 +18,8 @@ TOOLS = [
         "type": "object",
         "properties": {
             "name": {"type": "string", "description": "Secret name (kebab-case, matching existing vault conventions)"},
-            "value": {"type": "string", "description": "Secret value"}
+            "value": {"type": "string", "description": "Secret value"},
+            "designation": {"type": "string", "description": "Optional suffix appended as '-<designation>' (kebab-lower) when the base name collides."}
         },
         "required": ["name", "value"]
     }, "annotations": {"readOnlyHint": False, "destructiveHint": False, "openWorldHint": False}},
@@ -34,23 +35,8 @@ TOOLS = [
 ]
 
 
-def _kv_client():
-    import os
-    vault_name = os.environ.get("AZURE_KEYVAULT_NAME")
-    if not vault_name:
-        raise RuntimeError("AZURE_KEYVAULT_NAME not set")
-    from azure.identity import DefaultAzureCredential
-    from azure.keyvault.secrets import SecretClient
-    return SecretClient(vault_url=f"https://{vault_name}.vault.azure.net",
-                        credential=DefaultAzureCredential())
-
-
-def _secret_list():
-    return {"secrets": [s.name for s in _kv_client().list_properties_of_secrets()]}
-
-
 def _secret_create(args):
-    Vault.create(args["name"], args["value"])
+    Vault.create(args["name"], args["value"], designation=args.get("designation"))
     return {"name": args["name"], "created": True}
 
 
@@ -61,7 +47,7 @@ def _secret_update(args):
 
 HANDLERS = {
     "secret_get": lambda a: {"name": a["name"], "value": Vault.get(a["name"])},
-    "secret_list": lambda a: _secret_list(),
+    "secret_list": lambda a: {"secrets": Vault.list()},
     "secret_create": _secret_create,
     "secret_update": _secret_update,
 }
