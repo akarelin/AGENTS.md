@@ -2,7 +2,13 @@
 
 Seven MCP endpoints over Streamable HTTP transport: M365 Graph API, Azure Key Vault, Obsidian vault, Neo4j graph database, TickTick tasks, and QMD search index.
 
-**Auth:** OAuth 2.0 PKCE (claude.ai) or `x-api-key` header (Claude Code)
+**Auth:** OAuth 2.0 against Microsoft Entra ID. The server exposes a shim
+(`/.well-known/oauth-authorization-server`, `/register`, `/authorize`,
+`/oauth/callback`, `/token`) that delegates user authentication to Entra and
+returns Entra-issued JWTs. Inbound `Authorization: Bearer <jwt>` is validated
+against Entra JWKS; the `oid` claim must appear in the `mcp-allowed-oids` Key
+Vault secret. Legacy PSK (`x-api-key`) is still accepted in transition mode
+(see `MCP_AUTH_MODE`).
 
 ## /keys — Secret Management (2 tools)
 
@@ -124,18 +130,35 @@ Hybrid BM25+vector search over a local QMD index via subprocess.
 | `qmd_get` | Get a specific file from the index | file_path |
 | `qmd_status` | Index status and collection list | |
 
+## Add to claude.ai
+
+Settings → Connectors → Add custom MCP server → URL
+`https://mcp.karelin.ai/<endpoint>` (e.g. `/keys`, `/m365`, etc.). On first
+connect, claude.ai discovers the OAuth metadata, registers a client, opens the
+Entra sign-in window, and stores tokens. Your `oid` must be in
+`mcp-allowed-oids`.
+
 ## Connect from Claude Code
+
+```bash
+claude mcp add karelin-keys https://mcp.karelin.ai/keys
+```
+
+Claude Code walks the same OAuth dance and caches tokens. Repeat per endpoint.
+
+Static config (e.g. `~/.config/claude-code/.mcp.json`) — Bearer token from any
+helper (MSAL device-code, manual paste, etc.):
 
 ```json
 {
   "mcpServers": {
-    "Keys":       {"type": "http", "url": "https://your-mcp-host/keys",       "headers": {"x-api-key": "${MCP_PSK}"}},
-    "M365":       {"type": "http", "url": "https://your-mcp-host/m365",       "headers": {"x-api-key": "${MCP_PSK}"}},
-    "M365 Admin": {"type": "http", "url": "https://your-mcp-host/m365-admin", "headers": {"x-api-key": "${MCP_PSK}"}},
-    "Obsidian":   {"type": "http", "url": "https://your-mcp-host/obsidian",   "headers": {"x-api-key": "${MCP_PSK}"}},
-    "Neo4j":      {"type": "http", "url": "https://your-mcp-host/neo4j",      "headers": {"x-api-key": "${MCP_PSK}"}},
-    "TickTick":   {"type": "http", "url": "https://your-mcp-host/ticktick",   "headers": {"x-api-key": "${MCP_PSK}"}},
-    "QMD":        {"type": "http", "url": "https://your-mcp-host/qmd",        "headers": {"x-api-key": "${MCP_PSK}"}}
+    "Karelin Keys":     {"type": "http", "url": "https://mcp.karelin.ai/keys",       "headers": {"Authorization": "Bearer ${MCP_KARELIN_TOKEN}"}},
+    "Karelin M365":     {"type": "http", "url": "https://mcp.karelin.ai/m365",       "headers": {"Authorization": "Bearer ${MCP_KARELIN_TOKEN}"}},
+    "Karelin M365 Admin": {"type": "http", "url": "https://mcp.karelin.ai/m365-admin", "headers": {"Authorization": "Bearer ${MCP_KARELIN_TOKEN}"}},
+    "Karelin Obsidian": {"type": "http", "url": "https://mcp.karelin.ai/obsidian",   "headers": {"Authorization": "Bearer ${MCP_KARELIN_TOKEN}"}},
+    "Karelin Neo4j":    {"type": "http", "url": "https://mcp.karelin.ai/neo4j",      "headers": {"Authorization": "Bearer ${MCP_KARELIN_TOKEN}"}},
+    "Karelin TickTick": {"type": "http", "url": "https://mcp.karelin.ai/ticktick",   "headers": {"Authorization": "Bearer ${MCP_KARELIN_TOKEN}"}},
+    "Karelin QMD":      {"type": "http", "url": "https://mcp.karelin.ai/qmd",        "headers": {"Authorization": "Bearer ${MCP_KARELIN_TOKEN}"}}
   }
 }
 ```
