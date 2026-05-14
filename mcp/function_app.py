@@ -128,7 +128,7 @@ def _validate_jwt(token):
         token,
         key=public_key,
         algorithms=["RS256"],
-        audience=cfg["audience"],
+        audience=cfg["client_id"],
         issuer=issuer,
     )
 
