@@ -1,27 +1,26 @@
-# Xsolla — Claude Code Plugin Marketplace
+# A — Agentic Skills Marketplace
 
-**v0.0.1** — A plugin marketplace for Claude Code and Cowork. Meta-skills, reusable agents, MCP connections, and nested skill hierarchies — packaged as installable plugins.
+**v0.0.1** — A personal Claude Code plugin marketplace (`karelin`). 6 plugins, 24 skills — meta-skills, reusable agents, MCP connections, and nested skill hierarchies packaged as installable plugins.
 
-[![organize](https://img.shields.io/badge/plugin-organize-green?style=flat-square)](#organize)
-[![work](https://img.shields.io/badge/plugin-work-blue?style=flat-square)](#work)
-[![search](https://img.shields.io/badge/plugin-search-orange?style=flat-square)](#search)
+[![core](https://img.shields.io/badge/plugin-core-green?style=flat-square)](#core)
 [![manage](https://img.shields.io/badge/plugin-manage-red?style=flat-square)](#manage)
-[![shurick-start](https://img.shields.io/badge/plugin-shurick--start-purple?style=flat-square)](#shurick-start)
+[![organize](https://img.shields.io/badge/plugin-organize-orange?style=flat-square)](#organize)
+[![work](https://img.shields.io/badge/plugin-work-blue?style=flat-square)](#work)
+[![administer](https://img.shields.io/badge/plugin-administer-purple?style=flat-square)](#administer)
+[![research](https://img.shields.io/badge/plugin-research-teal?style=flat-square)](#research)
 
 ## Quick Start
 
 ```bash
 # Add the marketplace
-/plugin marketplace add xsolla/claude-plugin-marketplace
+/plugin marketplace add akarelin/A
 
 # Browse available plugins
-/plugin marketplace list xsolla
+/plugin marketplace list karelin
 
 # Install a plugin
-/plugin install work@xsolla
+/plugin install work@karelin
 ```
-
-In Cowork, use the plugin manager UI or ask Claude to install a plugin by name.
 
 ---
 
@@ -65,8 +64,9 @@ Example — the `work` meta-skill routes like this:
 |---|---|
 | Outlook, Exchange, Teams, OneDrive | `work-m365` |
 | Gmail, Google Drive | `work-google` |
-| Slack messages, channels | `work-slack` (MCP) |
-| Jira issues, Confluence pages | `work-jira` (MCP) |
+| Slack messages, channels | `work-slack` |
+| Jira issues, Confluence pages | `work-atlassian` |
+| TickTick tasks | `work-ticktick` |
 | Ambiguous "email" | Asks the user |
 
 There is no hardcoded dispatcher. Routing is natural language in markdown — Claude reads the routing section and makes a judgment call. This makes the system flexible and context-aware without requiring code changes.
@@ -85,30 +85,30 @@ Real example:
 
 ```
 work/                              ← meta-skill (routes by platform)
-├── work-m365/                     ← concrete skill (Graph API)
+├── work-m365/                     ← concrete skill (Graph API via self-hosted MCP)
+├── work-google/                   ← concrete skill (Gmail + Drive)
 ├── work-slack/                    ← concrete skill (Slack MCP)
-└── work-jira/                     ← concrete skill (Atlassian MCP)
-    ├── triage-issue/              ← nested workflow
-    ├── capture-tasks-from-meeting-notes/
-    ├── generate-status-report/
-    ├── spec-to-backlog/
-    └── search-company-knowledge/
+├── work-atlassian/                ← concrete skill (Jira/Confluence MCP)
+└── work-ticktick/                 ← concrete skill (TickTick via self-hosted MCP)
 ```
 
 Deeper nesting is intentionally avoided to keep the mental model simple.
 
 ### Connections (MCP Servers)
 
-Plugins connect to external services via **MCP servers** defined in `.mcp.json`:
+Most plugins talk to a self-hosted MCP service (source in [`mcp/`](mcp/)) at `https://mcp.{yourorg}.com` — 7 endpoints, ~77 tools, Entra OAuth 2.0 with JWT validation. See [`mcp/README.md`](mcp/README.md) for the full tool inventory.
 
-| Connection | Protocol | Auth |
-|---|---|---|
-| Slack | `https://mcp.slack.com/mcp` | OAuth |
-| Atlassian (Jira/Confluence) | `https://mcp.atlassian.com/v1/mcp` | Browser auth |
-| voidtools Everything | Local `uvx` process | None |
-| Microsoft Graph API | CLI script (`m365.py`) | Azure Key Vault client credentials |
+| Endpoint | URL | Tools | Used by |
+|---|---|---|---|
+| Keys | `https://mcp.{yourorg}.com/keys` | 2 | `core`, `administer` |
+| M365 (user) | `https://mcp.{yourorg}.com/m365` | 31 | `work-m365` |
+| M365 Admin | `https://mcp.{yourorg}.com/m365-admin` | 13 | `admin-m365` |
+| Obsidian | `https://mcp.{yourorg}.com/obsidian` | 16 | `organize`, `research` |
+| Neo4j | `https://mcp.{yourorg}.com/neo4j` | 5 | `research` |
+| TickTick | `https://mcp.{yourorg}.com/ticktick` | 6 | `work-ticktick` |
+| QMD | `https://mcp.{yourorg}.com/qmd` | 4 | `research` |
 
-MCP connections provide tools that skills can use. CLI scripts provide capabilities where no MCP server exists.
+External MCPs used by `work`: Slack (`https://mcp.slack.com/mcp`, OAuth) and Atlassian (`https://mcp.atlassian.com/v1/mcp`, browser auth).
 
 ### Reusable Agents
 
@@ -116,86 +116,94 @@ Skills and their scripts are designed to be reusable across plugins. The `manage
 
 ---
 
-## Using Cowork & Dispatch
+## Using Plugins in Claude Code
 
-### Cowork Mode
+Install via `/plugin install <name>@karelin`. Once installed, skills appear in Claude's available skill list and are triggered automatically by keywords in your request.
 
-In Cowork (Claude desktop app), plugins are installed via the UI or by asking Claude. Once installed, skills appear in Claude's available skill list and are triggered automatically by keywords in your request.
-
-**How dispatch works**: When you say "check my Jira backlog", Claude matches your request against installed skill descriptions, loads the `work` meta-skill, reads its routing table, and dispatches to `work-jira`. No slash commands needed — just describe what you want.
+**How dispatch works**: When you say "check my Jira backlog", Claude matches your request against installed skill descriptions, loads the `work` meta-skill, reads its routing table, and dispatches to `work-atlassian`. No slash commands needed — just describe what you want.
 
 **Explicit invocation** is also supported:
 ```
-/skill work-jira
-/skill search-m365
+/skill work-atlassian
+/skill search
 /skill organize
 ```
 
-### Claude Code CLI
-
-Same plugins work in Claude Code. Install via `/plugin install`, invoke via `/skill` or let Claude auto-dispatch based on your prompt.
-
 ---
 
-## Available Plugins (5)
+## Available Plugins (6)
 
-### organize
-File organizer with sub-skill discovery. Scans a folder, runs each sub-skill in `--scan` (dry-run) mode, presents a combined plan, waits for approval.
-
-| Sub-skill | Description |
-|---|---|
-| `organize-arxiv` | Identify arXiv PDFs, fetch metadata, rename, move to library |
-| `medical-scan-obsidian` | Convert medical scans into bilingual EN/RU Obsidian vault |
-
-### work
-Workplace productivity hub. Routes to the right platform based on your request.
+### core
+**v0.2.1** — Core agent primitives: memory, sessions, skills, agents, and learning.
 
 | Sub-skill | Description |
 |---|---|
-| `work-m365` | Mail, Calendar, Teams Chat, Files, Tasks, Contacts, OneNote, Presence |
-| `work-google` | Gmail, Google Drive |
-| `work-slack` | Messaging, search, threads, canvases (Slack MCP) |
-| `work-jira` | Issues, epics, sprints, Confluence docs (Atlassian MCP) — includes 5 nested workflows |
-
-### search
-Cross-platform search. Routes by target: local files, M365, or Slack.
-
-| Sub-skill | Description |
-|---|---|
-| `search-everything` | voidtools Everything MCP — 16 tools, Windows-only |
-| `search-m365` | Unified search across emails, files, events, chat, SharePoint |
-| `search-slack` | Messages, channels, files, people |
+| `core` | Meta-skill entry point for agentic primitives |
+| `memory` | Persistent file-based memory system |
+| `session` | Claude Code session inspection and resume |
+| `skill` | Skill authoring and lifecycle |
+| `agent` | Subagent definitions |
+| `compose-agent` | Compose multi-step agent workflows |
+| `learn` | Mistake-driven improvement loop |
 
 ### manage
-Administration and lifecycle management.
+**v0.2.0** — Session and skill management: sync, list, resume, patch, test, deploy.
 
 | Sub-skill | Description |
 |---|---|
-| `manage-sessions` | Claude Code sessions: sync, list, resume, rename, cleanup |
-| `manage-skills` | Plugin skills: review, patch, test, rebuild, deploy |
-| `manage-m365` | M365 tenant admin: Users, Groups, Teams, Licenses, Audit, Security |
+| `manage` | Lifecycle for plugin skills and Claude Code sessions |
 
-### shurick-start
-CEO workspace — 51 skills covering employee rewards, Neuronet knowledge graph, Quest Platform, Neo4j, Cloud Run, mini-apps, Atlassian, Slack, Gmail, GCP, and multi-agent orchestration.
+### organize
+**v0.2.0** — File organizer with sub-skill discovery. Scans a folder, runs each sub-skill in `--scan` (dry-run) mode, presents a combined plan, waits for approval.
+
+| Sub-skill | Description |
+|---|---|
+| `organize` | Meta-skill router across organizers |
+| `organize-arxiv` | Identify arXiv PDFs, fetch metadata, rename, move to library |
+| `organize-scan` | Generic scan triage |
+| `organize-scan-medical` | Convert medical scans into a bilingual EN/RU Obsidian vault |
+
+### work
+**v0.2.1** — Workplace productivity hub. Routes to the right platform based on your request.
+
+| Sub-skill | Description |
+|---|---|
+| `work` | Meta-skill router across workplace platforms |
+| `work-m365` | Mail, Calendar, Teams, Files, Tasks, Contacts, OneNote, Presence (self-hosted M365 MCP) |
+| `work-google` | Gmail, Google Drive |
+| `work-slack` | Messaging, search, threads, canvases (Slack MCP) |
+| `work-atlassian` | Jira issues, epics, sprints, Confluence docs (Atlassian MCP) |
+| `work-ticktick` | TickTick task management (self-hosted TickTick MCP) |
+
+### administer
+**v0.1.1** — Cloud and tenant administration: M365 tenant admin and GCP resource management.
+
+| Sub-skill | Description |
+|---|---|
+| `administer` | Meta-skill router across admin domains |
+| `admin-m365` | M365 tenant admin: Users, Groups, Licenses, Devices, Roles, Domains |
+| `admin-gcp` | GCP resource management |
+
+### research
+**v0.1.1** — Search and data exploration: knowledge search across providers, Neo4j graph queries, SQL database exploration.
+
+| Sub-skill | Description |
+|---|---|
+| `research` | Meta-skill router across research backends |
+| `search` | Knowledge search across providers (Obsidian via self-hosted MCP, QMD index, web) |
+| `data` | Neo4j Cypher queries and SQL exploration |
 
 ---
 
 ## Contributing
-
-**Wanted: contributors for these integrations:**
-
-- **Okta / Auth0** — Identity & access management skill (SSO, user provisioning, MFA policies, audit logs). If your org uses Okta, we'd love help building an `work-okta` or `manage-okta` sub-skill.
-- **GCP testing** — The `shurick-start` plugin includes GCP / Cloud Run skills that need testing across different project configurations and IAM setups. If you have a GCP sandbox, please help validate.
 
 To contribute a new skill:
 
 1. Fork the repo
 2. Create `plugins/<parent>/skills/<your-skill>/SKILL.md` with frontmatter
 3. Add implementation scripts under `plugins/<parent>/scripts/`
-4. Update `plugin.json` and `marketplace.json`
+4. Update `plugins/<parent>/.claude-plugin/plugin.json` and the top-level `.claude-plugin/marketplace.json`
 5. Open a PR
-
-See `plugins/manage/skills/manage-skills/references/plugin-structure.md` for the full spec.
 
 ---
 
@@ -218,7 +226,7 @@ This repository evolved from a series of earlier experiments in agentic tooling.
 ---
 
 ```
-Xsolla — Claude Code Plugin Marketplace
+karelin — Claude Code Plugin Marketplace
 v0.0.1
 ```
 

@@ -1,7 +1,8 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
-  "name": "akarelin-skills",
+  "name": "karelin",
   "description": "Personal productivity plugins for Claude Code — agentic cognition, file organization, workplace tools, and administration.",
+  "version": "0.1.0",
   "owner": {
     "name": "Alex Karelin",
     "email": "alex@karelin.ai"
@@ -12,6 +13,7 @@
       "description": "Core agent primitives: memory, sessions, skills, agents, and learning.",
       "source": "./plugins/core",
       "category": "development",
+      "keywords": ["core", "memory", "session", "skill", "agent", "learn"],
       "homepage": "https://github.com/akarelin/A/tree/master/plugins/core"
     },
     {
@@ -19,6 +21,7 @@
       "description": "Session and skill management: sync, list, resume, patch, test, deploy.",
       "source": "./plugins/manage",
       "category": "development",
+      "keywords": ["manage", "sessions", "skills", "plugins"],
       "homepage": "https://github.com/akarelin/A/tree/master/plugins/manage"
     },
     {
@@ -26,6 +29,7 @@
       "description": "File organizer: arxiv papers and medical scans to Obsidian.",
       "source": "./plugins/organize",
       "category": "productivity",
+      "keywords": ["organize", "files", "arxiv", "papers", "medical", "scan", "obsidian"],
       "homepage": "https://github.com/akarelin/A/tree/master/plugins/organize"
     },
     {
@@ -33,6 +37,7 @@
       "description": "Workplace productivity: M365, Google (Gmail + Drive), Slack (MCP), Jira/Confluence (MCP).",
       "source": "./plugins/work",
       "category": "productivity",
+      "keywords": ["work", "m365", "outlook", "email", "calendar", "teams", "slack", "jira", "atlassian", "gmail", "google", "drive"],
       "homepage": "https://github.com/akarelin/A/tree/master/plugins/work"
     },
     {
@@ -40,6 +45,7 @@
       "description": "Cloud and tenant administration: M365 tenant admin and GCP resource management.",
       "source": "./plugins/administer",
       "category": "development",
+      "keywords": ["admin", "m365", "gcp", "google-cloud", "tenant", "users", "groups", "iam", "compute"],
       "homepage": "https://github.com/akarelin/A/tree/master/plugins/administer"
     },
     {
@@ -47,6 +53,7 @@
       "description": "Search and data exploration: knowledge search across providers, Neo4j graph queries, SQL database exploration.",
       "source": "./plugins/research",
       "category": "development",
+      "keywords": ["research", "search", "data", "neo4j", "cypher", "sql", "postgres", "obsidian", "knowledge"],
       "homepage": "https://github.com/akarelin/A/tree/master/plugins/research"
     }
   ]
