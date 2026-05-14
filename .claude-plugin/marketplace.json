@@ -8,32 +8,46 @@
   },
   "plugins": [
     {
-      "name": "ac",
-      "description": "Agentic Cognition — foundational tools: memory (get/set/save), search-knowledge (scoped), sessions, skills, agents, learning.",
-      "source": "./plugins/ac",
+      "name": "core",
+      "description": "Core agent primitives: memory, sessions, skills, agents, and learning.",
+      "source": "./plugins/core",
       "category": "development",
-      "homepage": "https://github.com/akarelin/AGENTS.md/tree/master/plugins/ac"
-    },
-    {
-      "name": "organize",
-      "description": "File organizer with sub-skills: arxiv paper organizer, scan processors (medical-to-Obsidian).",
-      "source": "./plugins/organize",
-      "category": "productivity",
-      "homepage": "https://github.com/akarelin/AGENTS.md/tree/master/plugins/organize"
-    },
-    {
-      "name": "work",
-      "description": "Workplace tools: M365 (Mail, Calendar, Teams, Files, Tasks), Google (Gmail, Drive), Slack (MCP), Atlassian (Jira/Confluence MCP).",
-      "source": "./plugins/work",
-      "category": "productivity",
-      "homepage": "https://github.com/akarelin/AGENTS.md/tree/master/plugins/work"
+      "homepage": "https://github.com/akarelin/A/tree/master/plugins/core"
     },
     {
       "name": "manage",
-      "description": "M365 tenant administration: Users, Groups, Teams, Licenses, Audit, Security.",
+      "description": "Session and skill management: sync, list, resume, patch, test, deploy.",
       "source": "./plugins/manage",
       "category": "development",
-      "homepage": "https://github.com/akarelin/AGENTS.md/tree/master/plugins/manage"
+      "homepage": "https://github.com/akarelin/A/tree/master/plugins/manage"
+    },
+    {
+      "name": "organize",
+      "description": "File organizer: arxiv papers and medical scans to Obsidian.",
+      "source": "./plugins/organize",
+      "category": "productivity",
+      "homepage": "https://github.com/akarelin/A/tree/master/plugins/organize"
+    },
+    {
+      "name": "work",
+      "description": "Workplace productivity: M365, Google (Gmail + Drive), Slack (MCP), Jira/Confluence (MCP).",
+      "source": "./plugins/work",
+      "category": "productivity",
+      "homepage": "https://github.com/akarelin/A/tree/master/plugins/work"
+    },
+    {
+      "name": "administer",
+      "description": "Cloud and tenant administration: M365 tenant admin and GCP resource management.",
+      "source": "./plugins/administer",
+      "category": "development",
+      "homepage": "https://github.com/akarelin/A/tree/master/plugins/administer"
+    },
+    {
+      "name": "research",
+      "description": "Search and data exploration: knowledge search across providers, Neo4j graph queries, SQL database exploration.",
+      "source": "./plugins/research",
+      "category": "development",
+      "homepage": "https://github.com/akarelin/A/tree/master/plugins/research"
     }
   ]
 }

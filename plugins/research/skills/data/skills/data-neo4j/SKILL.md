@@ -17,7 +17,7 @@ Uses the Neo4j endpoint (auto-discovers servers from Key Vault):
   "Neo4j": {
     "type": "http",
     "url": "https://mcp.karelin.ai/neo4j",
-    "headers": {"x-api-key": "${MCP_KARELIN_PSK}"}
+    "headers": {"Authorization": "Bearer ${MCP_KARELIN_TOKEN}"}
   }
 }
 ```

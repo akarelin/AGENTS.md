@@ -2,7 +2,7 @@
   "M365": {
     "type": "http",
     "url": "https://mcp.karelin.ai/m365",
-    "headers": {"x-api-key": "${MCP_KARELIN_PSK}"}
+    "headers": {"Authorization": "Bearer ${MCP_KARELIN_TOKEN}"}
   },
   "slack": {
     "type": "http",

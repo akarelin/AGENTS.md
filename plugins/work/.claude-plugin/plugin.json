@@ -1,6 +1,6 @@
 {
   "name": "work",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Workplace productivity: M365, Google (Gmail + Drive), Slack (MCP), Jira/Confluence (MCP).",
   "author": {
     "name": "Alex Karelin"

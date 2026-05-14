@@ -1,6 +1,6 @@
 {
   "name": "research",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Search and data exploration: knowledge search across providers, Neo4j graph queries, SQL database exploration.",
   "author": {
     "name": "Alex Karelin"

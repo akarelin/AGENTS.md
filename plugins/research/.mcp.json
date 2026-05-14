@@ -2,17 +2,17 @@
   "Neo4j": {
     "type": "http",
     "url": "https://mcp.karelin.ai/neo4j",
-    "headers": {"x-api-key": "${MCP_KARELIN_PSK}"}
+    "headers": {"Authorization": "Bearer ${MCP_KARELIN_TOKEN}"}
   },
   "Obsidian": {
     "type": "http",
     "url": "https://mcp.karelin.ai/obsidian",
-    "headers": {"x-api-key": "${MCP_KARELIN_PSK}"}
+    "headers": {"Authorization": "Bearer ${MCP_KARELIN_TOKEN}"}
   },
   "M365": {
     "type": "http",
     "url": "https://mcp.karelin.ai/m365",
-    "headers": {"x-api-key": "${MCP_KARELIN_PSK}"}
+    "headers": {"Authorization": "Bearer ${MCP_KARELIN_TOKEN}"}
   },
   "atlassian": {
     "type": "http",
