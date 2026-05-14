@@ -5,7 +5,7 @@ import os
 import msal
 import requests
 
-from gppu import resolve_secret
+from gppu import Vault
 
 GRAPH_BASE = "https://graph.microsoft.com/beta"
 
@@ -30,9 +30,9 @@ _token_cache = {}
 def get_token():
     if "t" in _token_cache:
         return _token_cache["t"]
-    tenant_id = resolve_secret(f"{_MSGRAPH_PREFIX}-tenant-id")
-    client_id = resolve_secret(f"{_MSGRAPH_PREFIX}-client-id")
-    client_secret = resolve_secret(f"{_MSGRAPH_PREFIX}-client-secret")
+    tenant_id = Vault.get(f"{_MSGRAPH_PREFIX}-tenant-id")
+    client_id = Vault.get(f"{_MSGRAPH_PREFIX}-client-id")
+    client_secret = Vault.get(f"{_MSGRAPH_PREFIX}-client-secret")
     authority = f"https://login.microsoftonline.com/{tenant_id}"
     app = msal.ConfidentialClientApplication(
         client_id, authority=authority, client_credential=client_secret

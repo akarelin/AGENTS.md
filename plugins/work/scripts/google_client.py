@@ -12,7 +12,7 @@ import json
 import os
 import sys
 
-from gppu import resolve_secret
+from gppu import Vault
 
 SCOPES = [
     "https://www.googleapis.com/auth/gmail.modify",
@@ -32,8 +32,8 @@ def _get_client_config():
     """Build OAuth2 client config from Key Vault secrets."""
     return {
         "installed": {
-            "client_id": resolve_secret(KV_CLIENT_ID),
-            "client_secret": resolve_secret(KV_CLIENT_SECRET),
+            "client_id": Vault.get(KV_CLIENT_ID),
+            "client_secret": Vault.get(KV_CLIENT_SECRET),
             "auth_uri": "https://accounts.google.com/o/oauth2/auth",
             "token_uri": "https://oauth2.googleapis.com/token",
             "redirect_uris": ["http://localhost"],
@@ -44,7 +44,7 @@ def _get_client_config():
 def _load_token_from_kv():
     """Try to load token JSON from Key Vault. Returns None if not found."""
     try:
-        token_json = resolve_secret(KV_TOKEN)
+        token_json = Vault.get(KV_TOKEN)
         if token_json:
             data = json.loads(token_json)
             if data.get("refresh_token"):
@@ -56,8 +56,7 @@ def _load_token_from_kv():
 
 def _save_token_to_kv(token_json: str):
     """Save token JSON to Key Vault."""
-    from gppu import set_secret
-    set_secret(KV_TOKEN, token_json)
+    Vault.update(KV_TOKEN, token_json, create=True)
 
 
 def save_token(token_json: str):

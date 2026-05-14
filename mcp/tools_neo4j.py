@@ -5,7 +5,7 @@ secrets named neo4j-*-uri / neo4j-*-password. If multiple servers
 are found, the user must select one before querying.
 """
 
-from gppu import resolve_secret
+from gppu import Vault
 
 TOOLS = [
     {"name": "neo4j_list_servers", "description": "List available Neo4j servers (auto-discovered from Key Vault). Call this first to see what's available, then use neo4j_use_server to select one.", "inputSchema": {
@@ -72,7 +72,7 @@ def _list_servers(args):
     servers = _discover_servers()
     result = []
     for name in sorted(servers):
-        uri = resolve_secret(f"neo4j-{name}-uri")
+        uri = Vault.get(f"neo4j-{name}-uri")
         result.append({"name": name, "uri": uri, "active": name == _active_server})
     return {"servers": result, "active": _active_server,
             "hint": "Call neo4j_use_server to select a server before querying." if not _active_server else None}
@@ -85,10 +85,10 @@ def _use_server(args):
     if server not in servers:
         return {"error": f"Unknown server '{server}'. Available: {sorted(servers)}"}
     # Validate credentials exist
-    resolve_secret(f"neo4j-{server}-uri")
-    resolve_secret(f"neo4j-{server}-password")
+    Vault.get(f"neo4j-{server}-uri")
+    Vault.get(f"neo4j-{server}-password")
     _active_server = server
-    return {"active": server, "uri": resolve_secret(f"neo4j-{server}-uri")}
+    return {"active": server, "uri": Vault.get(f"neo4j-{server}-uri")}
 
 
 # ── Driver ──
@@ -103,8 +103,8 @@ def _get_driver():
         else:
             raise ValueError(f"Multiple Neo4j servers available ({', '.join(sorted(servers))}). "
                              "Call neo4j_use_server first to select one.")
-    uri = resolve_secret(f"neo4j-{_active_server}-uri")
-    password = resolve_secret(f"neo4j-{_active_server}-password")
+    uri = Vault.get(f"neo4j-{_active_server}-uri")
+    password = Vault.get(f"neo4j-{_active_server}-password")
     return GraphDatabase.driver(uri, auth=("neo4j", password))
 
 

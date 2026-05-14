@@ -27,7 +27,7 @@ import azure.functions as func
 import jwt as pyjwt
 import msal
 import requests
-from gppu import resolve_secret
+from gppu import Vault
 
 import tools as m365_tools
 import tools_admin as admin_tools
@@ -75,11 +75,11 @@ def _now():
 
 def _entra():
     if not _entra_config:
-        _entra_config["tenant_id"] = resolve_secret(f"{_ENTRA_PREFIX}-tenant-id")
-        _entra_config["client_id"] = resolve_secret(f"{_ENTRA_PREFIX}-client-id")
-        _entra_config["client_secret"] = resolve_secret(f"{_ENTRA_PREFIX}-client-secret")
-        _entra_config["audience"] = resolve_secret(f"{_ENTRA_PREFIX}-resource-audience")
-        oids = resolve_secret("mcp-allowed-oids") or ""
+        _entra_config["tenant_id"] = Vault.get(f"{_ENTRA_PREFIX}-tenant-id")
+        _entra_config["client_id"] = Vault.get(f"{_ENTRA_PREFIX}-client-id")
+        _entra_config["client_secret"] = Vault.get(f"{_ENTRA_PREFIX}-client-secret")
+        _entra_config["audience"] = Vault.get(f"{_ENTRA_PREFIX}-resource-audience")
+        oids = Vault.get("mcp-allowed-oids") or ""
         _entra_config["allowed_oids"] = {o.strip() for o in oids.split(",") if o.strip()}
     return _entra_config
 

@@ -23,7 +23,7 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 from urllib.parse import parse_qs, urlencode, urlparse
 
 import requests
-from gppu import resolve_secret
+from gppu import Vault
 
 OAUTH_BASE = "https://ticktick.com/oauth"
 API_BASE = "https://api.ticktick.com/open/v1"
@@ -45,7 +45,7 @@ KV_TOKEN = "ticktick-token"
 def _load_token():
     """Load token JSON from Key Vault."""
     try:
-        raw = resolve_secret(KV_TOKEN)
+        raw = Vault.get(KV_TOKEN)
         if raw:
             return json.loads(raw)
     except Exception:
@@ -55,8 +55,7 @@ def _load_token():
 
 def _save_token(token_data: dict):
     """Save token JSON to Key Vault."""
-    from gppu import set_secret
-    set_secret(KV_TOKEN, json.dumps(token_data))
+    Vault.update(KV_TOKEN, json.dumps(token_data), create=True)
 
 
 def get_token() -> str:
@@ -77,8 +76,8 @@ def get_token() -> str:
 
 
 def _refresh(token_data: dict) -> str:
-    client_id = resolve_secret(KV_CLIENT_ID)
-    client_secret = resolve_secret(KV_CLIENT_SECRET)
+    client_id = Vault.get(KV_CLIENT_ID)
+    client_secret = Vault.get(KV_CLIENT_SECRET)
     creds = base64.b64encode(f"{client_id}:{client_secret}".encode()).decode()
     resp = requests.post(f"{OAUTH_BASE}/token", headers={
         "Authorization": f"Basic {creds}",
@@ -204,8 +203,8 @@ def cmd_auth(args):
         print("Logged out.")
         return
 
-    client_id = resolve_secret(KV_CLIENT_ID)
-    client_secret = resolve_secret(KV_CLIENT_SECRET)
+    client_id = Vault.get(KV_CLIENT_ID)
+    client_secret = Vault.get(KV_CLIENT_SECRET)
     if not client_id or not client_secret:
         print("Error: ticktick-client-id and ticktick-client-secret must be in Key Vault.", file=sys.stderr)
         sys.exit(1)
