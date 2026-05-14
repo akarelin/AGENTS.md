@@ -570,6 +570,38 @@ def token(req: func.HttpRequest) -> func.HttpResponse:
 
 # ── Endpoints ──────────────────────────────────────────────────────
 
+_ALL_TOOLS = []
+_ALL_DISPATCHERS = {}
+
+for _mod, _fn in [
+    (keys_tools,     keys_tools.dispatch_tool),
+    (m365_tools,     m365_tools.dispatch_tool),
+    (admin_tools,    admin_tools.dispatch_tool),
+    (obsidian_tools, obsidian_tools.dispatch_tool),
+    (neo4j_tools,    neo4j_tools.dispatch_tool),
+    (ticktick_tools, ticktick_tools.dispatch),
+    (qmd_tools,      qmd_tools.dispatch_tool),
+]:
+    for _t in _mod.TOOLS:
+        if _t["name"] in _ALL_DISPATCHERS:
+            raise RuntimeError(f"duplicate tool name across modules: {_t['name']}")
+        _ALL_DISPATCHERS[_t["name"]] = _fn
+        _ALL_TOOLS.append(_t)
+
+
+def _dispatch_all(name, args):
+    fn = _ALL_DISPATCHERS.get(name)
+    if not fn:
+        raise ValueError(f"unknown tool: {name}")
+    return fn(name, args)
+
+
+@app.route(route="mcp", methods=["GET", "POST", "DELETE", "OPTIONS"],
+           auth_level=func.AuthLevel.ANONYMOUS)
+def mcp(req: func.HttpRequest) -> func.HttpResponse:
+    return _mcp_response(req, _ALL_TOOLS, _dispatch_all, "Karelin")
+
+
 @app.route(route="keys", methods=["GET", "POST", "DELETE", "OPTIONS"],
            auth_level=func.AuthLevel.ANONYMOUS)
 def keys(req: func.HttpRequest) -> func.HttpResponse:
