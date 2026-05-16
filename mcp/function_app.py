@@ -602,6 +602,12 @@ def mcp(req: func.HttpRequest) -> func.HttpResponse:
     return _mcp_response(req, _ALL_TOOLS, _dispatch_all, "Karelin")
 
 
+@app.route(route="", methods=["GET", "POST", "DELETE", "OPTIONS"],
+           auth_level=func.AuthLevel.ANONYMOUS)
+def root(req: func.HttpRequest) -> func.HttpResponse:
+    return _mcp_response(req, _ALL_TOOLS, _dispatch_all, "Karelin")
+
+
 @app.route(route="keys", methods=["GET", "POST", "DELETE", "OPTIONS"],
            auth_level=func.AuthLevel.ANONYMOUS)
 def keys(req: func.HttpRequest) -> func.HttpResponse:
