@@ -75,7 +75,7 @@ Consequence: there is no `user=<someone-else>` override. A user cannot read anot
 | `/keys` | privileged | `secret_get`, `secret_list`, `secret_create`, `secret_update` against the configured Azure Key Vault. |
 | `/obsidian` | privileged | Read/write to a local Obsidian vault via the [Local REST API](https://github.com/coddingtonbear/obsidian-local-rest-api) plugin: list, read, write, append, patch (by heading / block-reference / frontmatter-key), delete, open, run command, simple search, Dataview DQL search, tags, active note, daily note get/append. Tries each configured host in order and caches the one that responds. |
 | `/neo4j` | privileged | Auto-discovers Neo4j servers from vault secrets of the form `neo4j-<server>-uri` / `neo4j-<server>-password`. Tools: `neo4j_list_servers`, `neo4j_use_server`, `read_neo4j_cypher`, `write_neo4j_cypher`, `get_neo4j_schema`. |
-| `/ticktick` | privileged | TickTick projects and tasks (`tt_lists`, `tt_tasks`, `tt_create`, `tt_update`, `tt_complete`, `tt_abandon`). Accepts natural-language due dates (`today`, `tomorrow`, `in N days`, `next monday`, ISO 8601). |
+| `/ticktick` | privileged | TickTick projects, tasks, and time-tracking. Tasks: `tt_lists`, `tt_tasks`, `tt_create`, `tt_update`, `tt_complete`, `tt_abandon`. Focus sessions (Pomodoro + Timing) via `/open/v1/focus`: `tt_focus_list`, `tt_focus_get`, `tt_focus_delete`. Accepts natural-language dates (`today`, `tomorrow`, `yesterday`, `N days ago`, `this week`, `in N days`, `next monday`, ISO 8601). |
 | `/qmd` | privileged | Wraps a local `qmd` CLI (hybrid BM25 + vector index): `qmd_search`, `qmd_vsearch`, `qmd_get`, `qmd_status`. |
 | `/mcp`, `/` | privileged | Aggregate endpoint exposing every tool from every module above. |
 
