@@ -602,9 +602,15 @@ def mcp(req: func.HttpRequest) -> func.HttpResponse:
     return _mcp_response(req, _ALL_TOOLS, _dispatch_all, "Karelin")
 
 
-@app.route(route="", methods=["GET", "POST", "DELETE", "OPTIONS"],
+@app.route(route="{*path}", methods=["GET", "POST", "DELETE", "OPTIONS"],
            auth_level=func.AuthLevel.ANONYMOUS)
 def root(req: func.HttpRequest) -> func.HttpResponse:
+    # Specific routes (e.g. /mcp, /keys, /.well-known/...) win on ASP.NET
+    # routing specificity; this catch-all only fires for the bare root and
+    # other unmatched paths. Treat the root as an alias for /mcp; everything
+    # else gets a clean 404 instead of the Functions runtime's landing page.
+    if (req.route_params.get("path") or "").strip("/"):
+        return func.HttpResponse("Not Found", status_code=404, headers=CORS_HEADERS)
     return _mcp_response(req, _ALL_TOOLS, _dispatch_all, "Karelin")
 
 
