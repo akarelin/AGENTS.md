@@ -614,10 +614,16 @@ def mcp(req: func.HttpRequest) -> func.HttpResponse:
 
 @app.route(route="{*catchall}", methods=["GET", "POST", "DELETE", "OPTIONS"],
            auth_level=func.AuthLevel.ANONYMOUS)
-def root(req: func.HttpRequest) -> func.HttpResponse:
-    # Specific routes (/mcp, /keys, /.well-known/...) win on ASP.NET routing
-    # specificity, so this only fires for the bare root and otherwise unmatched
-    # paths. Treat root as an alias for /mcp; everything else gets a clean 404.
+def zz_catchall(req: func.HttpRequest) -> func.HttpResponse:
+    # NAMED `zz_catchall` (not `root`) ON PURPOSE: Functions Python worker
+    # registers routes in alphabetical order by function name. A catchall
+    # registered BEFORE a literal sibling will shadow it (returns 404 via the
+    # `catchall non-empty` branch below). `root` shadowed `/token` (fixed in
+    # 85261ce by renaming token→oauth_token) and `/ticktick` (same root cause).
+    # Naming the catchall `zz_*` guarantees it sorts last, so any future
+    # literal route is safe regardless of its function name.
+    #
+    # Treat bare root as an alias for /mcp; everything else gets a clean 404.
     if (req.route_params.get("catchall") or "").strip("/"):
         return func.HttpResponse("Not Found", status_code=404, headers=CORS_HEADERS)
     return _mcp_response(req, _ALL_TOOLS, _dispatch_all, "Karelin", require_role=_PRIV)
