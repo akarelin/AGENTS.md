@@ -1,73 +1,85 @@
-"""Microsoft Graph beta API client for Azure Functions — client credentials flow."""
+"""Microsoft Graph beta API client — on-behalf-of (OBO) flow.
 
-import logging
-import os
+Uses MCP Universal (mcp-entra-*) credentials to exchange the inbound user's
+MCP.Access token for a Graph token bound to that user's identity. All Graph
+calls execute as the calling user, so per-user permission boundaries are
+enforced by Graph itself — no client-side allowlists, no /users/{oid} rewriting.
+"""
+
+import hashlib
+import time
+from contextvars import ContextVar
+
 import msal
 import requests
 
 from gppu import Vault
 
 GRAPH_BASE = "https://graph.microsoft.com/beta"
+_ENTRA_PREFIX = "mcp-entra"
 
-_MSGRAPH_PREFIX = os.environ.get("MSGRAPH_SECRET_PREFIX", "msgraph")
+# Set per-request by function_app._check_auth after a successful JWT validation.
+current_user_assertion: ContextVar = ContextVar("current_user_assertion", default=None)
 
-def _parse_users():
-    raw = os.environ.get("GRAPH_USERS", "")
-    if not raw:
-        return {}
-    users = {}
-    for pair in raw.split(","):
-        if ":" in pair:
-            name, oid = pair.split(":", 1)
-            users[name.strip()] = oid.strip()
-    return users
+_msal_app = None
+_token_cache = {}  # sha256(assertion) → {token, expires_at}
 
-USERS = _parse_users()
 
-_token_cache = {}
+def _msal():
+    global _msal_app
+    if _msal_app is None:
+        tenant_id     = Vault.get(f"{_ENTRA_PREFIX}-tenant-id")
+        client_id     = Vault.get(f"{_ENTRA_PREFIX}-client-id")
+        client_secret = Vault.get(f"{_ENTRA_PREFIX}-client-secret")
+        _msal_app = msal.ConfidentialClientApplication(
+            client_id,
+            authority=f"https://login.microsoftonline.com/{tenant_id}",
+            client_credential=client_secret,
+        )
+    return _msal_app
 
 
 def get_token():
-    if "t" in _token_cache:
-        return _token_cache["t"]
-    tenant_id = Vault.get(f"{_MSGRAPH_PREFIX}-tenant-id")
-    client_id = Vault.get(f"{_MSGRAPH_PREFIX}-client-id")
-    client_secret = Vault.get(f"{_MSGRAPH_PREFIX}-client-secret")
-    authority = f"https://login.microsoftonline.com/{tenant_id}"
-    app = msal.ConfidentialClientApplication(
-        client_id, authority=authority, client_credential=client_secret
+    """Exchange the current request's user assertion for a Graph token via OBO."""
+    assertion = current_user_assertion.get()
+    if not assertion:
+        raise RuntimeError(
+            "No user assertion in context — graph_client called outside an authenticated "
+            "Entra request. Graph endpoints are not available under PSK auth mode."
+        )
+    key = hashlib.sha256(assertion.encode()).hexdigest()
+    now = int(time.time())
+    cached = _token_cache.get(key)
+    if cached and cached["expires_at"] > now + 60:
+        return cached["token"]
+    result = _msal().acquire_token_on_behalf_of(
+        user_assertion=assertion,
+        scopes=["https://graph.microsoft.com/.default"],
     )
-    result = app.acquire_token_for_client(
-        scopes=["https://graph.microsoft.com/.default"]
-    )
-    if "access_token" in result:
-        _token_cache["t"] = result["access_token"]
-        return result["access_token"]
-    raise RuntimeError(f"Auth failed: {result.get('error_description', result)}")
+    if "access_token" not in result:
+        raise RuntimeError(
+            f"OBO exchange failed: {result.get('error_description', result)}"
+        )
+    _token_cache[key] = {
+        "token": result["access_token"],
+        "expires_at": now + result.get("expires_in", 3600),
+    }
+    return result["access_token"]
 
 
-def _resolve_path(path, user_hint):
-    """Replace /me/ with /users/{aad_id}/ for the target user."""
-    aad_id = USERS.get(user_hint, user_hint)  # allow raw AAD ID too
-    if path.startswith("/me/"):
-        return f"/users/{aad_id}/{path[4:]}"
-    if path == "/me":
-        return f"/users/{aad_id}"
-    if path.startswith("/me?"):
-        return f"/users/{aad_id}?{path[4:]}"
-    return path
+def graph_request(method, path, params=None, json_body=None, extra_headers=None, **_legacy):
+    """Call Graph as the current user via OBO.
 
-
-def graph_request(method, path, user_hint="default",
-                  params=None, json_body=None, extra_headers=None):
+    `**_legacy` swallows the old `user_hint` kwarg from callers in tools.py —
+    OBO binds user identity to the token, so /me/ resolves natively and the
+    hint is meaningless.
+    """
     token = get_token()
-    path = _resolve_path(path, user_hint)
     url = f"{GRAPH_BASE}{path}" if path.startswith("/") else f"{GRAPH_BASE}/{path}"
     headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
     if extra_headers:
         headers.update(extra_headers)
     resp = requests.request(method, url, headers=headers, params=params, json=json_body)
-
     if resp.status_code == 204:
         return {"status": "ok"}
     try:

@@ -29,6 +29,7 @@ import msal
 import requests
 from gppu import Vault
 
+import graph_client
 import tools as m365_tools
 import tools_admin as admin_tools
 import tools_keys as keys_tools
@@ -157,22 +158,22 @@ def _unauth(req, msg="Unauthorized", status=401):
     )
 
 
-def _check_auth(req):
+def _check_auth(req, require_role=None):
     if AUTH_MODE == "disabled":
         return None
 
-    psk = os.environ.get("MCP_API_KEY")
-    provided = (
-        req.headers.get("x-api-key")
-        or _bearer(req)
-        or req.params.get("token")
-    )
-
-    if AUTH_MODE in ("psk", "both") and psk and provided == psk:
-        return None
-
-    if AUTH_MODE == "psk":
-        return _unauth(req)
+    # PSK retired — Entra JWT is the only accepted credential. Old branches kept
+    # commented for archival.
+    # psk = os.environ.get("MCP_API_KEY")
+    # provided = (
+    #     req.headers.get("x-api-key")
+    #     or _bearer(req)
+    #     or req.params.get("token")
+    # )
+    # if AUTH_MODE in ("psk", "both") and psk and provided == psk:
+    #     return None
+    # if AUTH_MODE == "psk":
+    #     return _unauth(req)
 
     token = _bearer(req)
     if not token:
@@ -186,6 +187,10 @@ def _check_auth(req):
     oid = claims.get("oid")
     if not oid or (cfg["allowed_oids"] and oid not in cfg["allowed_oids"]):
         return _unauth(req, "Forbidden", status=403)
+    if require_role and require_role not in (claims.get("roles") or []):
+        return _unauth(req, f"Forbidden — missing app role '{require_role}'", status=403)
+    # Stash the raw JWT for graph_client's OBO exchange downstream.
+    graph_client.current_user_assertion.set(token)
     return None
 
 
@@ -250,7 +255,7 @@ def _handle(body, tools, dispatcher, server_name, req=None):
     return _err(msg_id, -32601, f"Method not found: {method}")
 
 
-def _mcp_response(req, tools, dispatcher, server_name):
+def _mcp_response(req, tools, dispatcher, server_name, require_role=None):
     if req.method == "OPTIONS":
         return func.HttpResponse(status_code=204, headers=CORS_HEADERS)
 
@@ -264,7 +269,7 @@ def _mcp_response(req, tools, dispatcher, server_name):
         return func.HttpResponse(payload, status_code=200, mimetype="application/json",
                                  headers=CORS_HEADERS)
 
-    denied = _check_auth(req)
+    denied = _check_auth(req, require_role=require_role)
     if denied:
         return denied
 
@@ -596,10 +601,15 @@ def _dispatch_all(name, args):
     return fn(name, args)
 
 
+# Privileged routes require the 'MCP.Privileged' app role on MCP United.
+# Currently assigned to alex@karelin.com only.
+_PRIV = "MCP.Privileged"
+
+
 @app.route(route="mcp", methods=["GET", "POST", "DELETE", "OPTIONS"],
            auth_level=func.AuthLevel.ANONYMOUS)
 def mcp(req: func.HttpRequest) -> func.HttpResponse:
-    return _mcp_response(req, _ALL_TOOLS, _dispatch_all, "Karelin")
+    return _mcp_response(req, _ALL_TOOLS, _dispatch_all, "Karelin", require_role=_PRIV)
 
 
 @app.route(route="{*catchall}", methods=["GET", "POST", "DELETE", "OPTIONS"],
@@ -610,13 +620,13 @@ def root(req: func.HttpRequest) -> func.HttpResponse:
     # paths. Treat root as an alias for /mcp; everything else gets a clean 404.
     if (req.route_params.get("catchall") or "").strip("/"):
         return func.HttpResponse("Not Found", status_code=404, headers=CORS_HEADERS)
-    return _mcp_response(req, _ALL_TOOLS, _dispatch_all, "Karelin")
+    return _mcp_response(req, _ALL_TOOLS, _dispatch_all, "Karelin", require_role=_PRIV)
 
 
 @app.route(route="keys", methods=["GET", "POST", "DELETE", "OPTIONS"],
            auth_level=func.AuthLevel.ANONYMOUS)
 def keys(req: func.HttpRequest) -> func.HttpResponse:
-    return _mcp_response(req, keys_tools.TOOLS, keys_tools.dispatch_tool, "Keys")
+    return _mcp_response(req, keys_tools.TOOLS, keys_tools.dispatch_tool, "Keys", require_role=_PRIV)
 
 
 @app.route(route="m365", methods=["GET", "POST", "DELETE", "OPTIONS"],
@@ -634,22 +644,22 @@ def m365_admin(req: func.HttpRequest) -> func.HttpResponse:
 @app.route(route="obsidian", methods=["GET", "POST", "DELETE", "OPTIONS"],
            auth_level=func.AuthLevel.ANONYMOUS)
 def obsidian(req: func.HttpRequest) -> func.HttpResponse:
-    return _mcp_response(req, obsidian_tools.TOOLS, obsidian_tools.dispatch_tool, "Obsidian")
+    return _mcp_response(req, obsidian_tools.TOOLS, obsidian_tools.dispatch_tool, "Obsidian", require_role=_PRIV)
 
 
 @app.route(route="neo4j", methods=["GET", "POST", "DELETE", "OPTIONS"],
            auth_level=func.AuthLevel.ANONYMOUS)
 def neo4j(req: func.HttpRequest) -> func.HttpResponse:
-    return _mcp_response(req, neo4j_tools.TOOLS, neo4j_tools.dispatch_tool, "Neo4j")
+    return _mcp_response(req, neo4j_tools.TOOLS, neo4j_tools.dispatch_tool, "Neo4j", require_role=_PRIV)
 
 
 @app.route(route="ticktick", methods=["GET", "POST", "DELETE", "OPTIONS"],
            auth_level=func.AuthLevel.ANONYMOUS)
 def ticktick(req: func.HttpRequest) -> func.HttpResponse:
-    return _mcp_response(req, ticktick_tools.TOOLS, ticktick_tools.dispatch, "TickTick")
+    return _mcp_response(req, ticktick_tools.TOOLS, ticktick_tools.dispatch, "TickTick", require_role=_PRIV)
 
 
 @app.route(route="qmd", methods=["GET", "POST", "DELETE", "OPTIONS"],
            auth_level=func.AuthLevel.ANONYMOUS)
 def qmd(req: func.HttpRequest) -> func.HttpResponse:
-    return _mcp_response(req, qmd_tools.TOOLS, qmd_tools.dispatch_tool, "QMD")
+    return _mcp_response(req, qmd_tools.TOOLS, qmd_tools.dispatch_tool, "QMD", require_role=_PRIV)
