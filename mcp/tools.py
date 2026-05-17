@@ -7,7 +7,7 @@ from graph_client import graph_get, graph_post, graph_patch, graph_delete
 
 # ── Tool Definitions ────────────────────────────────────────────────
 
-_U = {"type": "string", "description": "User hint (default: env MCP_DEFAULT_USER)"}
+_U = {"type": "string", "description": "Ignored — Graph calls always run as the caller (OBO). Retained for backward compatibility."}
 _TOP = {"type": "integer", "description": "Max results to return"}
 
 TOOLS = [
