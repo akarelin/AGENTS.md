@@ -512,7 +512,7 @@ def oauth_callback(req: func.HttpRequest) -> func.HttpResponse:
 
 @app.route(route="token", methods=["POST", "OPTIONS"],
            auth_level=func.AuthLevel.ANONYMOUS)
-def token(req: func.HttpRequest) -> func.HttpResponse:
+def oauth_token(req: func.HttpRequest) -> func.HttpResponse:
     """Exchange our code for Entra tokens; proxy refresh_token grants to Entra."""
     if req.method == "OPTIONS":
         return func.HttpResponse(status_code=204, headers=CORS_HEADERS)
