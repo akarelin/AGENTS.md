@@ -18,6 +18,11 @@ API_BASE = "https://api.ticktick.com/open/v1"
 PRIORITY_MAP = {"none": 0, "low": 1, "medium": 3, "high": 5}
 PRIORITY_REVERSE = {0: "none", 1: "low", 3: "medium", 5: "high"}
 
+# Focus type codes per OpenAPI (/open/v1/focus): 0=Pomodoro, 1=Timing.
+FOCUS_TYPE_MAP = {"pomo": 0, "pomodoro": 0, "timing": 1}
+FOCUS_TYPE_REVERSE = {0: "pomo", 1: "timing"}
+FOCUS_RANGE_MAX_DAYS = 30  # server clamps anything larger, document it explicitly
+
 RETRY_DELAYS = [5, 15, 30, 60]
 MAX_RETRIES = 4
 
@@ -74,6 +79,49 @@ def _parse_due(s: str) -> str:
         raise ValueError(f"Invalid date: {s!r}")
 
 
+def _parse_range_point(s: str, *, end: bool) -> datetime:
+    """Resolve a natural-language date string to a datetime.
+
+    `end=True` resolves bare days to end-of-day, `end=False` resolves to start-of-day.
+    Accepted forms: today, yesterday, now, this week, last week, N days ago, ISO 8601.
+    """
+    lower = s.lower().strip()
+    now = datetime.now()
+    sod = lambda d: d.replace(hour=0, minute=0, second=0, microsecond=0)
+    eod = lambda d: d.replace(hour=23, minute=59, second=59, microsecond=0)
+    boundary = eod if end else sod
+    if lower == "now":
+        return now.replace(microsecond=0)
+    if lower == "today":
+        return boundary(now)
+    if lower == "yesterday":
+        return boundary(now - timedelta(days=1))
+    if lower in ("this week", "week"):
+        return boundary(now - timedelta(days=now.weekday()))
+    if lower == "last week":
+        return boundary(now - timedelta(days=now.weekday() + 7))
+    m = re.match(r"^(\d+) days? ago$", lower)
+    if m:
+        return boundary(now - timedelta(days=int(m.group(1))))
+    try:
+        return datetime.fromisoformat(s)
+    except ValueError:
+        raise ValueError(f"Invalid date: {s!r}")
+
+
+def _focus_fmt(dt: datetime) -> str:
+    # /open/v1/focus expects yyyy-MM-dd'T'HH:mm:ssZ with a numeric timezone offset.
+    tz = dt.strftime("%z") or "+0000"
+    return dt.strftime("%Y-%m-%dT%H:%M:%S") + tz
+
+
+def _focus_type_code(s: str) -> int:
+    code = FOCUS_TYPE_MAP.get(s.lower().strip())
+    if code is None:
+        raise ValueError(f"Invalid focus type {s!r}. Use 'pomo' or 'timing'.")
+    return code
+
+
 # ── Tool Definitions ──────────────────────────────────────────────────────────
 
 TOOLS = [
@@ -123,14 +171,42 @@ TOOLS = [
         },
         "required": ["task"]
     }},
+    {"name": "tt_focus_list", "description": "List TickTick focus / time-tracking sessions in a date range (max 30 days; longer ranges are clamped server-side). Type defaults to 'all' which merges Pomodoro and Timing entries.", "inputSchema": {
+        "type": "object", "properties": {
+            "from": {"type": "string", "description": "Range start: 'today', 'yesterday', 'this week', 'last week', 'N days ago', or ISO 8601. Defaults to 7 days ago."},
+            "to": {"type": "string", "description": "Range end: 'today', 'now', or ISO 8601. Defaults to 'now'."},
+            "type": {"type": "string", "enum": ["pomo", "timing", "all"], "description": "Session type filter. 'pomo' = Pomodoro, 'timing' = stopwatch, 'all' = both. Default 'all'."},
+        }
+    }},
+    {"name": "tt_focus_get", "description": "Get a single TickTick focus / time-tracking session by ID", "inputSchema": {
+        "type": "object", "properties": {
+            "id": {"type": "string", "description": "Focus session ID"},
+            "type": {"type": "string", "enum": ["pomo", "timing"], "description": "Session type. Required by the TickTick API."},
+        },
+        "required": ["id", "type"]
+    }},
+    {"name": "tt_focus_delete", "description": "Delete a TickTick focus / time-tracking session by ID", "inputSchema": {
+        "type": "object", "properties": {
+            "id": {"type": "string", "description": "Focus session ID"},
+            "type": {"type": "string", "enum": ["pomo", "timing"], "description": "Session type. Required by the TickTick API."},
+        },
+        "required": ["id", "type"]
+    }},
 ]
 
 _RO = {"readOnlyHint": True, "destructiveHint": False, "openWorldHint": False}
 _WR = {"readOnlyHint": False, "destructiveHint": False, "openWorldHint": True}
+_DEL = {"readOnlyHint": False, "destructiveHint": True, "openWorldHint": True}
 
-_READ_TOOLS = {"tt_lists", "tt_tasks"}
+_READ_TOOLS = {"tt_lists", "tt_tasks", "tt_focus_list", "tt_focus_get"}
+_DESTRUCTIVE_TOOLS = {"tt_focus_delete"}
 for _t in TOOLS:
-    _t["annotations"] = _RO if _t["name"] in _READ_TOOLS else _WR
+    if _t["name"] in _DESTRUCTIVE_TOOLS:
+        _t["annotations"] = _DEL
+    elif _t["name"] in _READ_TOOLS:
+        _t["annotations"] = _RO
+    else:
+        _t["annotations"] = _WR
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -244,5 +320,48 @@ def dispatch(name: str, args: dict):
         t = found["task"]
         _api("POST", f"/task/{t['id']}", json={"id": t["id"], "projectId": found["projectId"], "status": -1})
         return {"id": t["id"], "title": t["title"], "abandoned": True}
+
+    if name == "tt_focus_list":
+        end = _parse_range_point(args.get("to") or "now", end=True)
+        start = _parse_range_point(args.get("from") or f"{FOCUS_RANGE_MAX_DAYS - 23} days ago", end=False)
+        if (end - start).days > FOCUS_RANGE_MAX_DAYS:
+            start = end - timedelta(days=FOCUS_RANGE_MAX_DAYS)
+        type_arg = (args.get("type") or "all").lower().strip()
+        codes = [0, 1] if type_arg == "all" else [_focus_type_code(type_arg)]
+        params_base = {"from": _focus_fmt(start), "to": _focus_fmt(end)}
+        sessions = []
+        for code in codes:
+            entries = _api("GET", "/focus", params={**params_base, "type": code}) or []
+            for e in entries:
+                e["_type"] = FOCUS_TYPE_REVERSE.get(code, str(code))
+                sessions.append(e)
+        sessions.sort(key=lambda e: e.get("startTime") or "")
+        return [{
+            "id": e.get("id"),
+            "type": e.get("_type"),
+            "taskId": e.get("taskId"),
+            "startTime": e.get("startTime"),
+            "endTime": e.get("endTime"),
+            "duration": e.get("duration"),
+            "note": e.get("note"),
+        } for e in sessions]
+
+    if name == "tt_focus_get":
+        code = _focus_type_code(args["type"])
+        e = _api("GET", f"/focus/{args['id']}", params={"type": code})
+        return {
+            "id": e.get("id"),
+            "type": FOCUS_TYPE_REVERSE.get(code, str(code)),
+            "taskId": e.get("taskId"),
+            "startTime": e.get("startTime"),
+            "endTime": e.get("endTime"),
+            "duration": e.get("duration"),
+            "note": e.get("note"),
+        }
+
+    if name == "tt_focus_delete":
+        code = _focus_type_code(args["type"])
+        _api("DELETE", f"/focus/{args['id']}", params={"type": code})
+        return {"id": args["id"], "type": args["type"].lower().strip(), "deleted": True}
 
     raise RuntimeError(f"Unknown tool: {name}")
