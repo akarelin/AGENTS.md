@@ -1,195 +1,186 @@
 # MCP Server
 
-Seven MCP endpoints over Streamable HTTP transport: M365 Graph API, Azure Key Vault, Obsidian vault, Neo4j graph database, TickTick tasks, and QMD search index.
+A multi-endpoint [Model Context Protocol](https://modelcontextprotocol.io/) server packaged as an Azure Function (Python). One container exposes several tool sets — Microsoft 365 Graph (via on-behalf-of), Azure Key Vault secrets, an Obsidian vault, Neo4j, TickTick, and a local `qmd` search index — behind a single Entra ID OAuth app. All endpoints speak Streamable HTTP (MCP protocol `2025-03-26`).
 
-**Auth:** OAuth 2.0 against Microsoft Entra ID. The server exposes a shim
-(`/.well-known/oauth-authorization-server`, `/register`, `/authorize`,
-`/oauth/callback`, `/token`) that delegates user authentication to Entra and
-returns Entra-issued JWTs. Inbound `Authorization: Bearer <jwt>` is validated
-against Entra JWKS; the `oid` claim must appear in the `mcp-allowed-oids` Key
-Vault secret. Legacy PSK (`x-api-key`) is still accepted in transition mode
-(see `MCP_AUTH_MODE`).
+## Architecture
 
-## /keys — Secret Management (4 tools)
-
-| Tool | Description | Parameters |
-|------|-------------|------------|
-| `secret_get` | Retrieve a secret or API key by name from Azure Key Vault | name |
-| `secret_list` | List available secret names in Azure Key Vault | |
-| `secret_create` | Create a new secret. Fails on name collision. | name, value |
-| `secret_update` | Update existing secret (new version). Fails if missing, unless `create=true`. | name, value, create? |
-
-## /m365 — User M365 Operations (31 tools)
-
-`user` parameter on all tools selects which mailbox/calendar to act on (default: env `MCP_DEFAULT_USER`)
-
-| Tool | Description | Parameters |
-|------|-------------|------------|
-| `mail_list` | List recent email messages | user?, top?, folder? |
-| `mail_read` | Read a specific email by ID | user?, message_id |
-| `mail_search` | Search emails by keyword | user?, query, top? |
-| `mail_send` | Send an email | user?, to, subject, body, cc?, html? |
-| `mail_draft` | Create a draft email (not sent) | user?, to, subject, body |
-| `mail_reply` | Reply to an email message | user?, message_id, body |
-| `mail_folders` | List mail folders | user? |
-| `cal_list` | List upcoming calendar events | user?, top? |
-| `cal_today` | List today's calendar events | user? |
-| `cal_search` | Search calendar events by keyword | user?, query, top? |
-| `cal_create` | Create a calendar event | user?, subject, start, end, attendees?, online?, tz? |
-| `cal_delete` | Delete a calendar event | user?, event_id |
-| `chat_list` | List Teams chats | user?, top? |
-| `chat_messages` | List messages in a Teams chat | user?, chat_id, top? |
-| `chat_send` | Send a message in a Teams chat | user?, chat_id, message |
-| `chat_search` | Search Teams chat messages across all chats | user?, query, top? |
-| `channel_list` | List channels in a Teams team | user?, team_id |
-| `channel_messages` | List messages in a Teams channel | user?, team_id, channel_id, top? |
-| `channel_send` | Send a message to a Teams channel | user?, team_id, channel_id, message |
-| `files_list` | List files in OneDrive folder | user?, path? |
-| `files_search` | Search files in OneDrive | user?, query |
-| `tasks_lists` | List all To Do task lists | user? |
-| `tasks_list` | List tasks in a To Do list | user?, list_id |
-| `tasks_create` | Create a new To Do task | user?, list_id, title, due?, body? |
-| `tasks_complete` | Mark a To Do task as completed | user?, list_id, task_id |
-| `contacts_list` | List contacts | user?, top? |
-| `contacts_search` | Search people and contacts | user?, query |
-| `notes_notebooks` | List OneNote notebooks | user? |
-| `presence_get` | Get user presence/availability status | user? |
-| `presence_set` | Set user presence status | user?, availability, activity? |
-| `search` | Unified search across M365 (mail, files, events, chats, SharePoint) | user?, query, types?, top? |
-
-## /m365-admin — Tenant Administration (13 tools)
-
-| Tool | Description | Parameters |
-|------|-------------|------------|
-| `users_list` | List all users in the tenant | top? |
-| `users_get` | Get a specific user by ID or UPN | user_id |
-| `users_search` | Search users by display name or email | query, top? |
-| `groups_list` | List all groups in the tenant | top? |
-| `groups_get` | Get a specific group by ID | group_id |
-| `groups_members` | List members of a group | group_id |
-| `domains_list` | List domains in the tenant | |
-| `licenses_list` | List subscribed SKUs/licenses for the tenant | |
-| `user_licenses` | List licenses assigned to a specific user | user_id |
-| `devices_list` | List managed devices in the tenant | top? |
-| `roles_list` | List directory roles in the tenant | |
-| `role_members` | List members of a directory role | role_id |
-| `org_info` | Get organization details | |
-
-## /obsidian — Obsidian Vault Access (16 tools)
-
-Tries hosts from `OBSIDIAN_HOSTS` env var in order. Requires Obsidian Local REST API plugin.
-
-| Tool | Description | Parameters |
-|------|-------------|------------|
-| `vault_list` | List files/folders in a directory | path? |
-| `vault_read` | Read note contents | path |
-| `vault_search` | Full-text search across vault | query |
-| `vault_search_dql` | Dataview DQL query | query |
-| `vault_tags` | List all tags with counts | |
-| `vault_active` | Get currently open note | |
-| `vault_commands` | List Obsidian commands | |
-| `vault_status` | Check which host is reachable | |
-| `vault_write` | Create/overwrite a note | path, content |
-| `vault_append` | Append to a note | path, content |
-| `vault_patch` | Insert near heading/block/frontmatter | path, content, target_type, target |
-| `vault_delete` | Delete file/folder | path |
-| `vault_open` | Open note in Obsidian UI | path |
-| `vault_command` | Execute Obsidian command | command_id |
-| `vault_daily` | Get today's daily note | |
-| `vault_daily_append` | Append to today's daily note | content |
-
-## /neo4j — Graph Database (5 tools)
-
-Auto-discovers Neo4j servers from Key Vault secrets (neo4j-*-uri / neo4j-*-password).
-
-| Tool | Description | Parameters |
-|------|-------------|------------|
-| `neo4j_list_servers` | List available Neo4j servers | |
-| `neo4j_use_server` | Select which server to use | server |
-| `read_neo4j_cypher` | Execute a read-only Cypher query | query, params? |
-| `write_neo4j_cypher` | Execute a write Cypher query | query, params? |
-| `get_neo4j_schema` | Get graph schema (labels, relationships, properties) | |
-
-## /ticktick — Task Management (6 tools)
-
-| Tool | Description | Parameters |
-|------|-------------|------------|
-| `tt_lists` | List all TickTick projects/lists | |
-| `tt_tasks` | List tasks, optionally filtered | list?, status? |
-| `tt_create` | Create a new task | title, list, content?, priority?, due?, tags? |
-| `tt_update` | Update an existing task | task, list?, title?, content?, priority?, due?, tags? |
-| `tt_complete` | Mark a task as completed | task, list? |
-| `tt_abandon` | Mark a task as won't do | task, list? |
-
-## /qmd — QMD Search Index (4 tools)
-
-Hybrid BM25+vector search over a local QMD index via subprocess.
-
-| Tool | Description | Parameters |
-|------|-------------|------------|
-| `qmd_search` | Hybrid BM25+vector search | query, collection?, limit? |
-| `qmd_vsearch` | Vector-only semantic search | query, collection?, limit? |
-| `qmd_get` | Get a specific file from the index | file_path |
-| `qmd_status` | Index status and collection list | |
-
-## Add to claude.ai
-
-Settings → Connectors → Add custom MCP server → URL
-`https://mcp.karelin.ai/<endpoint>` (e.g. `/keys`, `/m365`, etc.). On first
-connect, claude.ai discovers the OAuth metadata, registers a client, opens the
-Entra sign-in window, and stores tokens. Your `oid` must be in
-`mcp-allowed-oids`.
-
-## Connect from Claude Code
-
-```bash
-claude mcp add karelin-keys https://mcp.karelin.ai/keys
+```
+Claude.ai / Claude Code / any MCP client
+        │  Authorization: Bearer <Entra JWT>
+        ▼
+<MCP_HOST>                            (your reverse proxy / Application Proxy)
+        │  pass-through; no auth stripping
+        ▼
+Azure Functions container (this repo)
+        │
+        ├── /.well-known/*, /register, /authorize,
+        │   /oauth/callback, /token                  ← OAuth shim (anonymous)
+        ├── /m365, /m365-admin                       ← open tier (allowlist)
+        ├── /keys, /obsidian, /neo4j, /ticktick,
+        │   /qmd, /mcp, /                            ← privileged tier (allowlist + role)
+        └── /docs, /icons/*                          ← anonymous
 ```
 
-Claude Code walks the same OAuth dance and caches tokens. Repeat per endpoint.
+The function validates inbound JWTs itself against the Entra JWKS, so it works behind any pass-through proxy and does not depend on platform-managed auth.
 
-Static config (e.g. `~/.config/claude-code/.mcp.json`) — Bearer token from any
-helper (MSAL device-code, manual paste, etc.):
+## Authentication
+
+A single multi-tenant Entra app registration handles everything. It publishes one delegated scope, `<SCOPE_NAME>` (default `MCP.Access`), and exposes one app role, `<ROLE_NAME>` (default `MCP.Privileged`).
+
+The flow is standard OAuth 2.0 authorization code with PKCE, brokered by this server so MCP clients see a normal `.well-known/oauth-authorization-server` discovery document:
+
+1. Client hits any MCP endpoint without a Bearer → server returns `401` with `WWW-Authenticate: Bearer resource_metadata=…`.
+2. Client fetches `.well-known/oauth-protected-resource` and `.well-known/oauth-authorization-server` and discovers `/authorize`, `/token`, `/register`.
+3. Client `POST /register` (RFC 7591 DCR stub) — server returns its fixed Entra `client_id` so the caller can proceed without per-client registration in Entra.
+4. Client `GET /authorize` with its own PKCE pair. The server stashes the caller's PKCE challenge, mints a fresh state nonce, and `302`s to Entra's `/authorize` with its own PKCE pair and the requested scope `<SCOPE_NAME>`.
+5. User signs in at Microsoft. Entra `302`s back to `/oauth/callback?code=…`.
+6. Server exchanges the code for tokens via MSAL using the confidential-client secret, mints an opaque code keyed to the real Entra token, and `302`s back to the client's `redirect_uri`.
+7. Client `POST /token` with the opaque code + its PKCE verifier → server verifies PKCE and returns the Entra-issued JWT. `refresh_token` grants are proxied to Entra.
+
+Every subsequent tool call must carry `Authorization: Bearer <jwt>`. The server validates:
+
+- RS256 signature against the issuing tenant's `discovery/v2.0/keys` (cached 1 h)
+- `aud` equals the configured `<CLIENT_ID>`
+- `iss` equals `https://login.microsoftonline.com/<tid>/v2.0`
+- `oid` claim is present and appears in the allowlist loaded from vault
+
+## Authorization
+
+Two tiers, both enforced in the same auth path:
+
+| Tier | Endpoints | Requirement |
+|---|---|---|
+| Open | `/m365`, `/m365-admin` | `oid` in the allowlist. Per-user permission boundaries are enforced downstream by Microsoft Graph. |
+| Privileged | `/keys`, `/obsidian`, `/neo4j`, `/ticktick`, `/qmd`, `/mcp`, `/` (alias) | Allowlist plus the `<ROLE_NAME>` app role in the JWT `roles` claim. Assign per-user in Entra. |
+
+The role is assigned in Entra against the application's service principal; users must sign in again for a newly-assigned role to appear in their token.
+
+## Microsoft Graph via on-behalf-of
+
+The backend never calls Graph with its own identity. For every Graph request:
+
+1. The validated user JWT is stashed in a `ContextVar` per request.
+2. `graph_client.get_token()` reads it and calls `msal.acquire_token_on_behalf_of(user_assertion=<jwt>, scopes=["https://graph.microsoft.com/.default"])` using the app's confidential-client credentials.
+3. Graph returns a token bound to the caller's identity (cached for ~1 h, keyed by SHA-256 of the assertion).
+4. The Graph request runs with that token, so `/me/...` resolves natively and Graph itself enforces what each user can read or write.
+
+Consequence: there is no `user=<someone-else>` override. A user cannot read another user's mailbox by passing a parameter — Graph will reject the call because the OBO token is bound to the original caller.
+
+## Endpoints
+
+| Path | Tier | Description |
+|---|---|---|
+| `/m365` | open | M365 user tools via Graph OBO: mail (list/read/search/send/draft/reply/folders), calendar (list/today/search/create/delete), Teams chats and channels (list/messages/send/search), OneDrive files (list/search), To Do tasks, contacts, OneNote notebooks, presence, unified `/search/query`. |
+| `/m365-admin` | open | Read-only tenant inventory via Graph: users, groups (and members), domains, subscribed SKUs and per-user licences, devices, directory roles (and members), organisation info. Each user only sees what their own roles permit. |
+| `/keys` | privileged | `secret_get`, `secret_list`, `secret_create`, `secret_update` against the configured Azure Key Vault. |
+| `/obsidian` | privileged | Read/write to a local Obsidian vault via the [Local REST API](https://github.com/coddingtonbear/obsidian-local-rest-api) plugin: list, read, write, append, patch (by heading / block-reference / frontmatter-key), delete, open, run command, simple search, Dataview DQL search, tags, active note, daily note get/append. Tries each configured host in order and caches the one that responds. |
+| `/neo4j` | privileged | Auto-discovers Neo4j servers from vault secrets of the form `neo4j-<server>-uri` / `neo4j-<server>-password`. Tools: `neo4j_list_servers`, `neo4j_use_server`, `read_neo4j_cypher`, `write_neo4j_cypher`, `get_neo4j_schema`. |
+| `/ticktick` | privileged | TickTick projects and tasks (`tt_lists`, `tt_tasks`, `tt_create`, `tt_update`, `tt_complete`, `tt_abandon`). Accepts natural-language due dates (`today`, `tomorrow`, `in N days`, `next monday`, ISO 8601). |
+| `/qmd` | privileged | Wraps a local `qmd` CLI (hybrid BM25 + vector index): `qmd_search`, `qmd_vsearch`, `qmd_get`, `qmd_status`. |
+| `/mcp`, `/` | privileged | Aggregate endpoint exposing every tool from every module above. |
+
+Each endpoint also responds to `GET` with a JSON manifest (transport, protocol version, tool name list) for clients that want to introspect before authenticating.
+
+## Environment variables
+
+| Variable | Purpose |
+|---|---|
+| `MCP_BASE_URL` | Public base URL the OAuth shim advertises in discovery documents and uses as its own redirect URI. Required. |
+| `MCP_AUTH_MODE` | `entra` (validate JWT — production), `disabled` (no auth — dev only). Defaults to `psk`, which is now a stub that rejects all requests; set explicitly. |
+| `AZURE_KEYVAULT_NAME` | Name of the Azure Key Vault the container reads all secrets from. The container's identity must have `get` (and `list`/`set` for `/keys` write tools) on the vault. |
+| `MCP_TOOL_TEXT_LIMIT` | Max characters per tool response before truncation. Default `12000`. |
+| `MCP_DEFAULT_USER` | Legacy default for the (now-ignored) `user` parameter on M365 tools. |
+| `OBSIDIAN_HOSTS` | Comma-separated host list for the Obsidian Local REST API. Tried in order. |
+| `OBSIDIAN_PORT` | Port for the Obsidian REST API. Default `27123`. |
+| `OBSIDIAN_SCHEME` | `http` or `https`. Default `http`. (Self-signed certs are accepted.) |
+| `OBSIDIAN_API_KEY` | Bearer token printed by the Obsidian Local REST API plugin. |
+| `TICKTICK_CLIENT_ID` / `TICKTICK_CLIENT_SECRET` | OAuth credentials for TickTick. |
+| `TICKTICK_ACCESS_TOKEN` / `TICKTICK_REFRESH_TOKEN` | TickTick tokens. The current build expects a pre-obtained access token. |
+| `QMD_BIN` | Path to the `qmd` binary. |
+| `QMD_XDG_CONFIG` / `QMD_XDG_CACHE` | XDG dirs passed to the `qmd` subprocess. |
+| `QMD_TIMEOUT` | Subprocess timeout in seconds. Default `30`. |
+
+## Vault secrets
+
+The container resolves all sensitive configuration from Key Vault at runtime. Names below; values stay in vault.
+
+| Secret name | Purpose |
+|---|---|
+| `mcp-entra-tenant-id` | Entra tenant id for the OAuth shim and OBO exchange. |
+| `mcp-entra-client-id` | Application (client) id of the Entra app registration. |
+| `mcp-entra-client-secret` | Confidential-client secret used for the `/oauth/callback` token exchange and for OBO. |
+| `mcp-entra-resource-audience` | Identifier URI of the same app (e.g. `api://<MCP_HOST>`), used to construct the requested scope. |
+| `mcp-allowed-oids` | Comma-separated list of Entra `oid` values permitted to call the server. |
+| `neo4j-<server>-uri`, `neo4j-<server>-password` | One pair per Neo4j server. The `/neo4j` endpoint auto-discovers them. |
+
+## Quick start
+
+### Local dev (no auth)
+
+```bash
+pip install -r requirements.txt
+export MCP_AUTH_MODE=disabled
+export MCP_BASE_URL=http://localhost:7071
+# Optional, only if you want to exercise tools that read vault:
+export AZURE_KEYVAULT_NAME=<VAULT_NAME>
+az login    # so DefaultAzureCredential can resolve
+
+func start
+```
+
+Point an MCP client at `http://localhost:7071/mcp` (or any per-module path).
+
+### Container
+
+```bash
+docker build -t mcp-server .
+docker run --rm -p 7071:80 \
+  -e MCP_AUTH_MODE=entra \
+  -e MCP_BASE_URL=https://<MCP_HOST> \
+  -e AZURE_KEYVAULT_NAME=<VAULT_NAME> \
+  mcp-server
+```
+
+The image is a standard `mcr.microsoft.com/azure-functions/python` base; deploy it wherever you run containers (Azure Container Apps, Container Instances, plain Docker, etc.). Front it with TLS termination at `<MCP_HOST>`; the function should receive `Authorization` headers untouched.
+
+### Client config
+
+Point an MCP-aware client at any endpoint URL. Clients that support OAuth discovery (Claude.ai, Claude Code) will walk the flow automatically:
+
+```bash
+claude mcp add my-keys https://<MCP_HOST>/keys
+```
+
+Or wire individual endpoints into a static config:
 
 ```json
 {
   "mcpServers": {
-    "Karelin Keys":     {"type": "http", "url": "https://mcp.karelin.ai/keys",       "headers": {"Authorization": "Bearer ${MCP_KARELIN_TOKEN}"}},
-    "Karelin M365":     {"type": "http", "url": "https://mcp.karelin.ai/m365",       "headers": {"Authorization": "Bearer ${MCP_KARELIN_TOKEN}"}},
-    "Karelin M365 Admin": {"type": "http", "url": "https://mcp.karelin.ai/m365-admin", "headers": {"Authorization": "Bearer ${MCP_KARELIN_TOKEN}"}},
-    "Karelin Obsidian": {"type": "http", "url": "https://mcp.karelin.ai/obsidian",   "headers": {"Authorization": "Bearer ${MCP_KARELIN_TOKEN}"}},
-    "Karelin Neo4j":    {"type": "http", "url": "https://mcp.karelin.ai/neo4j",      "headers": {"Authorization": "Bearer ${MCP_KARELIN_TOKEN}"}},
-    "Karelin TickTick": {"type": "http", "url": "https://mcp.karelin.ai/ticktick",   "headers": {"Authorization": "Bearer ${MCP_KARELIN_TOKEN}"}},
-    "Karelin QMD":      {"type": "http", "url": "https://mcp.karelin.ai/qmd",        "headers": {"Authorization": "Bearer ${MCP_KARELIN_TOKEN}"}}
+    "M365":      {"type": "http", "url": "https://<MCP_HOST>/m365"},
+    "Keys":      {"type": "http", "url": "https://<MCP_HOST>/keys"},
+    "Obsidian":  {"type": "http", "url": "https://<MCP_HOST>/obsidian"},
+    "Neo4j":     {"type": "http", "url": "https://<MCP_HOST>/neo4j"},
+    "TickTick":  {"type": "http", "url": "https://<MCP_HOST>/ticktick"},
+    "QMD":       {"type": "http", "url": "https://<MCP_HOST>/qmd"}
   }
 }
 ```
 
-## Environment Variables
+## Entra setup (one-time)
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `MCP_AUTH_MODE` | `psk` \| `entra` \| `both` \| `disabled` | `psk` |
-| `MCP_API_KEY` | Pre-shared key for legacy `x-api-key`/Bearer-PSK auth | |
-| `AZURE_KEYVAULT_NAME` | Azure Key Vault name (Entra config + allowlist live there) | |
-| `GRAPH_USERS` | User hint map: `name:aad-id,name:aad-id` | |
-| `MSGRAPH_SECRET_PREFIX` | Secret name prefix for Graph creds | `msgraph` |
-| `MCP_DEFAULT_USER` | Default user hint for M365 tools | `default` |
-| `OBSIDIAN_HOSTS` | Comma-separated host list | |
-| `OBSIDIAN_PORT` | Obsidian REST API port | `27123` |
-| `OBSIDIAN_SCHEME` | HTTP or HTTPS | `http` |
-| `OBSIDIAN_API_KEY` | Obsidian REST API bearer token | |
-| `TICKTICK_CLIENT_ID` | TickTick OAuth client ID | |
-| `TICKTICK_CLIENT_SECRET` | TickTick OAuth client secret | |
-| `TICKTICK_ACCESS_TOKEN` | TickTick access token | |
-| `QMD_BIN` | Path to qmd binary | `qmd` |
-| `QMD_XDG_CONFIG` | XDG_CONFIG_HOME for qmd | |
-| `QMD_XDG_CACHE` | XDG_CACHE_HOME for qmd | |
-| `QMD_TIMEOUT` | Subprocess timeout in seconds | `30` |
-| `MCP_TOOL_TEXT_LIMIT` | Max chars per tool response | `12000` |
+In your tenant, create an app registration with:
 
-## Run
+- **Supported account types:** Accounts in any organisational directory (multi-tenant).
+- **Identifier URI:** `api://<MCP_HOST>`.
+- **Redirect URI** (Web): `https://<MCP_HOST>/oauth/callback`.
+- **Public client / native** flow: enabled (so device-code clients can use the same app).
+- **Exposed API scope:** `<SCOPE_NAME>` (default `MCP.Access`).
+- **App role:** `<ROLE_NAME>` (default `MCP.Privileged`), assignable to users.
+- **Client secret:** create one and store its value as `mcp-entra-client-secret` in your vault.
+- **API permissions (delegated Microsoft Graph):** whatever scopes you want the `/m365` tools to be able to exercise (Mail, Calendars, Files, Sites, etc.). Admin-consent them tenant-wide.
 
-```bash
-docker compose up -d --build
-```
+Populate the vault secrets listed above (`mcp-entra-tenant-id`, `mcp-entra-client-id`, `mcp-entra-client-secret`, `mcp-entra-resource-audience`, `mcp-allowed-oids`). Grant the container's identity `get` on the vault (and `list`/`set` if you use the `/keys` write tools).
+
+## License
+
+See `LICENSE`.
