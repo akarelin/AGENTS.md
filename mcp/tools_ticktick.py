@@ -34,9 +34,17 @@ _REFRESH_TOKEN = os.environ.get("TICKTICK_REFRESH_TOKEN", "")
 
 
 def _get_token() -> str:
-    if _ACCESS_TOKEN:
-        return _ACCESS_TOKEN
-    raise RuntimeError("TICKTICK_ACCESS_TOKEN not set. Configure TickTick credentials.")
+    raw = _ACCESS_TOKEN
+    if not raw:
+        raise RuntimeError("TICKTICK_ACCESS_TOKEN not set. Configure TickTick credentials.")
+    # Accept either a bare token or a JSON envelope (vault stores the latter).
+    s = raw.strip()
+    if s.startswith("{"):
+        try:
+            return json.loads(s)["access_token"]
+        except (ValueError, KeyError) as e:
+            raise RuntimeError(f"TICKTICK_ACCESS_TOKEN looks like JSON but unparseable: {e}")
+    return s
 
 
 def _api(method: str, endpoint: str, retry: int = 0, **kwargs):
